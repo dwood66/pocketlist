@@ -221,3 +221,8 @@ app.onError((err, c) => {
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port });
 console.log(`Pocketlist API on http://localhost:${port}`);
+
+if (process.env.POCKETLIST_WARM) {
+  const { warm, STARTER_IDS } = await import("./warm.ts");
+  void warm(STARTER_IDS);
+}

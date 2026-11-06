@@ -2,15 +2,18 @@
 // MusicBrainz allows about one request a second, so a prolific player takes 20–30 minutes;
 // run this overnight.
 //
-//   npm run warm                    → the starter set below
-//   npm run warm -- <mbid> <mbid>   → specific players
+//   npm run dev:warm                → the app as usual, warming the starter set in the background
+//   npm run warm                    → warm only (dev server stopped: the local database
+//   npm run warm -- <mbid> <mbid>     takes one process at a time)
 //
-// Stop the dev server first: the local database takes one process at a time.
+// Whoever is using the app still goes first: a player someone is looking at outranks the
+// warm-up, which resumes afterwards.
 
 import { jobError, watch } from "./crawler.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES } from "./ingest.ts";
 import { requestCount } from "./mb.ts";
+import { pathToFileURL } from "node:url";
 
 // IDs checked against MusicBrainz search on 2026-11-06.
 const STARTER: Record<string, string> = {
@@ -21,7 +24,7 @@ const STARTER: Record<string, string> = {
   "Wally Kane (US woodwind player)": "c25346e6-1ec6-41a9-bfd0-4efef8f93799",
 };
 
-const ids = process.argv.slice(2).length ? process.argv.slice(2) : Object.values(STARTER);
+export const STARTER_IDS = Object.values(STARTER);
 
 async function progress(id: string) {
   const [r] = await rows<{ total: number; loaded: number }>(
@@ -32,21 +35,29 @@ async function progress(id: string) {
   return r;
 }
 
-for (const id of ids) {
-  const started = Date.now();
-  await new Promise<void>((resolve) => {
-    let last = 0;
-    const stop = watch(id, async () => {
-      const p = await progress(id);
-      if (Date.now() - last > 30_000) {
-        last = Date.now();
-        console.log(`${id}: ${p.loaded}/${p.total} recordings, ${requestCount} requests so far`);
-      }
-      const err = jobError(id);
-      if (err) console.error(`${id}: stopped: ${err}`);
-      if (err || (p.total > 0 && p.loaded >= p.total)) { stop(); resolve(); }
+export async function warm(ids: string[]) {
+  for (const id of ids) {
+    const started = Date.now();
+    await new Promise<void>((resolve) => {
+      let last = 0;
+      const stop = watch(id, async () => {
+        const p = await progress(id);
+        if (Date.now() - last > 60_000) {
+          last = Date.now();
+          console.log(`warm ${id}: ${p.loaded}/${p.total} recordings, ${requestCount} requests so far`);
+        }
+        const err = jobError(id);
+        if (err) console.error(`warm ${id}: stopped: ${err}`);
+        if (err || (p.total > 0 && p.loaded >= p.total)) { stop(); resolve(); }
+      });
     });
-  });
-  console.log(`${id}: done in ${Math.round((Date.now() - started) / 60000)} min`);
+    console.log(`warm ${id}: done in ${Math.round((Date.now() - started) / 60000)} min`);
+  }
+  console.log("warm: all done");
 }
-process.exit(0);
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const args = process.argv.slice(2);
+  await warm(args.length ? args : STARTER_IDS);
+  process.exit(0);
+}

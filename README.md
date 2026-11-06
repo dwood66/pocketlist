@@ -40,8 +40,8 @@ npm test
 ```
 
 A prolific player's first visit takes 20–30 minutes to fill in completely (results appear right
-away). To have some ready in advance, stop the dev server and run `npm run warm`, which pre-loads a
-starter set.
+away). To have some ready in advance, run `npm run dev:warm`: the app as usual, pre-loading a starter
+set in the background. Anyone looking at a player still goes first.
 
 ## License
 
