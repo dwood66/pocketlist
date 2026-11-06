@@ -1,0 +1,1914 @@
+[
+  {
+    "player": {
+      "name": "Paul Chambers",
+      "hint": "bass"
+    },
+    "musicbrainz": {
+      "candidates": [
+        {
+          "id": "b6ff4fd0-03ae-41a6-942e-7de13124b970",
+          "name": "Paul Chambers",
+          "score": 100,
+          "disambiguation": "US jazz bassist",
+          "lifeSpan": {
+            "begin": "1935-04-22",
+            "end": "1969-01-04",
+            "ended": true
+          },
+          "tags": [
+            "jazz",
+            "american",
+            "bassist",
+            "hard bop",
+            "death by tuberculosis"
+          ]
+        },
+        {
+          "id": "ef9fcdff-7e80-497d-bfb6-4eed10e90502",
+          "name": "Paul Chambers",
+          "score": 83,
+          "disambiguation": "DJ/producer from Belgium",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "f6fafc54-4ccd-4041-a3e2-2f9fa7cb155d",
+          "name": "Paul Chambers",
+          "score": 82,
+          "disambiguation": "UK Hard Dance Producer",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "hard house"
+          ]
+        },
+        {
+          "id": "463d193a-9808-46e9-a377-0440eaf0f931",
+          "name": "Paul Chambers",
+          "score": 80,
+          "disambiguation": "new wave, 80s, minimal wave",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "d790eef4-2e20-4b92-9a2b-14d42c548ebd",
+          "name": "Paul Chambers",
+          "score": 80,
+          "disambiguation": "UK drum & bass producer Life on Mars",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "d1804612-72e8-48e6-ba8f-a3f7b6c0f73d",
+          "name": "Paul Chambers",
+          "score": 80,
+          "disambiguation": "a.k.a. Paul Ibiza",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "fccbe3a1-96fd-4b12-bfc9-e93048c86d69",
+          "name": "Paul Chambers",
+          "score": 80,
+          "disambiguation": "songwriter",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "9d0dadd8-bd09-4a16-97d2-dab5bd3ce61c",
+          "name": "Paul Chambers Sextet",
+          "score": 77,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        }
+      ],
+      "pick": {
+        "id": "b6ff4fd0-03ae-41a6-942e-7de13124b970",
+        "name": "Paul Chambers",
+        "score": 100,
+        "disambiguation": "US jazz bassist",
+        "lifeSpan": {
+          "begin": "1935-04-22",
+          "end": "1969-01-04",
+          "ended": true
+        },
+        "tags": [
+          "jazz",
+          "american",
+          "bassist",
+          "hard bop",
+          "death by tuberculosis"
+        ]
+      },
+      "recordingRelationships": 2193,
+      "uniqueRecordings": 2120,
+      "instruments": {
+        "double bass": 1624,
+        "bass": 565,
+        "acoustic bass guitar": 4
+      },
+      "discogsUrl": "https://www.discogs.com/artist/259778",
+      "sampled": [
+        {
+          "title": "Bemsha Swing / Epistrophy",
+          "otherCredits": 3
+        },
+        {
+          "title": "Rhythm‐a‐ning",
+          "otherCredits": 3
+        },
+        {
+          "title": "'Daylie' Double",
+          "otherCredits": 6
+        },
+        {
+          "title": "'Daylie' Double (alternate take)",
+          "otherCredits": 4
+        },
+        {
+          "title": "Groovin'",
+          "otherCredits": 6
+        },
+        {
+          "title": "Pennies From Heaven",
+          "otherCredits": 6
+        },
+        {
+          "title": "Pennies From Heaven (alternate take)",
+          "otherCredits": 4
+        },
+        {
+          "title": "Portrait of Jennie",
+          "otherCredits": 6
+        },
+        {
+          "title": "Viscosity",
+          "otherCredits": 6
+        },
+        {
+          "title": "Viscosity (alternate take)",
+          "otherCredits": 4
+        },
+        {
+          "title": "You're Mine, You",
+          "otherCredits": 6
+        },
+        {
+          "title": "Body and Soul",
+          "otherCredits": 5
+        },
+        {
+          "title": "Laura",
+          "otherCredits": 5
+        },
+        {
+          "title": "Say Jack",
+          "otherCredits": 5
+        },
+        {
+          "title": "Sometimes I'm Happy",
+          "otherCredits": 5
+        }
+      ],
+      "sampledWithZeroOtherCredits": 0,
+      "topCollaborators": [
+        {
+          "name": "Kenny Clarke",
+          "count": 9,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "J.J. Johnson",
+          "count": 9,
+          "roles": [
+            "instrument:trombone"
+          ]
+        },
+        {
+          "name": "Hank Mobley",
+          "count": 9,
+          "roles": [
+            "instrument:tenor saxophone"
+          ]
+        },
+        {
+          "name": "Horace Silver",
+          "count": 9,
+          "roles": [
+            "instrument:piano"
+          ]
+        },
+        {
+          "name": "Alfred Lion",
+          "count": 6,
+          "roles": [
+            "producer"
+          ]
+        },
+        {
+          "name": "Rudy van Gelder",
+          "count": 6,
+          "roles": [
+            "recording"
+          ]
+        },
+        {
+          "name": "Candido",
+          "count": 4,
+          "roles": [
+            "instrument:congas"
+          ]
+        },
+        {
+          "name": "Bennie Green",
+          "count": 4,
+          "roles": [
+            "instrument:trombone"
+          ]
+        },
+        {
+          "name": "Osie Johnson",
+          "count": 4,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Charlie Rouse",
+          "count": 4,
+          "roles": [
+            "instrument:tenor saxophone"
+          ]
+        },
+        {
+          "name": "Cliff Smalls",
+          "count": 4,
+          "roles": [
+            "instrument:piano"
+          ]
+        },
+        {
+          "name": "Ernie Henry",
+          "count": 2,
+          "roles": [
+            "instrument:alto saxophone"
+          ]
+        },
+        {
+          "name": "Willie Jones",
+          "count": 2,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Thelonious Monk",
+          "count": 2,
+          "roles": [
+            "instrument:piano"
+          ]
+        }
+      ]
+    },
+    "discogs": {
+      "discogsId": "259778",
+      "totalListed": 1956,
+      "firstPageByRole": {
+        "Main": 78,
+        "Producer": 1,
+        "Appearance": 21
+      },
+      "sampled": [
+        {
+          "title": "Bohemia After Dark",
+          "year": 1955,
+          "credits": 21,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Blue Red, Part 1 / Blue Red, Part 2",
+          "year": 1956,
+          "credits": 7,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Introducing Nat Adderley",
+          "year": 1955,
+          "credits": 11,
+          "trackLevelCredits": false
+        },
+        {
+          "title": "Chambers' Music: A Jazz Delegation From The East",
+          "year": 1956,
+          "credits": 13,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Jazzmen: Detroit",
+          "year": 1956,
+          "credits": 5,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Kenny Drew Trio",
+          "year": 1956,
+          "credits": 10,
+          "trackLevelCredits": false
+        }
+      ],
+      "topCollaborators": [
+        {
+          "name": "Cannonball Adderley",
+          "count": 7,
+          "roles": [
+            "Alto Saxophone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Nat Adderley",
+          "count": 7,
+          "roles": [
+            "Cornet",
+            "Written-By",
+            "Trumpet"
+          ]
+        },
+        {
+          "name": "Kenny Drew",
+          "count": 3,
+          "roles": [
+            "Piano",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Rudy Van Gelder",
+          "count": 2,
+          "roles": [
+            "Lacquer Cut By",
+            "Engineer [Recording]"
+          ]
+        },
+        {
+          "name": "Horace Silver",
+          "count": 2,
+          "roles": [
+            "Piano"
+          ]
+        },
+        {
+          "name": "Red Garland",
+          "count": 2,
+          "roles": [
+            "Piano",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Charlie Parker",
+          "count": 2,
+          "roles": [
+            "Written-By"
+          ]
+        },
+        {
+          "name": "\"Philly\" Joe Jones",
+          "count": 2,
+          "roles": [
+            "Drums"
+          ]
+        },
+        {
+          "name": "John Coltrane",
+          "count": 2,
+          "roles": [
+            "Tenor Saxophone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Kenny Burrell",
+          "count": 2,
+          "roles": [
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Orrin Keepnews",
+          "count": 2,
+          "roles": [
+            "Liner Notes",
+            "Producer"
+          ]
+        },
+        {
+          "name": "Kenny Clarke",
+          "count": 1,
+          "roles": [
+            "Drums, Leader"
+          ]
+        },
+        {
+          "name": "Hank Jones",
+          "count": 1,
+          "roles": [
+            "Piano"
+          ]
+        },
+        {
+          "name": "Jerome Richardson",
+          "count": 1,
+          "roles": [
+            "Tenor Saxophone, Flute"
+          ]
+        },
+        {
+          "name": "Donald Byrd",
+          "count": 1,
+          "roles": [
+            "Trumpet"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "player": {
+      "name": "Ron Carter",
+      "hint": "bass"
+    },
+    "musicbrainz": {
+      "candidates": [
+        {
+          "id": "57db3f59-9c58-4f68-a00e-e044666c4828",
+          "name": "Ron Carter",
+          "score": 100,
+          "disambiguation": "US jazz double-bassist",
+          "lifeSpan": {
+            "begin": "1937-05-04",
+            "ended": null
+          },
+          "tags": [
+            "jazz",
+            "jazz fusion",
+            "post-bop",
+            "hard bop",
+            "bebop",
+            "chamber jazz",
+            "session",
+            "samba-jazz"
+          ]
+        },
+        {
+          "id": "f41c3614-0e0d-4065-8208-20ac5fff1a37",
+          "name": "Ron Carter Quartet",
+          "score": 73,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "13b32afe-d3b2-461c-b3af-c3a5cc5d139d",
+          "name": "Ron Carter Trio",
+          "score": 71,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "97517cd9-82b9-43c5-b2db-15a7c92fda7d",
+          "name": "Ron Carter Sextet",
+          "score": 70,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "f8ae5118-19a9-4b8d-b100-3035fdd23980",
+          "name": "The Ron Carter Nonet",
+          "score": 66,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "13747f49-5867-4230-b957-9162eea74319",
+          "name": "Ron Carter Foursight Quartet",
+          "score": 66,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "5136640e-6d83-467e-83f0-f6beb9cbaa47",
+          "name": "Ron Carter \"Golden Striker\" Trio",
+          "score": 63,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "13fe254e-241a-49cc-a686-7a397105e5c6",
+          "name": "Jim Hall / Ron Carter Duo",
+          "score": 62,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        }
+      ],
+      "pick": {
+        "id": "57db3f59-9c58-4f68-a00e-e044666c4828",
+        "name": "Ron Carter",
+        "score": 100,
+        "disambiguation": "US jazz double-bassist",
+        "lifeSpan": {
+          "begin": "1937-05-04",
+          "ended": null
+        },
+        "tags": [
+          "jazz",
+          "jazz fusion",
+          "post-bop",
+          "hard bop",
+          "bebop",
+          "chamber jazz",
+          "session",
+          "samba-jazz"
+        ]
+      },
+      "recordingRelationships": 4050,
+      "uniqueRecordings": 3735,
+      "instruments": {
+        "bass": 1566,
+        "cello": 51,
+        "double bass": 2089,
+        "bass guitar": 50,
+        "electric upright bass": 10,
+        "electric bass guitar": 36,
+        "strings": 9,
+        "cowbell": 6,
+        "tambourine": 6,
+        "percussion": 3,
+        "solo": 23,
+        "guest": 7,
+        "acoustic bass guitar": 8,
+        "additional": 1,
+        "spoken vocals": 1
+      },
+      "discogsUrl": "https://www.discogs.com/artist/95088",
+      "sampled": [
+        {
+          "title": "A Blues for Bradley",
+          "otherCredits": 1
+        },
+        {
+          "title": "A Child Is Born",
+          "otherCredits": 2
+        },
+        {
+          "title": "A Hymn for Him",
+          "otherCredits": 7
+        },
+        {
+          "title": "A Quiet Place",
+          "otherCredits": 8
+        },
+        {
+          "title": "A Small Ballad",
+          "otherCredits": 8
+        },
+        {
+          "title": "A Theme in 3/4",
+          "otherCredits": 12
+        },
+        {
+          "title": "Ah, Rio",
+          "otherCredits": 8
+        },
+        {
+          "title": "All Blues",
+          "otherCredits": 4
+        },
+        {
+          "title": "Arboretum",
+          "otherCredits": 3
+        },
+        {
+          "title": "Autumn Leaves",
+          "otherCredits": 2
+        },
+        {
+          "title": "B And A",
+          "otherCredits": 4
+        },
+        {
+          "title": "Bitin'",
+          "otherCredits": 2
+        },
+        {
+          "title": "Blues Farm",
+          "otherCredits": 7
+        },
+        {
+          "title": "Bom Dia",
+          "otherCredits": 2
+        },
+        {
+          "title": "Bottoms Up",
+          "otherCredits": 3
+        }
+      ],
+      "sampledWithZeroOtherCredits": 0,
+      "topCollaborators": [
+        {
+          "name": "Rudy van Gelder",
+          "count": 11,
+          "roles": [
+            "recording",
+            "engineer",
+            "mix"
+          ]
+        },
+        {
+          "name": "Ralph MacDonald",
+          "count": 4,
+          "roles": [
+            "instrument:percussion"
+          ]
+        },
+        {
+          "name": "Kenny Barron",
+          "count": 4,
+          "roles": [
+            "instrument:piano",
+            "instrument:piano:solo"
+          ]
+        },
+        {
+          "name": "Sam Brown",
+          "count": 3,
+          "roles": [
+            "instrument:electric guitar"
+          ]
+        },
+        {
+          "name": "Billy Cobham",
+          "count": 3,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Hubert Laws",
+          "count": 3,
+          "roles": [
+            "instrument:flute"
+          ]
+        },
+        {
+          "name": "Richard Tee",
+          "count": 3,
+          "roles": [
+            "instrument:electric piano"
+          ]
+        },
+        {
+          "name": "Creed Taylor",
+          "count": 3,
+          "roles": [
+            "producer"
+          ]
+        },
+        {
+          "name": "Tony Williams",
+          "count": 3,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Helen Merrill",
+          "count": 2,
+          "roles": [
+            "vocal"
+          ]
+        },
+        {
+          "name": "Wade Marcus",
+          "count": 2,
+          "roles": [
+            "conductor",
+            "instrument arranger:horn"
+          ]
+        },
+        {
+          "name": "Ben Riley",
+          "count": 2,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Buster Williams",
+          "count": 2,
+          "roles": [
+            "instrument:bass"
+          ]
+        },
+        {
+          "name": "Art Farmer",
+          "count": 2,
+          "roles": [
+            "instrument:trumpet"
+          ]
+        },
+        {
+          "name": "Bill Evans",
+          "count": 2,
+          "roles": [
+            "instrument:tenor saxophone"
+          ]
+        }
+      ]
+    },
+    "discogs": {
+      "discogsId": "95088",
+      "totalListed": 2700,
+      "firstPageByRole": {
+        "Main": 100
+      },
+      "sampled": [
+        {
+          "title": "Untitled",
+          "year": 1960,
+          "credits": 9,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "All Members",
+          "year": 1961,
+          "credits": 20,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Where?",
+          "year": 1962,
+          "credits": 14,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Bob Brookmeyer And Friends",
+          "year": 1965,
+          "credits": 19,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Untitled",
+          "year": 1967,
+          "credits": 16,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Robert Scheer's A Night At Santa Rita",
+          "year": 1969,
+          "credits": 15,
+          "trackLevelCredits": false
+        }
+      ],
+      "topCollaborators": [
+        {
+          "name": "Eric Dolphy",
+          "count": 6,
+          "roles": [
+            "Producer [Uncredited]",
+            "Flute, Bass Clarinet",
+            "Alto Saxophone",
+            "Flute",
+            "Bass Clarinet, Alto Saxophone, Flute"
+          ]
+        },
+        {
+          "name": "Bob Brookmeyer",
+          "count": 4,
+          "roles": [
+            "Valve Trombone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Edgar Summerlin",
+          "count": 4,
+          "roles": [
+            "Liner Notes",
+            "Tenor Saxophone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Don Heckman",
+          "count": 3,
+          "roles": [
+            "Alto Saxophone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Jimmy Heath",
+          "count": 2,
+          "roles": [
+            "Tenor Saxophone",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Don Sleet",
+          "count": 2,
+          "roles": [
+            "Trumpet",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Clifford Jordan",
+          "count": 2,
+          "roles": [
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Sigmund Romberg",
+          "count": 2,
+          "roles": [
+            "Written-By",
+            "Composed By"
+          ]
+        },
+        {
+          "name": "Randy Weston",
+          "count": 2,
+          "roles": [
+            "Composed By"
+          ]
+        },
+        {
+          "name": "Bob Thiele",
+          "count": 2,
+          "roles": [
+            "Producer",
+            "Songwriter [A Night At Santa Rita]"
+          ]
+        },
+        {
+          "name": "Jerry Newman",
+          "count": 1,
+          "roles": [
+            "Engineer [Uncredited]"
+          ]
+        },
+        {
+          "name": "Ken Deardoff",
+          "count": 1,
+          "roles": [
+            "Design [Cover]"
+          ]
+        },
+        {
+          "name": "Jimmy Cobb",
+          "count": 1,
+          "roles": [
+            "Drums"
+          ]
+        },
+        {
+          "name": "Ray Fowler",
+          "count": 1,
+          "roles": [
+            "Engineer [Recording]"
+          ]
+        },
+        {
+          "name": "Ira Gitler",
+          "count": 1,
+          "roles": [
+            "Liner Notes"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "player": {
+      "name": "Elvin Jones",
+      "hint": "drum"
+    },
+    "musicbrainz": {
+      "candidates": [
+        {
+          "id": "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7",
+          "name": "Elvin Jones",
+          "score": 100,
+          "disambiguation": "jazz drummer",
+          "lifeSpan": {
+            "begin": "1927-09-09",
+            "end": "2004-05-18",
+            "ended": true
+          },
+          "tags": [
+            "jazz",
+            "jazz fusion",
+            "post-bop",
+            "hard bop",
+            "avant-garde jazz",
+            "chamber jazz",
+            "2008 universal fire victim"
+          ]
+        },
+        {
+          "id": "c9d261f2-f9c2-4f0b-b770-9da51056b437",
+          "name": "Elvin Jones Quartet",
+          "score": 74,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "5b0d1a97-2401-4ebe-bde9-e81f1861f6df",
+          "name": "Elvin Jones Quintet",
+          "score": 73,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": true
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "cf3ed1a6-cca1-49ca-a198-95b89c777f8f",
+          "name": "The Elvin Jones Jazz Machine",
+          "score": 70,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "730512ea-9165-463e-b004-408a388c9607",
+          "name": "Elvin Jones Tribute Band",
+          "score": 69,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "50a57cf1-7f25-4a4f-9240-8309ffb76063",
+          "name": "Elvin Jones Special Quartet",
+          "score": 69,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "c424075c-19f8-49f3-9f32-0f11f476de3e",
+          "name": "The New Elvin Jones Trio",
+          "score": 66,
+          "disambiguation": "Elvin Jones, Jimmy Garrison & Joe Farrell",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "f7d398fd-c052-41e6-87f0-b29b70c8000f",
+          "name": "Elvin Jones McCoy Tyner Quintet",
+          "score": 66,
+          "disambiguation": "",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        }
+      ],
+      "pick": {
+        "id": "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7",
+        "name": "Elvin Jones",
+        "score": 100,
+        "disambiguation": "jazz drummer",
+        "lifeSpan": {
+          "begin": "1927-09-09",
+          "end": "2004-05-18",
+          "ended": true
+        },
+        "tags": [
+          "jazz",
+          "jazz fusion",
+          "post-bop",
+          "hard bop",
+          "avant-garde jazz",
+          "chamber jazz",
+          "2008 universal fire victim"
+        ]
+      },
+      "recordingRelationships": 1614,
+      "uniqueRecordings": 1601,
+      "instruments": {
+        "drums (drum set)": 1580,
+        "percussion": 26,
+        "strings": 2,
+        "guitar": 1,
+        "guest": 3,
+        "additional": 1
+      },
+      "discogsUrl": "https://www.discogs.com/artist/135885",
+      "sampled": [
+        {
+          "title": "Alone Together",
+          "otherCredits": 5
+        },
+        {
+          "title": "Alone Together",
+          "otherCredits": 4
+        },
+        {
+          "title": "Easy Living",
+          "otherCredits": 5
+        },
+        {
+          "title": "Easy Living",
+          "otherCredits": 4
+        },
+        {
+          "title": "Nature Boy",
+          "otherCredits": 6
+        },
+        {
+          "title": "There's No You",
+          "otherCredits": 5
+        },
+        {
+          "title": "Angel Eyes",
+          "otherCredits": 6
+        },
+        {
+          "title": "I Should Care",
+          "otherCredits": 6
+        },
+        {
+          "title": "Joey, Joey, Joey",
+          "otherCredits": 6
+        },
+        {
+          "title": "Overdrive",
+          "otherCredits": 6
+        },
+        {
+          "title": "Undecided",
+          "otherCredits": 6
+        },
+        {
+          "title": "Cube Steak",
+          "otherCredits": 6
+        },
+        {
+          "title": "Never Let Me Go",
+          "otherCredits": 6
+        },
+        {
+          "title": "Solar",
+          "otherCredits": 6
+        },
+        {
+          "title": "Tumbling Tumbleweeds",
+          "otherCredits": 7
+        }
+      ],
+      "sampledWithZeroOtherCredits": 0,
+      "topCollaborators": [
+        {
+          "name": "Bobby Jaspar",
+          "count": 9,
+          "roles": [
+            "instrument:tenor saxophone",
+            "instrument:flute"
+          ]
+        },
+        {
+          "name": "J.J. Johnson",
+          "count": 9,
+          "roles": [
+            "instrument:trombone"
+          ]
+        },
+        {
+          "name": "Hank Jones",
+          "count": 9,
+          "roles": [
+            "instrument:piano"
+          ]
+        },
+        {
+          "name": "Cal Lampley",
+          "count": 9,
+          "roles": [
+            "producer"
+          ]
+        },
+        {
+          "name": "Fred Plaut",
+          "count": 9,
+          "roles": [
+            "recording"
+          ]
+        },
+        {
+          "name": "Charles Mingus",
+          "count": 7,
+          "roles": [
+            "instrument:double bass",
+            "instrument arranger:double bass"
+          ]
+        },
+        {
+          "name": "Teddy Charles",
+          "count": 6,
+          "roles": [
+            "instrument:vibraphone"
+          ]
+        },
+        {
+          "name": "Miles Davis",
+          "count": 6,
+          "roles": [
+            "instrument:trumpet"
+          ]
+        },
+        {
+          "name": "Britt Woodman",
+          "count": 6,
+          "roles": [
+            "instrument:trombone"
+          ]
+        },
+        {
+          "name": "Percy Heath",
+          "count": 6,
+          "roles": [
+            "instrument:double bass"
+          ]
+        },
+        {
+          "name": "Rudy van Gelder",
+          "count": 4,
+          "roles": [
+            "recording"
+          ]
+        },
+        {
+          "name": "Wilbur Little",
+          "count": 4,
+          "roles": [
+            "instrument:double bass"
+          ]
+        }
+      ]
+    },
+    "discogs": {
+      "discogsId": "135885",
+      "totalListed": 1378,
+      "firstPageByRole": {
+        "Main": 100
+      },
+      "sampled": [
+        {
+          "title": "Olio",
+          "year": 1957,
+          "credits": 14,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Olio",
+          "year": 1958,
+          "credits": 8,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Paul Chambers Quintet",
+          "year": 1958,
+          "credits": 17,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Motor City Scene",
+          "year": 1959,
+          "credits": 14,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Drums - Vol. 2 : Jam Session De Batteries Au \"Birdland\"",
+          "year": 1960,
+          "credits": 11,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Gretsch Drum Night At Birdland",
+          "year": 1960,
+          "credits": 15,
+          "trackLevelCredits": true
+        }
+      ],
+      "topCollaborators": [
+        {
+          "name": "Teddy Charles",
+          "count": 8,
+          "roles": [
+            "Supervised By [Supervision]",
+            "Vibraphone [Vibes]",
+            "Written-By",
+            "Vibraphone"
+          ]
+        },
+        {
+          "name": "Thad Jones",
+          "count": 7,
+          "roles": [
+            "Trumpet",
+            "Cornet, Flugelhorn",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Mal Waldron",
+          "count": 4,
+          "roles": [
+            "Piano",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Paul Chambers (3)",
+          "count": 4,
+          "roles": [
+            "Bass",
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Tommy Flanagan",
+          "count": 4,
+          "roles": [
+            "Piano"
+          ]
+        },
+        {
+          "name": "\"Philly\" Joe Jones",
+          "count": 4,
+          "roles": [
+            "Drum",
+            "Drums",
+            "Drums [Solo]"
+          ]
+        },
+        {
+          "name": "Art Blakey",
+          "count": 4,
+          "roles": [
+            "Drum",
+            "Drums",
+            "Drums [Solo]"
+          ]
+        },
+        {
+          "name": "Charlie Persip",
+          "count": 3,
+          "roles": [
+            "Drum",
+            "Drums",
+            "Drums [Solo]"
+          ]
+        },
+        {
+          "name": "Doug Watkins",
+          "count": 2,
+          "roles": [
+            "Bass"
+          ]
+        },
+        {
+          "name": "Frank Wess",
+          "count": 2,
+          "roles": [
+            "Flute, Tenor Saxophone"
+          ]
+        },
+        {
+          "name": "Benny Golson",
+          "count": 2,
+          "roles": [
+            "Written-By"
+          ]
+        },
+        {
+          "name": "Sylvester Kyner",
+          "count": 2,
+          "roles": [
+            "Alto Saxophone"
+          ]
+        },
+        {
+          "name": "Rudy Traylor",
+          "count": 2,
+          "roles": [
+            "Sleeve Notes",
+            "Producer"
+          ]
+        },
+        {
+          "name": "Charles Greenlee",
+          "count": 2,
+          "roles": [
+            "Trombone"
+          ]
+        },
+        {
+          "name": "Ira Gitler",
+          "count": 1,
+          "roles": [
+            "Liner Notes"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "player": {
+      "name": "Bill Evans",
+      "hint": "pian"
+    },
+    "musicbrainz": {
+      "candidates": [
+        {
+          "id": "8247a3f2-3a8e-4256-b322-6c57b03a4e36",
+          "name": "Bill Evans",
+          "score": 100,
+          "disambiguation": "pianist",
+          "lifeSpan": {
+            "begin": "1929-08-16",
+            "end": "1980-09-15",
+            "ended": true
+          },
+          "tags": [
+            "jazz",
+            "american",
+            "1970s",
+            "1960s",
+            "post-bop",
+            "hard bop",
+            "modal jazz",
+            "vocal jazz",
+            "cool jazz",
+            "jazz and blues",
+            "cool",
+            "piano jazz",
+            "third stream",
+            "death by cirrhosis",
+            "death by pneumonia",
+            "death by bleeding ulcer",
+            "jazz instrument",
+            "1950s",
+            "modal music",
+            "jazz quartet"
+          ]
+        },
+        {
+          "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+          "name": "Bill Evans Trio",
+          "score": 90,
+          "disambiguation": "",
+          "lifeSpan": {
+            "begin": "1959",
+            "end": "1980-09-15",
+            "ended": true
+          },
+          "tags": [
+            "jazz",
+            "post-bop",
+            "modal jazz",
+            "bebop",
+            "cool jazz",
+            "piano jazz",
+            "jazz trio",
+            "jazz instrument",
+            "contemporary post-bop"
+          ]
+        },
+        {
+          "id": "8c7aa18e-9392-47c7-9d56-97d34d746a8b",
+          "name": "Bill Evans",
+          "score": 80,
+          "disambiguation": "saxophonist",
+          "lifeSpan": {
+            "begin": "1958-02-09",
+            "ended": null
+          },
+          "tags": [
+            "jazz"
+          ]
+        },
+        {
+          "id": "b4a5e374-ed1b-4976-9b86-58d4a9b643a8",
+          "name": "Bill Evans",
+          "score": 74,
+          "disambiguation": "banjoist",
+          "lifeSpan": {
+            "begin": "1956-09-02",
+            "ended": null
+          },
+          "tags": [
+            "folk",
+            "bluegrass"
+          ]
+        },
+        {
+          "id": "dc1fae1c-8dd4-455a-a612-32815c341f06",
+          "name": "Bill Evans",
+          "score": 67,
+          "disambiguation": "appears on Chanan Hanspal's tracks",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "b9389828-695b-4cdf-abe6-d0c9f634f152",
+          "name": "Bill Evans",
+          "score": 67,
+          "disambiguation": "bassist, member of Butch Thompson Trio",
+          "lifeSpan": {
+            "end": "2019-09-10",
+            "ended": true
+          },
+          "tags": []
+        },
+        {
+          "id": "a8ed5bd0-15c9-40e4-82a6-9d12aca19c72",
+          "name": "Bill Evans",
+          "score": 67,
+          "disambiguation": "LDS musician",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        },
+        {
+          "id": "a9cf5bea-87a4-4421-858b-661a2bd872f1",
+          "name": "Bill Evans",
+          "score": 67,
+          "disambiguation": "UK engineer",
+          "lifeSpan": {
+            "ended": null
+          },
+          "tags": []
+        }
+      ],
+      "pick": {
+        "id": "8247a3f2-3a8e-4256-b322-6c57b03a4e36",
+        "name": "Bill Evans",
+        "score": 100,
+        "disambiguation": "pianist",
+        "lifeSpan": {
+          "begin": "1929-08-16",
+          "end": "1980-09-15",
+          "ended": true
+        },
+        "tags": [
+          "jazz",
+          "american",
+          "1970s",
+          "1960s",
+          "post-bop",
+          "hard bop",
+          "modal jazz",
+          "vocal jazz",
+          "cool jazz",
+          "jazz and blues",
+          "cool",
+          "piano jazz",
+          "third stream",
+          "death by cirrhosis",
+          "death by pneumonia",
+          "death by bleeding ulcer",
+          "jazz instrument",
+          "1950s",
+          "modal music",
+          "jazz quartet"
+        ]
+      },
+      "recordingRelationships": 2706,
+      "uniqueRecordings": 2639,
+      "instruments": {
+        "piano": 2639,
+        "keyboard": 25,
+        "electric piano": 34,
+        "solo": 8,
+        "spoken vocals": 2
+      },
+      "discogsUrl": "https://www.discogs.com/artist/252310",
+      "sampled": [
+        {
+          "title": "Jag vet en dejlig rosa",
+          "otherCredits": 4
+        },
+        {
+          "title": "Lucky to Be Me",
+          "otherCredits": 6
+        },
+        {
+          "title": "Ev’ry Night About This Time",
+          "otherCredits": 3
+        },
+        {
+          "title": "Kimona My House",
+          "otherCredits": 3
+        },
+        {
+          "title": "Like Someone in Love",
+          "otherCredits": 3
+        },
+        {
+          "title": "Ezz-thetic",
+          "otherCredits": 7
+        },
+        {
+          "title": "Jack's Blues",
+          "otherCredits": 7
+        },
+        {
+          "title": "Livingstone I Presume",
+          "otherCredits": 7
+        },
+        {
+          "title": "Ye Hypocrite, Ye Beelzebub",
+          "otherCredits": 7
+        },
+        {
+          "title": "Conception",
+          "otherCredits": 5
+        },
+        {
+          "title": "Displacement",
+          "otherCredits": 5
+        },
+        {
+          "title": "Easy Living",
+          "otherCredits": 5
+        },
+        {
+          "title": "Five",
+          "otherCredits": 5
+        },
+        {
+          "title": "I Got It Bad and That Ain’t Good",
+          "otherCredits": 3
+        },
+        {
+          "title": "I Love You",
+          "otherCredits": 5
+        }
+      ],
+      "sampledWithZeroOtherCredits": 0,
+      "topCollaborators": [
+        {
+          "name": "Bill Grauer, Jr.",
+          "count": 6,
+          "roles": [
+            "producer"
+          ]
+        },
+        {
+          "name": "Orrin Keepnews",
+          "count": 6,
+          "roles": [
+            "producer"
+          ]
+        },
+        {
+          "name": "Jack Higgins",
+          "count": 6,
+          "roles": [
+            "recording",
+            "engineer"
+          ]
+        },
+        {
+          "name": "Teddy Kotick",
+          "count": 5,
+          "roles": [
+            "instrument:double bass"
+          ]
+        },
+        {
+          "name": "Paul Motian",
+          "count": 5,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "George Russell",
+          "count": 4,
+          "roles": [
+            "arranger"
+          ]
+        },
+        {
+          "name": "Ray Hall",
+          "count": 4,
+          "roles": [
+            "engineer"
+          ]
+        },
+        {
+          "name": "Art Farmer",
+          "count": 4,
+          "roles": [
+            "instrument:trumpet"
+          ]
+        },
+        {
+          "name": "Barry Galbraith",
+          "count": 4,
+          "roles": [
+            "instrument:guitar"
+          ]
+        },
+        {
+          "name": "Joe Harris",
+          "count": 4,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        },
+        {
+          "name": "Milt Hinton",
+          "count": 4,
+          "roles": [
+            "instrument:bass"
+          ]
+        },
+        {
+          "name": "Hal McKusick",
+          "count": 4,
+          "roles": [
+            "instrument:alto saxophone"
+          ]
+        },
+        {
+          "name": "Jerry Bruno",
+          "count": 3,
+          "roles": [
+            "instrument:double bass"
+          ]
+        },
+        {
+          "name": "Dick Garcia",
+          "count": 3,
+          "roles": [
+            "instrument:guitar"
+          ]
+        },
+        {
+          "name": "Camille Morin",
+          "count": 3,
+          "roles": [
+            "instrument:drums (drum set)"
+          ]
+        }
+      ]
+    },
+    "discogs": {
+      "discogsId": "252310",
+      "totalListed": 3430,
+      "firstPageByRole": {
+        "Main": 100
+      },
+      "sampled": [
+        {
+          "title": "New Jazz Conceptions",
+          "year": 1957,
+          "credits": 10,
+          "trackLevelCredits": false
+        },
+        {
+          "title": "Free Blown Jazz",
+          "year": 1959,
+          "credits": 10,
+          "trackLevelCredits": false
+        },
+        {
+          "title": "The Ivory Hunters - Double Barrelled Piano",
+          "year": 1959,
+          "credits": 20,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "A Message From Garcia",
+          "year": 1956,
+          "credits": 34,
+          "trackLevelCredits": true
+        },
+        {
+          "title": "Jazz In The Space Age",
+          "year": 1960,
+          "credits": 20,
+          "trackLevelCredits": false
+        },
+        {
+          "title": "Ping Pong Beer / November Afternoon",
+          "year": 1961,
+          "credits": 2,
+          "trackLevelCredits": true
+        }
+      ],
+      "topCollaborators": [
+        {
+          "name": "Dick Garcia",
+          "count": 5,
+          "roles": [
+            "Arranged By",
+            "Guitar",
+            "Composed By"
+          ]
+        },
+        {
+          "name": "Jimmy Van Heusen And Johnny Burke",
+          "count": 3,
+          "roles": [
+            "Written-By",
+            "Composed By"
+          ]
+        },
+        {
+          "name": "Paul Motian",
+          "count": 2,
+          "roles": [
+            "Drums"
+          ]
+        },
+        {
+          "name": "Orrin Keepnews",
+          "count": 2,
+          "roles": [
+            "Liner Notes",
+            "Producer"
+          ]
+        },
+        {
+          "name": "Paul Bacon (2)",
+          "count": 2,
+          "roles": [
+            "Typography [Typographic Design]",
+            "Design [Cover And Inside]"
+          ]
+        },
+        {
+          "name": "Tony Scott (2)",
+          "count": 2,
+          "roles": [
+            "Baritone Saxophone",
+            "Clarinet"
+          ]
+        },
+        {
+          "name": "Milt Hinton",
+          "count": 2,
+          "roles": [
+            "Bass"
+          ]
+        },
+        {
+          "name": "Bob Brookmeyer",
+          "count": 2,
+          "roles": [
+            "Piano",
+            "Trombone"
+          ]
+        },
+        {
+          "name": "Andy Razaf",
+          "count": 2,
+          "roles": [
+            "Written-By",
+            "Composed By"
+          ]
+        },
+        {
+          "name": "George & Ira Gershwin",
+          "count": 2,
+          "roles": [
+            "Written-By"
+          ]
+        },
+        {
+          "name": "David Hancock",
+          "count": 2,
+          "roles": [
+            "Engineer",
+            "Lacquer Cut By"
+          ]
+        },
+        {
+          "name": "Burt Korall",
+          "count": 2,
+          "roles": [
+            "Liner Notes"
+          ]
+        },
+        {
+          "name": "Teddy Kotick",
+          "count": 1,
+          "roles": [
+            "Bass"
+          ]
+        },
+        {
+          "name": "Fran Scott",
+          "count": 1,
+          "roles": [
+            "Design [Cover]"
+          ]
+        },
+        {
+          "name": "Jack Higgins",
+          "count": 1,
+          "roles": [
+            "Engineer"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "player": {
+      "name": "Walter Kane",
+      "hint": ""
+    },
+    "musicbrainz": {
+      "candidates": [],
+      "pick": null
+    },
+    "discogs": {
+      "note": "no Discogs link on the MusicBrainz artist"
+    }
+  }
+]

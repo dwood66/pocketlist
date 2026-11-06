@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Dark mode keys off a .dark class on <html>, not a media query, so users can
+   override it. :where() keeps specificity at 0 so it never fights utilities. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Register semantic tokens so Tailwind generates bg-primary, text-foreground, etc.
+   Each points at an intermediate var that flips between light (:root) and .dark. */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --background: #f7f8f8;
+  --foreground: #101418;
+  --card: #ffffff;
+  --card-foreground: #101418;
+  --primary: #2f6b3f;
+  --primary-foreground: #ffffff;
+  --muted: #eef0f1;
+  --muted-foreground: #5b6470;
+  --border: #e2e5e8;
+  --ring: #2f6b3f;
+}
+
+.dark {
+  --background: #0d1013;
+  --foreground: #e7eaee;
+  --card: #14181c;
+  --card-foreground: #e7eaee;
+  --primary: #5fd08a;
+  --primary-foreground: #08120b;
+  --muted: #1b2025;
+  --muted-foreground: #97a1ac;
+  --border: #262c33;
+  --ring: #5fd08a;
+}
+
+body { margin: 0; }
