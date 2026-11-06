@@ -3,9 +3,12 @@
 Type a jazz musician's name and see everyone they've recorded with, as a list or as a galaxy you
 can fly through. Click any name to keep going.
 
-**Status:** the collaborator list works locally: search (alias-aware, with a "which one?" step),
+**Live:** https://pocketlist-tau.vercel.app
+
+**Status:** the collaborator list works: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
-recordings behind each connection. Not deployed yet. The plan and the decisions behind it are in
+recordings behind each connection. The app is on Vercel; the API and crawler run on Railway;
+the cache is Postgres on Neon. The plan and the decisions behind it are in
 [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Why
