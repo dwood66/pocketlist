@@ -4,14 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch server/index.ts",
+    "dev:web": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test server/*.test.ts",
+    "warm": "tsx server/warm.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "@hono/node-server": "2.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "hono": "4.13.13",
     "lucide-react": "^0.454.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -23,7 +30,9 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "10.0.6",
     "tailwindcss": "^4.0.0",
+    "tsx": "4.23.15",
     "typescript": "^5.6.3",
     "vite": "^6.0.5"
   }
