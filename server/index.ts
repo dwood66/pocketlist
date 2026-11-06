@@ -6,6 +6,7 @@
 
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
+import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import type { Player, PlayerCandidate, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
@@ -15,6 +16,20 @@ import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
 import { mb, NotFound, type MbArtist } from "./mb.ts";
 
 const app = new Hono();
+
+// Deployed, the app (Vercel) and the API (an always-on host) are on different domains.
+// Only the app's own origins may call the API from a browser. ALLOWED_ORIGINS is a
+// comma-separated list; "*" matches within one label, for preview URLs, e.g.
+//   https://pocketlist-tau.vercel.app,https://pocketlist-*.vercel.app
+const ORIGINS = (process.env.ALLOWED_ORIGINS ?? "http://localhost:5190")
+  .split(",").map((o) => o.trim()).filter(Boolean)
+  .map((o) => new RegExp("^" + o.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[a-z0-9-]+") + "$"));
+app.use("/api/*", cors({
+  origin: (origin) => (ORIGINS.some((re) => re.test(origin)) ? origin : null),
+  allowMethods: ["GET"],
+}));
+
+app.get("/api/health", (c) => c.json({ ok: true }));
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // ---------------------------------------------------------------------------

@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test server/*.test.ts",
     "warm": "tsx server/warm.ts",
-    "dev:warm": "POCKETLIST_WARM=1 concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\""
+    "dev:warm": "POCKETLIST_WARM=1 concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "start": "tsx server/index.ts",
+    "copy-to-postgres": "tsx server/copy-to-postgres.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.11",
@@ -21,19 +23,21 @@
     "clsx": "^2.1.1",
     "hono": "4.13.13",
     "lucide-react": "^0.454.0",
+    "pg": "8.23.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.5"
+    "tailwind-merge": "^2.5.5",
+    "tsx": "4.23.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.20.4",
+    "@types/pg": "8.23.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "10.0.6",
     "tailwindcss": "^4.0.0",
-    "tsx": "4.23.15",
     "typescript": "^5.6.3",
     "vite": "^6.0.5"
   }

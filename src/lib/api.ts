@@ -6,8 +6,21 @@ import {
   type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
 
-async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const res = await fetch(url, { signal });
+// Locally the API sits behind Vite's /api proxy. Deployed, it's on its own host, set at
+// build time (VITE_API_URL in Vercel's environment variables).
+const API = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+
+async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
+  let res: Response;
+  try {
+    res = await fetch(API + path, { signal });
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    throw new Error("Can't reach the Pocketlist server right now. Try again in a moment.");
+  }
+  if (!(res.headers.get("content-type") ?? "").includes("json")) {
+    throw new Error("Can't reach the Pocketlist server right now. Try again in a moment.");
+  }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const msg = typeof body === "object" && body && "error" in body && typeof body.error === "string"
@@ -49,7 +62,7 @@ export function streamPlayer(
   id: string,
   on: { snapshot: (s: Snapshot) => void; problem: (message: string) => void },
 ): () => void {
-  const es = new EventSource(`/api/players/${id}/stream`);
+  const es = new EventSource(`${API}/api/players/${id}/stream`);
   let finished = false;
   es.addEventListener("snapshot", (e) => {
     try {

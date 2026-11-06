@@ -1,7 +1,6 @@
 // Writes MusicBrainz responses into the cache.
 
-import type { Transaction } from "@electric-sql/pglite";
-import { db } from "./db.ts";
+import { db, type Tx as Transaction } from "./db.ts";
 import type { MbArtist, MbRecording, MbRelation, MbRelease } from "./mb.ts";
 
 /** Relationship types that mean "played or sang on this recording". */
