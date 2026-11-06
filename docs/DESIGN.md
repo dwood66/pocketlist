@@ -23,12 +23,51 @@ learn what the sources actually contain.
    the path taken and lets you step back.
 5. **Each connection can expand** to show the recordings behind it ("played together on…").
 
+## Playlists
+
+A secondary feature, not the headline. Output is a **downloadable file** (plain text and CSV),
+with a one-line reason for each song. Streaming-service export can come later.
+
+**Seeds.** Every mode starts from one player or several. With several, a song only qualifies if
+**all of them** played on it ("everything Ron Carter and Herbie Hancock played on together").
+
+1. **Sampler:** "10 songs with Player A on them". Picks are spread across sessions and years
+   (one per session by default), so it isn't ten takes from one album. Ships first: it falls
+   straight out of the collaborator data.
+2. **Bridge:** "Player A → about X songs → Player B". Start on a song with A, end on one with B;
+   every adjacent pair of songs shares at least one player, and each step says who
+   ("both have Paul Chambers on bass"). Shortest path by default; "about X" uses a bounded
+   search rather than padding with detours.
+
+## Duplicates and identity
+
+The hard part of any credits data, in two halves.
+
+**The same recording, many times over.** Classic records are reissued, remastered and
+compiled dozens of times, which would inflate every count.
+- Count distinct MusicBrainz **recordings** (one performance, linked to every release it's on),
+  not tracks on releases. That removes most reissues for free.
+- Collapse remaining duplicates into **sessions**: a distinct recording date where known,
+  otherwise a distinct release group. Alternate takes from one date count once.
+- Drop or down-weight compilations, live releases and bootlegs, using release-group types and
+  release status.
+
+**The same person, many names.** Players are easier than "artists" (which can be bands, billing
+names or one-off groups): a player is one person with an ID and aliases.
+- Search by alias; disambiguate by instrument and years.
+- A small local overrides table (merge, split, reassign an alias) on top of the source data.
+- Later, **crowdsourced curation**: listeners flag wrong merges or missing ones. MusicBrainz is
+  already crowdsourced, so the first version is a "suggest a fix on MusicBrainz" link; a review
+  queue of our own covers what upstream won't model.
+
 ## Later
 
 - **Wider credits:** a setting to count engineers, producers and other credited roles as
   connections, not just performers.
-- **AI that acts, not chats:** for example, turning an ambiguous name into the right person
-  ("the Bill Evans who played with Scott LaFaro"). Model output is validated before the app acts on it.
+- **AI that acts, not chats:** turning an ambiguous name into the right person ("the Bill Evans
+  who played with Scott LaFaro"), building a playlist from plain language ("five songs from
+  Coltrane to Herbie, only through drummers"), and explaining each step in one sentence. Model
+  output is validated before the app acts on it.
 - More to come.
 
 ## Similar projects
@@ -62,7 +101,8 @@ type Credit    = { personId: string; recordingId: string;
                    role: 'performer' | 'engineer' | 'producer' | 'other'; instrument?: string };
 
 // derived, never stored by hand
-type Collaborator = { person: Person; sharedRecordings: number; instruments: string[] };
+type Collaborator = { person: Person; sharedRecordings: number; sharedSessions: number;
+                      instruments: string[]; firstYear?: number; lastYear?: number };
 ```
 
 A collaboration means **two people credited on the same recording**, not just the same album.
@@ -87,8 +127,9 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M1 | Scaffold and deploy | public repo, starter app renamed, live "hello" URL |
 | M2 | **Collaborators v1** | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
 | M3 | Recordings | each connection expands to the shared recordings; recording pages |
-| M4 | AI | name disambiguation |
-| M5 | Wider credits | engineers, producers and others as an option |
+| M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step |
+| M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
+| M6 | Wider credits | engineers, producers and others as an option |
 
 ## Open questions
 
