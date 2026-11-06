@@ -4,7 +4,8 @@ _Living document. Decisions get recorded here as they're made._
 
 ## One line
 
-Type a musician's name and see everyone they've recorded with. Click any name to keep going.
+Type a musician's name and see everyone they've recorded with, as a list or as a galaxy you can
+fly through. Click any name to keep going.
 
 ## Why jazz first
 
@@ -22,6 +23,28 @@ learn what the sources actually contain.
 4. **Every name is a link.** Clicking one makes that player the center. A breadcrumb trail shows
    the path taken and lets you step back.
 5. **Each connection can expand** to show the recordings behind it ("played together on…").
+
+## The galaxy view
+
+The other way to see the same data, and the fun one. The selected player sits at the center;
+every collaborator is a star around them.
+
+- **Distance = how often they recorded together**, counted in shared sessions. Closer means
+  more. A log or square-root scale keeps a few prolific partners from crowding the center and
+  pushing everyone else onto one far ring.
+- **Heat = how concentrated the collaboration was in time:** shared sessions divided by the
+  years from first to last (+1). A burst of sessions in one year is **hot**; the same number
+  spread over twenty years is a long, steady partnership, **cool**. Distance says *how much*,
+  heat says *how intense*.
+- **Navigable:** click a star and it becomes the center, with an animated re-layout and the
+  breadcrumb trail kept. Pinch-zoom and proper tap targets on mobile.
+- **Hover or tap a star:** name, instrument, shared sessions and tracks, first–last year, a few
+  of the shared recordings.
+- **The list stays** as the accessible, screen-reader-friendly view of the same data.
+
+**Open:** a minimum session count before heat applies (2 tracks in 1 year shouldn't look like a
+real burst); a time slider to watch the galaxy form (stretch); SVG with d3-force up to a few
+hundred stars, canvas beyond that.
 
 ## Playlists
 
@@ -126,7 +149,8 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M0 ✅ | **Data test** (done 2026-11-05; see `data-test/FINDINGS.md`) | a script pulls credits for five players from MusicBrainz and Discogs; a short findings note says which source to use and what's missing |
 | M1 | Scaffold and deploy | public repo, starter app renamed, live "hello" URL |
 | M2 | **Collaborators v1** | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
-| M3 | Recordings | each connection expands to the shared recordings; recording pages |
+| M3 | **Galaxy view** | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
+| M3b | Recordings | each connection expands to the shared recordings; recording pages |
 | M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
 | M6 | Wider credits | engineers, producers and others as an option |

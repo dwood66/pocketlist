@@ -1,6 +1,7 @@
 # Pocketlist
 
-Type a jazz musician's name and see everyone they've recorded with. Click any name to keep going.
+Type a jazz musician's name and see everyone they've recorded with, as a list or as a galaxy you
+can fly through. Click any name to keep going.
 
 **Status:** early. The data test is done ([findings](docs/data-test/FINDINGS.md)); the app is being
 scaffolded. The plan and the decisions behind it are in [docs/DESIGN.md](docs/DESIGN.md).
