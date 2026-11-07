@@ -34,7 +34,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {names.length > 1 ? "Songs they all played on" : "Songs with them on"}, one per session, spread across the years.
         </p>
@@ -94,9 +94,11 @@ export function PlaylistView({ seeds, n, mix, go }: {
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{t.title}</span>
                   {t.album && <span className="text-muted-foreground"> · {t.album}</span>}
-                  <span className="block text-xs text-muted-foreground">{why(list, t)}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{why(list, t)}
+                  </span>
                 </span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">{t.date ?? t.year ?? ""}</span>
+                <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
               </li>
             ))}
           </ol>

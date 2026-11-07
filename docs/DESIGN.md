@@ -141,9 +141,21 @@ names or one-off groups): a player is one person with an ID and aliases.
 
 The features work, but the app is rudimentary and it isn't clear what you should or can do.
 A real design pass, before more features. Measured against `GREAT-APP-CHECKLIST.md` in the
-job-search repo. What's been noticed so far:
+job-search repo. What's been noticed so far, and what the first pass (2026-11-07) did about it:
 
-- **First visit:** the home page is a paragraph and a search box. It should show, in a glance,
+**Done in the first pass:** a visual identity (paper-and-brass light theme, ink-and-brass dark,
+a serif for headings, a mark and favicon); a home page with a one-line promise and three ways
+in that open instantly (explore, Connect, playlist); player pages with the name and its actions
+together, and a plain summary line ("305 people, from 2,120 recordings"); a friendlier reading
+message and a "still reading" chip on the canvas; a one-time hint on how to use the galaxy
+(touch and pointer versions); the key on the canvas (behind an (i) button on phones); a hover
+card that sits by the star on desktop and can be reached; a compact one-row search off the home
+page; a placeholder while a player loads.
+
+**Still to do:**
+
+
+- ~~**First visit:**~~ (done) the home page is a paragraph and a search box. It should show, in a glance,
   the three things you can do (explore a player's galaxy, play Connect, make a playlist) with
   one obvious first click for each.
 - **Player page hierarchy:** the view switch, filter, "Play Connect from here" and "Playlist"
@@ -161,9 +173,12 @@ job-search repo. What's been noticed so far:
   something you'd share.
 - **Playlists:** no way to add or swap seeds from the page; no listen links yet; the track list
   is plain.
-- **Streaming and empty states:** "Reading credits: 49 of 440" is accurate but not friendly;
+- **Years from reissues:** a session only known from a later reissue takes the reissue's year,
+  so Wynton Kelly (d. 1971) shows "1956–2013, long and steady" with Chambers. Use credit dates
+  and artists' life spans (MusicBrainz has them) to cap the span; this also fixes heat.
+- **Streaming and empty states** (first pass done): "Reading credits: 49 of 440" is accurate but not friendly;
   a sparse galaxy while reading should look intentional, not broken.
-- **Visual identity:** type scale, a mark, colour beyond the defaults. It should feel like a
+- **Visual identity** (first pass done): type scale, a mark, colour beyond the defaults. It should feel like a
   jazz thing, not a template.
 - **Mobile pass:** card placement, tap targets on dense galaxies, pinch.
 

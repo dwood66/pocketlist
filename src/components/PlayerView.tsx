@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, List, ListMusic, Orbit } from "lucide-react";
+import { ChevronDown, ChevronRight, Flag, List, ListMusic, Orbit } from "lucide-react";
 import type { Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
   const [filter, setFilter] = useState("");
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const [hold] = useState(() => { const h = heldHeight; heldHeight = 0; return h; });
@@ -58,27 +59,38 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
     <div ref={box} className="flex flex-col gap-4" style={galaxy && hold ? { minHeight: hold } : undefined}>
       <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} goal={goal} />
 
-      <header>
-        <h1 ref={heading} tabIndex={-1} className="text-2xl font-bold focus:outline-none">
-          {snap?.player.name ?? <span className="text-muted-foreground">Loading…</span>}
-        </h1>
-        {snap && (
-          <p className="text-sm text-muted-foreground">
-            {[snap.player.disambiguation, snap.instruments.slice(0, 4).join(", ")].filter(Boolean).join(" · ")}
-          </p>
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h1 ref={heading} tabIndex={-1} className="text-3xl font-semibold leading-tight focus:outline-none">
+            {snap?.player.name ?? <span className="text-muted-foreground">Loading…</span>}
+          </h1>
+          {snap && (
+            <p className="text-sm text-muted-foreground">
+              {[snap.player.disambiguation, snap.instruments.slice(0, 4).join(", ")].filter(Boolean).join(" · ")}
+            </p>
+          )}
+        </div>
+        {snap && !goal && (
+          <div className="flex flex-wrap gap-2">
+            <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <ListMusic className="mr-1.5 h-4 w-4" /> Playlist
+            </Link>
+            <Button variant="outline" size="sm" aria-expanded={connecting} onClick={() => setConnecting((v) => !v)}>
+              <Flag className="h-4 w-4" /> Connect from here
+            </Button>
+          </div>
         )}
       </header>
 
       {snap && <ProgressLine snap={snap} />}
-      {goal ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} /> : snap && (
-        <div className="flex flex-wrap gap-2">
-          <ConnectFrom id={id} name={snap.player.name} go={go} />
-          <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
-            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ListMusic className="mr-1.5 h-4 w-4" /> Playlist
-          </Link>
-        </div>
+      {!snap && !problem && (
+        // Where the galaxy will be, so the page doesn't jump when it arrives.
+        <div className="aspect-square max-h-[72vh] w-full animate-pulse rounded-xl border border-border bg-card" aria-hidden />
       )}
+      {goal
+        ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} />
+        : snap && connecting && <ConnectFrom id={id} name={snap.player.name} go={go} onClose={() => setConnecting(false)} />}
       {problem && <p role="alert" className="text-sm">{problem}</p>}
 
       {snap && snap.collaborators.length > 0 && (
@@ -91,9 +103,11 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
             <label htmlFor="filter" className="sr-only">Filter by name or instrument</label>
             <Input id="filter" value={filter} onChange={(e) => { setFilter(e.target.value); setShown(PAGE); }}
               placeholder="Filter by name or instrument" autoComplete="off" className="min-w-[12rem] max-w-xs flex-1" />
-            <span className="text-sm text-muted-foreground">
-              {visible.length.toLocaleString()} {visible.length === 1 ? "person" : "people"}
-            </span>
+            {matches && (
+              <span className="text-sm text-muted-foreground" role="status">
+                {visible.length.toLocaleString()} of {snap.collaborators.length.toLocaleString()}
+              </span>
+            )}
           </div>
 
           {galaxy ? (
@@ -138,6 +152,7 @@ function ViewButton({ on, onClick, icon, children }: { on: boolean; onClick: () 
 
 function ProgressLine({ snap }: { snap: Snapshot }) {
   const { recordingsTotal: total, recordingsLoaded: loaded, done } = snap.progress;
+  const people = snap.collaborators.length;
   const pct = total ? Math.round((loaded / total) * 100) : 0;
   // Screen readers hear the coarse version (every quarter), not every tick.
   const spoken = done ? `All ${total} recordings read.` : total ? `Reading credits, about ${Math.floor(pct / 25) * 25} percent.` : "Finding recordings.";
@@ -145,10 +160,10 @@ function ProgressLine({ snap }: { snap: Snapshot }) {
     <div className="flex flex-col gap-1.5">
       <p className="text-sm text-muted-foreground">
         {done
-          ? `${total.toLocaleString()} recordings read.`
+          ? `${people.toLocaleString()} ${people === 1 ? "person" : "people"}, from ${total.toLocaleString()} recordings.`
           : total
-            ? `Reading credits: ${loaded.toLocaleString()} of ${total.toLocaleString()} recordings. The list fills in as albums arrive.`
-            : "Finding their recordings…"}
+            ? `Listening through ${total.toLocaleString()} recordings: ${loaded.toLocaleString()} so far. New people appear as albums come in.`
+            : "Looking up their recordings…"}
       </p>
       {!done && (
         <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden>

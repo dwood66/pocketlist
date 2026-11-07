@@ -34,28 +34,26 @@ export function ConnectIntro({ go }: { go: Go }) {
   const [offset, setOffset] = useState(0);
   const p = puzzleOfTheDay(offset);
   return (
-    <section aria-labelledby="connect" className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-      <h2 id="connect" className="font-semibold">Connect</h2>
+    <section className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
+      <h2 className="flex items-center gap-2 text-lg font-semibold"><Flag className="h-5 w-5 text-primary" />Play Connect</h2>
       <p className="text-sm text-muted-foreground">
-        Get from one player to another through people who recorded together, in as few hops as you can.
+        Six degrees, jazz style: get from one player to another through people who recorded together.
       </p>
-      <p className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">{offset ? "Another:" : "Today:"}</span>
+      <div className="mt-auto flex flex-col items-start gap-1.5 pt-1">
         <Link to={{ view: "player", id: p.from, trail: [], goal: p.to }} go={go}
-          className="rounded-full bg-primary px-3 py-1 font-medium text-primary-foreground hover:opacity-90">
-          {p.fromName} → {p.toName}
+          className="rounded-lg bg-primary px-3 py-1.5 text-left text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {offset ? "" : "Today: "}{p.fromName} → {p.toName}
         </Link>
-        <button type="button" onClick={() => setOffset((o) => o + 1)} className="text-muted-foreground underline hover:text-foreground">
-          Try another
+        <button type="button" onClick={() => setOffset((o) => o + 1)} className="text-sm text-muted-foreground underline hover:text-foreground">
+          Another puzzle
         </button>
-      </p>
+      </div>
     </section>
   );
 }
 
-/** "Play Connect from here": pick a goal by name. */
-export function ConnectFrom({ id, name, go }: { id: string; name: string; go: Go }) {
-  const [open, setOpen] = useState(false);
+/** "Connect from here": pick a goal by name. */
+export function ConnectFrom({ id, name, go, onClose }: { id: string; name: string; go: Go; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [found, setFound] = useState<PlayerCandidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,20 +66,13 @@ export function ConnectFrom({ id, name, go }: { id: string; name: string; go: Go
     catch (err) { setError(err instanceof Error ? err.message : "Search failed"); }
   }
 
-  if (!open) {
-    return (
-      <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)}>
-        <Flag className="mr-1.5 h-4 w-4" /> Play Connect from here
-      </Button>
-    );
-  }
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3">
       <form onSubmit={find} className="flex flex-wrap items-center gap-2">
         <label htmlFor="goal" className="text-sm">Connect {name} to</label>
         <Input id="goal" value={q} onChange={(e) => setQ(e.target.value)} placeholder="another player" autoComplete="off" className="max-w-xs flex-1" autoFocus />
         <Button type="submit" size="sm">Find</Button>
-        <Button type="button" variant="outline" size="sm" aria-label="Cancel" onClick={() => setOpen(false)}><X className="h-4 w-4" /></Button>
+        <Button type="button" variant="ghost" size="sm" aria-label="Cancel" onClick={onClose}><X className="h-4 w-4" /></Button>
       </form>
       {error && <p className="text-sm">{error}</p>}
       {found && (found.length ? (
@@ -89,7 +80,7 @@ export function ConnectFrom({ id, name, go }: { id: string; name: string; go: Go
           {found.map((c) => (
             <li key={c.id}>
               <Button variant="outline" size="sm" onClick={() => go({ view: "player", id, trail: [], goal: c.id })}>
-                {c.name}{c.disambiguation ? <span className="ml-1 text-muted-foreground">({c.disambiguation})</span> : null}
+                {c.name}{c.disambiguation ? <span className="text-muted-foreground">({c.disambiguation})</span> : null}
               </Button>
             </li>
           ))}

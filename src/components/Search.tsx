@@ -7,7 +7,9 @@ import { Link } from "@/components/Link";
 import { rememberPlayer, search } from "@/lib/api";
 import type { Route } from "@/lib/route";
 
-export function SearchForm({ q, instrument, go }: { q: string; instrument: string; go: (r: Route) => void }) {
+// `compact` (away from the home page): one row on a phone, with the instrument field only on
+// wider screens, so the player underneath gets the space.
+export function SearchForm({ q, instrument, go, compact }: { q: string; instrument: string; go: (r: Route) => void; compact?: boolean }) {
   const [name, setName] = useState(q);
   const [inst, setInst] = useState(instrument);
   useEffect(() => { setName(q); setInst(instrument); }, [q, instrument]);
@@ -19,15 +21,15 @@ export function SearchForm({ q, instrument, go }: { q: string; instrument: strin
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row" role="search">
+    <form onSubmit={submit} className={compact ? "flex gap-2" : "flex flex-col gap-2 sm:flex-row"} role="search">
       <label className="sr-only" htmlFor="q">Musician's name</label>
       <Input id="q" value={name} onChange={(e) => setName(e.target.value)} placeholder="A musician, e.g. Paul Chambers"
-        autoComplete="off" spellCheck={false} className="sm:flex-[2]" />
+        autoComplete="off" spellCheck={false} className={compact ? "min-w-0 flex-[2]" : "sm:flex-[2]"} />
       <label className="sr-only" htmlFor="i">Instrument (optional)</label>
       <Input id="i" value={inst} onChange={(e) => setInst(e.target.value)} placeholder="Instrument (optional)"
-        autoComplete="off" className="sm:flex-1" />
-      <Button type="submit" className="shrink-0">
-        <SearchIcon className="h-4 w-4" aria-hidden /> Find
+        autoComplete="off" className={compact ? "hidden flex-1 sm:block" : "sm:flex-1"} />
+      <Button type="submit" className="shrink-0" aria-label={compact ? "Find" : undefined}>
+        <SearchIcon className="h-4 w-4" aria-hidden /> <span className={compact ? "hidden sm:inline" : undefined}>Find</span>
       </Button>
     </form>
   );

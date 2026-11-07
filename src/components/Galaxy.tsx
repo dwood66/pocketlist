@@ -10,7 +10,7 @@
 // accessible view; here the keyboard can still step through stars by rank.
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { Minus, Plus, RotateCcw } from "lucide-react";
+import { Info, Minus, Plus, RotateCcw, X } from "lucide-react";
 import type { Collaborator, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { sharedRecordings } from "@/lib/api";
@@ -145,7 +145,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
       const e = ease(t);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size.w, size.h);
-      ctx.font = "11px ui-sans-serif, system-ui, sans-serif";
+      ctx.font = "11px Inter, ui-sans-serif, system-ui, sans-serif";
 
       // Guide rings for session counts, and decade marks around the edge.
       ctx.strokeStyle = col.border;
@@ -273,7 +273,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
     const p = local(e);
     const prev = pointers.current.get(e.pointerId);
     if (!prev) {
-      if (e.pointerType === "mouse") setHover(starAt(p.x, p.y, 8)?.c.id ?? null);
+      if (e.pointerType === "mouse") hoverSoon(starAt(p.x, p.y, 8)?.c.id ?? null);
       return;
     }
     pointers.current.set(e.pointerId, p);
@@ -334,7 +334,29 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
     return () => el.removeEventListener("wheel", onWheel);
   });
 
-  const focus = byId.get(hover ?? selected ?? "");
+  // Hover sticks for a moment after the pointer leaves a star, so it can travel into the card.
+  const hoverTimer = useRef(0);
+  function hoverSoon(id: string | null) {
+    clearTimeout(hoverTimer.current);
+    if (id) { setHover(id); seen(); }
+    else hoverTimer.current = window.setTimeout(() => setHover(null), 350);
+  }
+  useEffect(() => () => clearTimeout(hoverTimer.current), []);
+
+  // A one-time hint on how to use it, until the first star is pointed at or tapped.
+  const [hint, setHint] = useState(() => { try { return !localStorage.getItem(HINT_KEY); } catch { return true; } });
+  function seen() {
+    if (!hint) return;
+    setHint(false);
+    try { localStorage.setItem(HINT_KEY, "1"); } catch { /* private mode: show it again next time */ }
+  }
+  useEffect(() => { if (selected) seen(); }); // eslint-disable-line react-hooks/exhaustive-deps
+  const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  const [keyOpen, setKeyOpen] = useState(false);
+
+  const hovered = hover ? byId.get(hover) : undefined;
+  const picked = selected ? byId.get(selected) : undefined;
+  const at = (s: Star) => { const cur = shown.current.get(s.c.id) ?? s; return toScreen(cur.x, cur.y); };
 
   return (
     <div className="flex flex-col gap-3">
@@ -342,7 +364,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
         <canvas
           ref={canvas}
           style={{ width: size.w, height: size.h, touchAction: "none" }}
-          className="block cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className={"block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring " + (hover ? "cursor-pointer" : "cursor-grab")}
           tabIndex={0}
           role="application"
           aria-roledescription="galaxy"
@@ -351,17 +373,74 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={() => { pointers.current.clear(); gesture.current = { moved: false }; }}
-          onPointerLeave={(e) => { if (e.pointerType === "mouse") setHover(null); }}
+          onPointerLeave={(e) => { if (e.pointerType === "mouse") hoverSoon(null); }}
           onKeyDown={onKeyDown}
         />
-        <div className="absolute right-2 top-2 flex flex-col gap-1">
-          <Button variant="outline" size="icon" aria-label="Zoom in" onClick={() => zoomAt(1.4)}><Plus className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.4)}><Minus className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon" aria-label="Reset view" onClick={() => setView({ k: 1, x: 0, y: 0 })}><RotateCcw className="h-4 w-4" /></Button>
+
+        <div className="pointer-events-none absolute left-2 top-2 flex max-w-[70%] flex-col items-start gap-1.5">
+          {!snap.progress.done && (
+            <span className="flex items-center gap-2 rounded-full bg-card/85 px-2.5 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-primary" aria-hidden />
+              Still reading: stars appear as albums arrive
+            </span>
+          )}
+          {hint && (
+            <span className="pointer-events-auto flex items-center gap-1 rounded-lg bg-card/90 py-1 pl-2.5 pr-1 text-xs shadow-sm backdrop-blur">
+              {coarse ? "Tap a star to see who it is, tap again to go there. Pinch to zoom." : "Point at a star to see who it is. Click to go there. Scroll to zoom, drag to move."}
+              <button type="button" aria-label="Dismiss hint" onClick={seen} className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          )}
         </div>
+
+        <div className="absolute right-2 top-2 flex flex-col gap-1">
+          <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Zoom in" onClick={() => zoomAt(1.4)}><Plus className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.4)}><Minus className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Reset view" onClick={() => setView({ k: 1, x: 0, y: 0 })}><RotateCcw className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="How to read it" aria-expanded={keyOpen} onClick={() => setKeyOpen((v) => !v)}><Info className="h-4 w-4" /></Button>
+        </div>
+
+        <Key open={keyOpen} />
+
+        {hovered && !coarse && (
+          <FloatingCard star={hovered} at={at(hovered)} box={size} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist}
+            onEnter={() => clearTimeout(hoverTimer.current)} onLeave={() => hoverSoon(null)} />
+        )}
       </div>
-      <StarCard star={focus} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
-      <Legend />
+      {picked && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
+    </div>
+  );
+}
+
+const HINT_KEY = "pocketlist.galaxy-hint-seen";
+
+// How to read it, on the canvas: always on wider screens, behind the (i) button on phones.
+function Key({ open }: { open: boolean }) {
+  return (
+    <div className={(open ? "flex" : "hidden sm:flex") + " pointer-events-none absolute bottom-2 left-2 right-2 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:right-auto"}>
+      <span className="rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">Closer = more sessions together</span>
+      <span className="rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">Clockwise from the top = when they first recorded</span>
+      <span className="flex items-center gap-1.5 rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">
+        <span className="h-1.5 w-10 rounded-full" style={{ background: "linear-gradient(90deg, var(--star-cool), var(--star-hot))" }} aria-hidden />
+        steady → a burst · grey: too few to say
+      </span>
+    </div>
+  );
+}
+
+// The hover card on desktop: next to the star, kept inside the galaxy, and reachable.
+function FloatingCard({ star, at, box, onEnter, onLeave, ...rest }: {
+  star: Star; at: { sx: number; sy: number }; box: { w: number; h: number }; playerId: string;
+  onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void; onEnter: () => void; onLeave: () => void;
+}) {
+  const W = 280, H = 150, GAP = 14;
+  const left = at.sx + GAP + W > box.w - 8 ? at.sx - GAP - W : at.sx + GAP;
+  const top = Math.min(Math.max(8, at.sy - 24), box.h - H - 8);
+  return (
+    <div className="absolute z-10 rounded-lg border border-border bg-card p-3 shadow-lg" style={{ left: Math.max(8, left), top, width: W }}
+      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <StarCard star={star} {...rest} compact />
     </div>
   );
 }
@@ -370,7 +449,7 @@ type Box = { x0: number; y0: number; x1: number; y1: number };
 
 // Draws a name with a halo so it reads over stars. With `taken`, skips it if it would overlap.
 function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, fg: string, bg: string, strong: boolean, taken?: Box[]): Box {
-  ctx.font = `${strong ? "600 " : ""}12px ui-sans-serif, system-ui, sans-serif`;
+  ctx.font = `${strong ? "600" : "500"} 12px Inter, ui-sans-serif, system-ui, sans-serif`;
   const w = ctx.measureText(text).width;
   const box = { x0: x - w / 2 - 3, y0: y - 8, x1: x + w / 2 + 3, y1: y + 8 };
   if (taken) {
@@ -389,14 +468,13 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 const shared = new Map<string, Promise<SharedRecording[]>>();
 
-function StarCard({ star, playerId, onOpen, onPlaylist }: {
-  star?: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void;
+function StarCard({ star, playerId, onOpen, onPlaylist, compact }: {
+  star: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void; compact?: boolean;
 }) {
   const [recs, setRecs] = useState<SharedRecording[] | null>(null);
-  const id = star?.c.id;
+  const id = star.c.id;
   useEffect(() => {
     setRecs(null);
-    if (!id) return;
     let live = true;
     const t = setTimeout(() => {
       const key = `${playerId}/${id}`;
@@ -406,49 +484,26 @@ function StarCard({ star, playerId, onOpen, onPlaylist }: {
     return () => { live = false; clearTimeout(t); };
   }, [id, playerId]);
 
-  if (!star) {
-    return (
-      <p className="min-h-[5.5rem] text-sm text-muted-foreground" aria-live="polite">
-        Point at a star (or tap one) to see who it is. Click to make them the centre.
-      </p>
-    );
-  }
   const { c, heat } = star;
   const span = c.firstYear ? (c.firstYear === c.lastYear ? `${c.firstYear}` : `${c.firstYear}–${c.lastYear}`) : "";
   const words = heatWords(c, heat);
   return (
-    <div className="flex min-h-[5.5rem] flex-col gap-1 text-sm" aria-live="polite">
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-medium">{c.name}</span>
+    <div className={"flex flex-col gap-1 text-sm " + (compact ? "" : "rounded-xl border border-border bg-card p-3")} aria-live="polite">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="font-semibold">{c.name}</span>
         <span className="text-muted-foreground">{c.instruments.slice(0, 3).join(", ")}</span>
       </div>
       <p className="tabular-nums text-muted-foreground">
         {c.sharedSessions} {c.sharedSessions === 1 ? "session" : "sessions"} · {c.sharedRecordings} {c.sharedRecordings === 1 ? "track" : "tracks"}
         {span && ` · ${span}`}{words && ` · ${words}`}
       </p>
-      {recs && recs.length > 0 && (
-        <p className="truncate text-muted-foreground">
-          {recs.slice(0, 3).map((r) => r.title).join(" · ")}{recs.length > 3 ? " …" : ""}
-        </p>
-      )}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => onOpen(c)}>Centre on {c.name}</Button>
-        {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist with {c.name}</Button>}
+      <p className="truncate text-muted-foreground">
+        {recs ? recs.slice(0, 3).map((r) => r.title).join(" · ") + (recs.length > 3 ? " …" : "") : "\u00a0"}
+      </p>
+      <div className="mt-1 flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => onOpen(c)}>Go to {c.name.split(" ")[0]}</Button>
+        {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist together</Button>}
       </div>
     </div>
-  );
-}
-
-function Legend() {
-  return (
-    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-      <span>Closer = more sessions together.</span>
-      <span>Clockwise from the top = the year they first recorded together.</span>
-      <span className="flex items-center gap-1.5">
-        <span className="h-2 w-16 rounded-full" style={{ background: "linear-gradient(90deg, var(--star-cool), var(--star-hot))" }} aria-hidden />
-        long and steady → a burst
-      </span>
-      <span>Grey: too few sessions to say.</span>
-    </p>
   );
 }
