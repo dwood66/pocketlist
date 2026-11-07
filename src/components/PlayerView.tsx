@@ -66,8 +66,8 @@ export function PlayerView({ id, trail, galaxy, go }: {
         <>
           <div className="flex flex-wrap items-center gap-3">
             <div role="group" aria-label="View" className="flex rounded-lg border border-border p-0.5">
-              <ViewButton on={!galaxy} onClick={() => setGalaxy(false)} icon={<List className="h-4 w-4" />}>List</ViewButton>
               <ViewButton on={galaxy} onClick={() => setGalaxy(true)} icon={<Orbit className="h-4 w-4" />}>Galaxy</ViewButton>
+              <ViewButton on={!galaxy} onClick={() => setGalaxy(false)} icon={<List className="h-4 w-4" />}>List</ViewButton>
             </div>
             <label htmlFor="filter" className="sr-only">Filter by name or instrument</label>
             <Input id="filter" value={filter} onChange={(e) => { setFilter(e.target.value); setShown(PAGE); }}
@@ -86,7 +86,7 @@ export function PlayerView({ id, trail, galaxy, go }: {
                 {visible.slice(0, shown).map((c) => (
                   <Row key={c.id} c={c} max={max} playerId={id} playerName={snap.player.name}
                     open={open === c.id} onToggle={() => setOpen(open === c.id ? null : c.id)}
-                    to={{ view: "player", id: c.id, trail: childTrail }} go={go} />
+                    to={{ view: "player", id: c.id, trail: childTrail, galaxy: false }} go={go} />
                 ))}
               </ol>
               {visible.length > shown && (

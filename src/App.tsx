@@ -23,7 +23,7 @@ export default function App() {
         <main className="flex flex-col gap-6">
           {route.view === "home" && <Intro go={go} />}
           {route.view === "search" && <SearchResults q={route.q} instrument={route.instrument} go={go} />}
-          {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={!!route.galaxy} go={go} />}
+          {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} go={go} />}
         </main>
 
         <footer className="mt-8 text-center text-xs text-muted-foreground">

@@ -3,14 +3,14 @@
 //
 //   /?q=wally+kane&i=flute          search results
 //   /?p=<id>&trail=<id>,<id>        a player, with the players you came through
-//   /?p=<id>&v=galaxy               the same player, as a galaxy
+//   /?p=<id>&v=list                 the same player, as a list (the galaxy is the default)
 
 import { useCallback, useEffect, useState } from "react";
 
 export type Route =
   | { view: "home" }
   | { view: "search"; q: string; instrument: string }
-  | { view: "player"; id: string; trail: string[]; galaxy?: boolean };
+  | { view: "player"; id: string; trail: string[]; galaxy?: boolean }; // galaxy unless false
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -19,7 +19,7 @@ export function parse(search: string): Route {
   const p = params.get("p");
   if (p && MBID.test(p)) {
     const trail = (params.get("trail") ?? "").split(",").filter((id) => MBID.test(id));
-    return { view: "player", id: p, trail, galaxy: params.get("v") === "galaxy" };
+    return { view: "player", id: p, trail, galaxy: params.get("v") !== "list" };
   }
   const q = params.get("q")?.trim();
   if (q) return { view: "search", q, instrument: params.get("i")?.trim() ?? "" };
@@ -31,7 +31,7 @@ export function href(route: Route): string {
   if (route.view === "player") {
     params.set("p", route.id);
     if (route.trail.length) params.set("trail", route.trail.join(","));
-    if (route.galaxy) params.set("v", "galaxy");
+    if (route.galaxy === false) params.set("v", "list");
   } else if (route.view === "search") {
     params.set("q", route.q);
     if (route.instrument) params.set("i", route.instrument);

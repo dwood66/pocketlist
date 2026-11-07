@@ -52,7 +52,7 @@ data always draws the same galaxy and a thousand stars stay smooth.
 - Clicking a star recentres on it: the clicked star slides to the middle and shared
   collaborators move to their new places. A player still being read fills in live.
 - Keyboard: arrow keys step through stars closest-first, Enter opens, +/- zoom. The list's
-  filter dims everyone who doesn't match. `?v=galaxy` in the URL keeps the view when shared.
+  filter dims everyone who doesn't match. The galaxy is the default view (2026-11-07); `?v=list` in the URL keeps the list when shared.
 
 **Open:** a minimum session count before heat applies (2 tracks in 1 year shouldn't look like a
 real burst); a time slider to watch the galaxy form (stretch); SVG with d3-force up to a few
