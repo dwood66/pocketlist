@@ -1,6 +1,8 @@
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Link } from "@/components/Link";
 import { PlayerView } from "@/components/PlayerView";
+import { PlaylistView } from "@/components/PlaylistView";
+import { ConnectIntro } from "@/components/Connect";
 import { SearchForm, SearchResults } from "@/components/Search";
 import { useRoute, type Route } from "@/lib/route";
 
@@ -23,7 +25,8 @@ export default function App() {
         <main className="flex flex-col gap-6">
           {route.view === "home" && <Intro go={go} />}
           {route.view === "search" && <SearchResults q={route.q} instrument={route.instrument} go={go} />}
-          {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} go={go} />}
+          {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} goal={route.goal} go={go} />}
+          {route.view === "playlist" && <PlaylistView seeds={route.seeds} n={route.n} mix={route.mix} go={go} />}
         </main>
 
         <footer className="mt-8 text-center text-xs text-muted-foreground">
@@ -42,6 +45,7 @@ function Intro({ go }: { go: (r: Route) => void }) {
     { q: "Walter Kane", i: "" },
   ];
   return (
+    <>
     <section className="flex flex-col gap-3 text-sm text-muted-foreground">
       <p>
         Type a jazz musician’s name to see everyone they recorded with. It counts people on the same
@@ -58,5 +62,7 @@ function Intro({ go }: { go: (r: Route) => void }) {
         ))}
       </p>
     </section>
+    <ConnectIntro go={go} />
+    </>
   );
 }

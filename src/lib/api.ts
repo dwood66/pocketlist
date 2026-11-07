@@ -2,6 +2,7 @@
 // the rest of the app sees it.
 
 import {
+  isPath, isPlaylist, type Path, type Playlist,
   isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
   type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
@@ -49,6 +50,26 @@ export async function getPlayer(id: string, signal?: AbortSignal): Promise<Playe
   if (!isPlayer(data)) throw new Error("Unexpected player response");
   players.set(id, data);
   return data;
+}
+
+export async function playlist(seeds: string[], n: number, mix: number, signal?: AbortSignal): Promise<Playlist> {
+  const data = await getJson(`/api/playlist?seeds=${seeds.join(",")}&n=${n}&mix=${mix}`, signal);
+  if (!isPlaylist(data)) throw new Error("Unexpected playlist response");
+  for (const p of data.seeds) players.set(p.id, p);
+  return data;
+}
+
+// The best-known route between two players. Cached: it's asked for on every hop of a game.
+const paths = new Map<string, Promise<Path>>();
+export function shortestPath(from: string, to: string): Promise<Path> {
+  const key = `${from}>${to}`;
+  if (!paths.has(key)) {
+    paths.set(key, getJson(`/api/path?from=${from}&to=${to}`).then((d) => {
+      if (!isPath(d)) throw new Error("Unexpected path response");
+      return d;
+    }).catch((e: unknown) => { paths.delete(key); throw e; }));
+  }
+  return paths.get(key)!;
 }
 
 export async function sharedRecordings(a: string, b: string, signal?: AbortSignal): Promise<SharedRecording[]> {

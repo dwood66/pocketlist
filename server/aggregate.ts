@@ -71,6 +71,7 @@ export function aggregate(playerId: string, rows: CreditRow[]): Collaborator[] {
 
   for (const r of rows) {
     if (r.artist_id === playerId) continue;
+    if (/^\[.*\]$/.test(r.artist_name)) continue; // MusicBrainz placeholders like [unknown] aren't people
     const info = recs.get(r.recording_id)!;
     let a = acc.get(r.artist_id);
     if (!a) {

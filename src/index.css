@@ -33,6 +33,7 @@
   /* Galaxy heat: a long, steady partnership is cool; a burst of sessions is hot. */
   --star-cool: #2f6fb8;
   --star-hot: #d2531f;
+  --goal: #b7791f; /* Connect's target star */
 }
 
 .dark {
@@ -48,6 +49,7 @@
   --ring: #5fd08a;
   --star-cool: #7fb2ff;
   --star-hot: #ff8a4c;
+  --goal: #f2c14e;
 }
 
 body { margin: 0; }

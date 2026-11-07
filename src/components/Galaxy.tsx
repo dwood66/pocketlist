@@ -45,10 +45,12 @@ function mix(a: string, b: string, t: number) {
 
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function Galaxy({ snap, matches, onOpen }: {
+export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
   snap: Snapshot;
   matches: Set<string> | null; // the list's filter, applied here as dimming
+  goal?: string; // Connect's target, marked in gold wherever it appears
   onOpen: (c: Collaborator) => void;
+  onPlaylist?: (c: Collaborator) => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -58,7 +60,20 @@ export function Galaxy({ snap, matches, onOpen }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [theme, setTheme] = useState(0);
 
-  const galaxy = useMemo(() => layout(snap.collaborators), [snap.collaborators]);
+  // While a player is still being read, every batch of credits would nudge every star (the
+  // scales depend on everyone). Stars already placed stay put until reading finishes, so you
+  // can click one without it sliding away; then everything settles into its final place.
+  const placed = useRef(new Map<string, { x: number; y: number }>());
+  const galaxy = useMemo(() => {
+    const fresh = layout(snap.collaborators);
+    const settle = snap.progress.done;
+    const stars = fresh.stars.map((s) => {
+      const keep = settle ? undefined : placed.current.get(s.c.id);
+      return keep ? { ...s, ...keep } : s;
+    });
+    placed.current = new Map(stars.map((s) => [s.c.id, { x: s.x, y: s.y }]));
+    return { ...fresh, stars };
+  }, [snap.collaborators, snap.progress.done]);
   const byId = useMemo(() => new Map(galaxy.stars.map((s) => [s.c.id, s])), [galaxy]);
 
   // Animation state lives in refs: it changes every frame and React doesn't need to know.
@@ -120,7 +135,7 @@ export function Galaxy({ snap, matches, onOpen }: {
     const col = {
       fg: cssColor("--foreground"), muted: cssColor("--muted-foreground"), border: cssColor("--border"),
       primary: cssColor("--primary"), cool: cssColor("--star-cool"), hot: cssColor("--star-hot"),
-      bg: cssColor("--card"),
+      bg: cssColor("--card"), goal: cssColor("--goal"),
     };
     const DURATION = reduceMotion() ? 0 : 1200;
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -183,15 +198,22 @@ export function Galaxy({ snap, matches, onOpen }: {
       // Names: whatever is under the pointer or selected first, then the closest few. A name
       // that would overlap one already drawn is skipped; pointing at the star shows it.
       const named = new Set<string>();
-      for (const id of [hover, selected]) if (id) named.add(id);
+      for (const id of [goal, hover, selected]) if (id) named.add(id);
       for (const s of galaxy.stars.slice(0, MAX_LABELS)) if (!matches || matches.has(s.c.id)) named.add(s.c.id);
       if (matches && matches.size <= 20) matches.forEach((id) => named.add(id));
       for (const id of named) {
         const s = byId.get(id);
         const p = pos.get(id);
         if (!s || !p || p.a < 0.5) continue;
-        const ring = id === hover || id === selected;
-        if (ring) {
+        const isGoal = id === goal;
+        const ring = isGoal || id === hover || id === selected;
+        if (isGoal) {
+          ctx.fillStyle = col.goal;
+          ctx.beginPath(); ctx.arc(p.sx, p.sy, Math.max(5, s.size * Math.sqrt(view.k)), 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = col.goal; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.sx, p.sy, s.size * Math.sqrt(view.k) + 7, 0, Math.PI * 2); ctx.stroke();
+        }
+        if (ring && !isGoal) {
           ctx.strokeStyle = col.fg; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(p.sx, p.sy, s.size * Math.sqrt(view.k) + 4, 0, Math.PI * 2); ctx.stroke();
         }
@@ -207,7 +229,7 @@ export function Galaxy({ snap, matches, onOpen }: {
     return () => cancelAnimationFrame(frame.current);
     // toScreen and R derive from size and view, which are listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [galaxy, byId, size, view, hover, selected, matches, theme, snap.player.name]);
+  }, [galaxy, byId, size, view, hover, selected, matches, theme, snap.player.name, goal]);
 
   // Pointer: hover shows a card, click opens (a tap selects first, a second tap opens),
   // drag pans, wheel and pinch zoom.
@@ -338,7 +360,7 @@ export function Galaxy({ snap, matches, onOpen }: {
           <Button variant="outline" size="icon" aria-label="Reset view" onClick={() => setView({ k: 1, x: 0, y: 0 })}><RotateCcw className="h-4 w-4" /></Button>
         </div>
       </div>
-      <StarCard star={focus} playerId={snap.player.id} onOpen={onOpen} />
+      <StarCard star={focus} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
       <Legend />
     </div>
   );
@@ -367,7 +389,9 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 const shared = new Map<string, Promise<SharedRecording[]>>();
 
-function StarCard({ star, playerId, onOpen }: { star?: Star; playerId: string; onOpen: (c: Collaborator) => void }) {
+function StarCard({ star, playerId, onOpen, onPlaylist }: {
+  star?: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void;
+}) {
   const [recs, setRecs] = useState<SharedRecording[] | null>(null);
   const id = star?.c.id;
   useEffect(() => {
@@ -407,9 +431,10 @@ function StarCard({ star, playerId, onOpen }: { star?: Star; playerId: string; o
           {recs.slice(0, 3).map((r) => r.title).join(" · ")}{recs.length > 3 ? " …" : ""}
         </p>
       )}
-      <Button variant="outline" size="sm" className="self-start" onClick={() => onOpen(c)}>
-        Centre on {c.name}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => onOpen(c)}>Centre on {c.name}</Button>
+        {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist with {c.name}</Button>}
+      </div>
     </div>
   );
 }

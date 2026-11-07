@@ -74,6 +74,24 @@ with a one-line reason for each song. Streaming-service export can come later.
    ("both have Paul Chambers on bass"). Shortest path by default; "about X" uses a bounded
    search rather than padding with detours.
 
+## Connect: six degrees, played in the galaxy (Damon, 2026-11-07)
+
+Pick two players and link them through people who recorded together. The computed version is
+the bridge playlist; this is the version you play.
+
+- **The board is the galaxy.** You start in A's galaxy; B is marked wherever B appears as a
+  star. Each click recentres on the player you picked, and the breadcrumb trail is your path.
+- **You win** when B is the centre. The result shows the chain, each link with the session
+  that earned it ("Carter → Shorter: *Speak No Evil*, 1964"), your hops against **par**, and
+  a "Copy result" button for sharing.
+- **Par** is the shortest path through every credit read so far (breadth-first over shared
+  recordings). It can only get shorter as more is read, so it's "best known", and says so.
+- **Data is the constraint, not code.** A hop to a player nobody has read starts a crawl.
+  So: a **puzzle of the day** chosen among players already read, and later a slow background
+  pre-read of a few dozen key players a day, well inside MusicBrainz's limits.
+- **Give up** shows a par route. Later: hints ("someone who played with both on a 1964
+  date"), a daily streak, and turning a finished chain into a bridge playlist.
+
 ## Playlist games: hide one half
 
 A bridge is two lists woven together: the **songs**, and the **connections** between them
@@ -144,6 +162,8 @@ names or one-off groups): a player is one person with an ID and aliases.
   Credits are relationships on recordings: performer by instrument, engineer, producer.
 - **Discogs:** strong jazz personnel on releases and tracks; API and data dumps.
 - **Not AllMusic:** no public API, and scraping it would break its terms.
+- **Not Jaxsta:** label-supplied official credits, but its API and commercial services were
+  decommissioned (checked 2026-11-07), and the site isn't for reuse.
 
 **M0 result:** MusicBrainz is primary (recording-level, typed roles, normalized instruments).
 Discogs comes later as enrichment (free-text roles, some album-level-only credits). Search must
@@ -187,7 +207,8 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M2 ✅ | **Collaborators v1** (live 2026-11-06; GIF 2026-11-07) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
 | M3 🔨 | **Galaxy view** (first version live 2026-11-07) | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
-| M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
+| M3c | Connect | the six-degrees game in the galaxy: goal marker, hops, best-known par, result card; puzzle of the day |
+| M4 | Playlists | sampler first (POC 2026-11-07; N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
 | M6 | Wider credits | engineers, producers and others as an option |
 

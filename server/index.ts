@@ -8,9 +8,10 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Player, PlayerCandidate, SharedRecording, Snapshot } from "../contract/index.ts";
+import type { Path, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, watch } from "./crawler.ts";
+import { samplePlaylist, type SeedCreditRow } from "./playlist.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
 import { mb, NotFound, type MbArtist } from "./mb.ts";
@@ -226,6 +227,113 @@ app.get("/api/players/:id/with/:other", async (c) => {
   const list = [...byKey.values()].sort((x, y) =>
     (x.date ?? String(x.year ?? "9999")).localeCompare(y.date ?? String(y.year ?? "9999")) || x.title.localeCompare(y.title));
   return c.json(list);
+});
+
+// The album a recording is best known from: an official album with no "compilation" or
+// "live" tags first, then the earliest. Used wherever one album name stands for a song.
+const BEST_ALBUM = `
+  select rl.rg_id, rl.rg_title as album from recording_releases rr join releases rl on rl.id = rr.release_id
+  where rr.recording_id = c.recording_id
+  order by (rl.status = 'Official') desc nulls last, (rl.rg_primary = 'Album') desc nulls last,
+           coalesce(array_length(rl.rg_secondary, 1), 0) asc, rl.date asc nulls last
+  limit 1`;
+
+// Sampler playlist: ?seeds=<id>,<id>&n=10&mix=0. Songs every seed played on; see playlist.ts.
+app.get("/api/playlist", async (c) => {
+  const seeds = [...new Set((c.req.query("seeds") ?? "").split(",").filter((id) => MBID.test(id)))];
+  if (seeds.length < 1 || seeds.length > 4) return c.json({ error: "one to four players, please" }, 400);
+  const n = Math.min(50, Math.max(1, Number(c.req.query("n")) || 10));
+  const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
+  const players = await Promise.all(seeds.map(findPlayer));
+  if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
+  const found = await rows<SeedCreditRow>(
+    `with shared as (
+       select recording_id from credits where artist_id = any($1) and rel_type = any($2)
+       group by recording_id having count(distinct artist_id) = $3
+     )
+     select c.recording_id, r.title, r.first_release_date, f.rg_id, f.album, c.artist_id, c.instruments, c.date
+     from credits c
+     join shared s on s.recording_id = c.recording_id
+     join recordings r on r.id = c.recording_id
+     left join lateral (${BEST_ALBUM}) f on true
+     where c.artist_id = any($1) and c.rel_type = any($2) and r.credits_loaded`,
+    [seeds, PERFORMER_TYPES, seeds.length],
+  );
+  const body: Playlist = { seeds: players as Player[], ...samplePlaylist(found, seeds, n, mix) };
+  return c.json(body);
+});
+
+// Shortest known chain between two players: ?from=<id>&to=<id>. Breadth-first over "credited
+// on the same recording", from both ends at once, through everything read so far. "Known"
+// matters: reading more can only make it shorter.
+const MAX_HOPS = 6;
+const MAX_FRONTIER = 4000;
+
+async function neighbours(ids: string[]) {
+  return rows<{ src: string; dst: string }>(
+    `select distinct a.artist_id as src, b.artist_id as dst
+     from credits a
+     join credits b on b.recording_id = a.recording_id
+     join recordings r on r.id = a.recording_id
+     where a.artist_id = any($1) and a.rel_type = any($2) and b.rel_type = any($2)
+       and b.artist_id <> a.artist_id and r.credits_loaded
+       and b.artist_name !~ '^\\[.*\\]$'`, // MusicBrainz placeholders like [unknown] aren't people
+    [ids, PERFORMER_TYPES],
+  );
+}
+
+app.get("/api/path", async (c) => {
+  const from = c.req.query("from") ?? "", to = c.req.query("to") ?? "";
+  if (!MBID.test(from) || !MBID.test(to)) return c.json({ error: "not a MusicBrainz ID" }, 400);
+  const prev = [new Map<string, string | null>([[from, null]]), new Map<string, string | null>([[to, null]])];
+  let frontier = [[from], [to]];
+  let meet: string | null = from === to ? from : null;
+  for (let hops = 0; !meet && hops < MAX_HOPS; hops++) {
+    const side = frontier[0].length <= frontier[1].length ? 0 : 1; // grow the smaller side
+    if (!frontier[side].length || frontier[side].length > MAX_FRONTIER) break;
+    const next: string[] = [];
+    for (const { src, dst } of await neighbours(frontier[side])) {
+      if (prev[side].has(dst)) continue;
+      prev[side].set(dst, src);
+      next.push(dst);
+      if (prev[1 - side].has(dst)) { meet = dst; break; }
+    }
+    frontier[side] = next;
+  }
+  if (!meet) return c.json({ error: "no known path yet" }, 404);
+
+  const ids: string[] = [];
+  for (let at: string | null = meet; at; at = prev[0].get(at) ?? null) ids.unshift(at);
+  for (let at = prev[1].get(meet) ?? null; at; at = prev[1].get(at) ?? null) ids.push(at);
+
+  const names = await rows<{ artist_id: string; artist_name: string; artist_disambiguation: string | null }>(
+    `select distinct on (artist_id) artist_id, artist_name, artist_disambiguation from credits where artist_id = any($1)`, [ids]);
+  const byId = new Map(names.map((n) => [n.artist_id, n]));
+  const links: Path["links"] = [];
+  for (let i = 0; i + 1 < ids.length; i++) {
+    const [link] = await rows<{ recording_id: string; title: string; album: string | null; date: string | null }>(
+      `select c.recording_id, r.title, f.album, coalesce(c.date, d.date, r.first_release_date) as date
+       from credits c
+       join credits d on d.recording_id = c.recording_id and d.artist_id = $2 and d.rel_type = any($3)
+       join recordings r on r.id = c.recording_id
+       left join lateral (${BEST_ALBUM}) f on true
+       where c.artist_id = $1 and c.rel_type = any($3) and r.credits_loaded
+       order by f.album is null, coalesce(c.date, d.date, r.first_release_date) asc nulls last
+       limit 1`,
+      [ids[i], ids[i + 1], PERFORMER_TYPES],
+    );
+    const y = (link?.date ?? "").slice(0, 4);
+    links.push({ recordingId: link.recording_id, title: link.title, album: link.album ?? undefined,
+      year: /^\d{4}$/.test(y) ? Number(y) : undefined });
+  }
+  const body: Path = {
+    players: ids.map((id) => {
+      const n = byId.get(id);
+      return { id, name: n?.artist_name ?? "?", disambiguation: n?.artist_disambiguation ?? undefined };
+    }),
+    links,
+  };
+  return c.json(body);
 });
 
 app.onError((err, c) => {

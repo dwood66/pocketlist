@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, List, Orbit } from "lucide-react";
+import { ChevronDown, ChevronRight, List, ListMusic, Orbit } from "lucide-react";
 import type { Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/Link";
 import { Galaxy, forgetGalaxy } from "@/components/Galaxy";
+import { ConnectBanner, ConnectFrom } from "@/components/Connect";
 import { getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
 import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
@@ -12,8 +13,8 @@ import { cn } from "@/lib/utils";
 const PAGE = 100;
 let heldHeight = 0; // set when a star is clicked; see the comment on the outer div
 
-export function PlayerView({ id, trail, galaxy, go }: {
-  id: string; trail: string[]; galaxy: boolean; go: (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
+export function PlayerView({ id, trail, galaxy, goal, go }: {
+  id: string; trail: string[]; galaxy: boolean; goal?: string; go: (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
 }) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -48,14 +49,14 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const childTrail = [...trail, id];
   const matches = useMemo(() => (filter.trim() ? new Set(visible.map((c) => c.id)) : null), [visible, filter]);
   useEffect(() => { if (!galaxy) forgetGalaxy(); }, [galaxy]);
-  const setGalaxy = (on: boolean) => go({ view: "player", id, trail, galaxy: on }, { replace: true });
+  const setGalaxy = (on: boolean) => go({ view: "player", id, trail, galaxy: on, goal }, { replace: true });
 
   return (
     // After a recentre, hold the page at the height the last galaxy left it, so keeping the
     // scroll position isn't undone by a momentarily short page (while loading, and for the
     // frame before the new canvas has measured itself).
     <div ref={box} className="flex flex-col gap-4" style={galaxy && hold ? { minHeight: hold } : undefined}>
-      <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} />
+      <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} goal={goal} />
 
       <header>
         <h1 ref={heading} tabIndex={-1} className="text-2xl font-bold focus:outline-none">
@@ -69,6 +70,15 @@ export function PlayerView({ id, trail, galaxy, go }: {
       </header>
 
       {snap && <ProgressLine snap={snap} />}
+      {goal ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} /> : snap && (
+        <div className="flex flex-wrap gap-2">
+          <ConnectFrom id={id} name={snap.player.name} go={go} />
+          <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
+            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <ListMusic className="mr-1.5 h-4 w-4" /> Playlist
+          </Link>
+        </div>
+      )}
       {problem && <p role="alert" className="text-sm">{problem}</p>}
 
       {snap && snap.collaborators.length > 0 && (
@@ -87,11 +97,12 @@ export function PlayerView({ id, trail, galaxy, go }: {
           </div>
 
           {galaxy ? (
-            <Galaxy snap={snap} matches={matches}
+            <Galaxy snap={snap} matches={matches} goal={goal}
+              onPlaylist={(c) => go({ view: "playlist", seeds: [id, c.id], n: 10, mix: 0 })}
               onOpen={(c) => {
                 // Measure now: the next player renders before this one is gone.
                 heldHeight = box.current?.offsetHeight ?? 0;
-                go({ view: "player", id: c.id, trail: childTrail, galaxy: true }, { keepScroll: true });
+                go({ view: "player", id: c.id, trail: childTrail, galaxy: true, goal }, { keepScroll: true });
               }} />
           ) : (
             <>
@@ -99,7 +110,7 @@ export function PlayerView({ id, trail, galaxy, go }: {
                 {visible.slice(0, shown).map((c) => (
                   <Row key={c.id} c={c} max={max} playerId={id} playerName={snap.player.name}
                     open={open === c.id} onToggle={() => setOpen(open === c.id ? null : c.id)}
-                    to={{ view: "player", id: c.id, trail: childTrail, galaxy: false }} go={go} />
+                    to={{ view: "player", id: c.id, trail: childTrail, galaxy: false, goal }} go={go} />
                 ))}
               </ol>
               {visible.length > shown && (
@@ -226,7 +237,7 @@ function SharedList({ id, a, b, aName, bName }: { id: string; a: string; b: stri
   );
 }
 
-function Breadcrumbs({ trail, go, current, galaxy }: { trail: string[]; go: (r: Route) => void; current?: Player; galaxy: boolean }) {
+function Breadcrumbs({ trail, go, current, galaxy, goal }: { trail: string[]; go: (r: Route) => void; current?: Player; galaxy: boolean; goal?: string }) {
   const [names, setNames] = useState<Record<string, string>>({});
   useEffect(() => {
     const ctrl = new AbortController();
@@ -242,7 +253,7 @@ function Breadcrumbs({ trail, go, current, galaxy }: { trail: string[]; go: (r: 
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
         {trail.map((id, i) => (
           <li key={`${id}-${i}`} className="flex items-center gap-1.5">
-            <Link to={{ view: "player", id, trail: trail.slice(0, i), galaxy }} go={go} className="hover:text-foreground hover:underline">
+            <Link to={{ view: "player", id, trail: trail.slice(0, i), galaxy, goal }} go={go} className="hover:text-foreground hover:underline">
               {names[id] ?? "…"}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" aria-hidden />

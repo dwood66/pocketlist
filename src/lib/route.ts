@@ -4,22 +4,31 @@
 //   /?q=wally+kane&i=flute          search results
 //   /?p=<id>&trail=<id>,<id>        a player, with the players you came through
 //   /?p=<id>&v=list                 the same player, as a list (the galaxy is the default)
+//   /?p=<id>&goal=<id>              playing Connect: get from here to the goal
+//   /?pl=<id>,<id>&n=10&mix=0       a sampler playlist of songs all of them played on
 
 import { useCallback, useEffect, useState } from "react";
 
 export type Route =
   | { view: "home" }
   | { view: "search"; q: string; instrument: string }
-  | { view: "player"; id: string; trail: string[]; galaxy?: boolean }; // galaxy unless false
+  | { view: "player"; id: string; trail: string[]; galaxy?: boolean; goal?: string } // galaxy unless false
+  | { view: "playlist"; seeds: string[]; n: number; mix: number };
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function parse(search: string): Route {
   const params = new URLSearchParams(search);
+  const pl = (params.get("pl") ?? "").split(",").filter((id) => MBID.test(id));
+  if (pl.length) {
+    return { view: "playlist", seeds: [...new Set(pl)].slice(0, 4), n: Math.min(50, Math.max(1, Number(params.get("n")) || 10)),
+      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)) };
+  }
   const p = params.get("p");
   if (p && MBID.test(p)) {
     const trail = (params.get("trail") ?? "").split(",").filter((id) => MBID.test(id));
-    return { view: "player", id: p, trail, galaxy: params.get("v") !== "list" };
+    const goal = params.get("goal");
+    return { view: "player", id: p, trail, galaxy: params.get("v") !== "list", ...(goal && MBID.test(goal) ? { goal } : {}) };
   }
   const q = params.get("q")?.trim();
   if (q) return { view: "search", q, instrument: params.get("i")?.trim() ?? "" };
@@ -32,6 +41,11 @@ export function href(route: Route): string {
     params.set("p", route.id);
     if (route.trail.length) params.set("trail", route.trail.join(","));
     if (route.galaxy === false) params.set("v", "list");
+    if (route.goal) params.set("goal", route.goal);
+  } else if (route.view === "playlist") {
+    params.set("pl", route.seeds.join(","));
+    if (route.n !== 10) params.set("n", String(route.n));
+    if (route.mix) params.set("mix", String(route.mix));
   } else if (route.view === "search") {
     params.set("q", route.q);
     if (route.instrument) params.set("i", route.instrument);

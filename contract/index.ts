@@ -94,3 +94,43 @@ export function isSharedRecording(v: unknown): v is SharedRecording {
     optStr(v.album) && isObj(v.instruments) && isStrArr(v.instruments.player) &&
     isStrArr(v.instruments.collaborator);
 }
+
+/** One song in a sampler playlist: a performance every seed player is credited on. */
+export type PlaylistTrack = {
+  recordingId: string;
+  title: string;
+  album?: string;
+  date?: string;
+  year?: number;
+  /** What each seed played on it, keyed by player id. */
+  instruments: Record<string, string[]>;
+};
+
+export type Playlist = {
+  seeds: Player[];
+  /** How much there was to choose from: distinct performances, and the sessions they came from. */
+  performances: number;
+  sessions: number;
+  tracks: PlaylistTrack[];
+};
+
+/** A shortest known chain between two players, one shared recording per link. */
+export type Path = {
+  players: Player[];
+  links: { recordingId: string; title: string; album?: string; year?: number }[];
+};
+
+export function isPlaylistTrack(v: unknown): v is PlaylistTrack {
+  return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.album) && optStr(v.date) &&
+    optNum(v.year) && isObj(v.instruments) && Object.values(v.instruments).every(isStrArr);
+}
+
+export function isPlaylist(v: unknown): v is Playlist {
+  return isObj(v) && Array.isArray(v.seeds) && v.seeds.every(isPlayer) && typeof v.performances === "number" &&
+    typeof v.sessions === "number" && Array.isArray(v.tracks) && v.tracks.every(isPlaylistTrack);
+}
+
+export function isPath(v: unknown): v is Path {
+  return isObj(v) && Array.isArray(v.players) && v.players.every(isPlayer) && Array.isArray(v.links) &&
+    v.links.every((l) => isObj(l) && isStr(l.recordingId) && isStr(l.title) && optStr(l.album) && optNum(l.year));
+}
