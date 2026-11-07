@@ -301,7 +301,8 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
     if (g.moved) return;
     const hit = starAt(p.x, p.y, e.pointerType === "mouse" ? 8 : 18);
     if (!hit) { setSelected(null); return; }
-    if (e.pointerType === "mouse" || g.touchSelected === hit.c.id) onOpen(hit.c);
+    if (e.pointerType === "mouse" && e.shiftKey && onPlaylist) onPlaylist(hit.c);
+    else if (e.pointerType === "mouse" || g.touchSelected === hit.c.id) onOpen(hit.c);
     else setSelected(hit.c.id);
   }
 
@@ -334,12 +335,12 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
     return () => el.removeEventListener("wheel", onWheel);
   });
 
-  // Hover sticks for a moment after the pointer leaves a star, so it can travel into the card.
+  // Hover lingers for a beat after the pointer leaves a star, so the card doesn't flicker.
   const hoverTimer = useRef(0);
   function hoverSoon(id: string | null) {
     clearTimeout(hoverTimer.current);
     if (id) { setHover(id); seen(); }
-    else hoverTimer.current = window.setTimeout(() => setHover(null), 350);
+    else hoverTimer.current = window.setTimeout(() => setHover(null), 120);
   }
   useEffect(() => () => clearTimeout(hoverTimer.current), []);
 
@@ -404,8 +405,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
         <Key open={keyOpen} />
 
         {hovered && !coarse && (
-          <FloatingCard star={hovered} at={at(hovered)} box={size} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist}
-            onEnter={() => clearTimeout(hoverTimer.current)} onLeave={() => hoverSoon(null)} />
+          <FloatingCard star={hovered} at={at(hovered)} box={size} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
         )}
       </div>
       {picked && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
@@ -429,29 +429,21 @@ function Key({ open }: { open: boolean }) {
   );
 }
 
-// The hover card on desktop: next to the star, on the side away from the centre (so it never
-// covers the closest partners), kept inside the galaxy. It ignores the pointer until the
-// pointer has rested on the star for a moment: passing over stars on the way somewhere
-// shouldn't throw up cards that block the way.
-function FloatingCard({ star, at, box, onEnter, onLeave, ...rest }: {
+// The hover card on desktop: a tooltip beside the star, on the side away from the centre so
+// it doesn't cover the closest partners. It never takes the pointer, so it can't block the
+// next star you're heading for; clicking the star goes there, shift-click makes a playlist.
+// (Touch and keyboard get the full card with buttons below the galaxy.)
+function FloatingCard({ star, at, box, ...rest }: {
   star: Star; at: { sx: number; sy: number }; box: { w: number; h: number }; playerId: string;
-  onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void; onEnter: () => void; onLeave: () => void;
+  onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void;
 }) {
-  const W = 280, H = 150, GAP = 14;
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setReady(false);
-    const t = setTimeout(() => setReady(true), 450);
-    return () => clearTimeout(t);
-  }, [star.c.id]);
+  const W = 260, H = 120, GAP = 16;
   const outward = at.sx < box.w / 2 ? at.sx - GAP - W : at.sx + GAP;
   const left = Math.min(Math.max(8, outward), box.w - W - 8);
-  const below = at.sy > box.h / 2;
-  const top = Math.min(Math.max(8, below ? at.sy + GAP - 20 : at.sy - H + 20), box.h - H - 8);
+  const top = Math.min(Math.max(8, at.sy > box.h / 2 ? at.sy + 4 : at.sy - H + 4), box.h - H - 8);
   return (
-    <div className={"absolute z-10 rounded-lg border border-border bg-card p-3 shadow-lg transition-opacity " + (ready ? "" : "pointer-events-none opacity-90")}
-      style={{ left, top, width: W }} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-      <StarCard star={star} {...rest} compact />
+    <div className="pointer-events-none absolute z-10 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur" style={{ left, top, width: W }}>
+      <StarCard star={star} {...rest} compact tooltip={rest.onPlaylist ? "Click to go there · shift-click for a playlist together" : "Click to go there"} />
     </div>
   );
 }
@@ -479,8 +471,9 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 const shared = new Map<string, Promise<SharedRecording[]>>();
 
-function StarCard({ star, playerId, onOpen, onPlaylist, compact }: {
-  star: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void; compact?: boolean;
+function StarCard({ star, playerId, onOpen, onPlaylist, compact, tooltip }: {
+  star: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void;
+  compact?: boolean; tooltip?: string; // tooltip: no buttons, this line instead
 }) {
   const [recs, setRecs] = useState<SharedRecording[] | null>(null);
   const id = star.c.id;
@@ -511,10 +504,12 @@ function StarCard({ star, playerId, onOpen, onPlaylist, compact }: {
       <p className="truncate text-muted-foreground">
         {recs ? recs.slice(0, 3).map((r) => r.title).join(" · ") + (recs.length > 3 ? " …" : "") : "\u00a0"}
       </p>
-      <div className="mt-1 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => onOpen(c)}>Go to {c.name.split(" ")[0]}</Button>
-        {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist together</Button>}
-      </div>
+      {tooltip ? <p className="text-xs text-primary">{tooltip}</p> : (
+        <div className="mt-1 flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => onOpen(c)}>Go to {c.name.split(" ")[0]}</Button>
+          {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist together</Button>}
+        </div>
+      )}
     </div>
   );
 }
