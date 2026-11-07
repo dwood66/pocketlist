@@ -27,6 +27,11 @@ nothing to install. Data from MusicBrainz is used under its open-data licence.
 
 ## How it works
 
+The full tour (what runs where, how credits get in, the counting rules, every screen, known
+issues, and what it would take to go further) is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The short version:
+
+
 - `contract/` holds the types both sides share, with guards for anything that crosses the network.
 - `server/crawler.ts` reads a player's credits. MusicBrainz allows about one request a second, so
   it reads whole albums at a time: look up one unread recording, then fetch its original album,
