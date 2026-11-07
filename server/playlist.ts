@@ -73,26 +73,27 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
   for (let i = 0; i < n && i < ordered.length; i++) chosen.add(Math.min(ordered.length - 1, Math.floor(offset + i * step)));
   const order = [...chosen, ...ordered.keys()].filter((v, i, all) => all.indexOf(v) === i);
 
-  // 4. Passes: one song per session per pass, skipping tunes already used.
+  // 4. Passes: one song per session per pass, skipping tunes already used. Finished versions
+  //    first; takes and rehearsals only if there's still room after that.
   const picked: Perf[] = [];
   const tunes = new Set<string>();
-  for (let pass = 0; picked.length < n; pass++) {
-    let progress = false;
-    for (const i of order) {
-      if (picked.length >= n) break;
-      const perfs = ordered[i];
-      if (pass >= perfs.length) continue;
-      // Rotate within a session by `mix`, so another mix can also mean other tunes.
-      // The first time round, takes and rehearsals wait: a session with only those gives
-      // way to one with a finished version. They come in later if there's nothing else.
-      const fresh = perfs.map((_, k) => perfs[(k + pass + mix) % perfs.length])
-        .find((p) => !tunes.has(p.tune) && !picked.includes(p) && (pass > 0 || !TAKE.test(p.title)));
-      progress = true;
-      if (!fresh) continue;
-      picked.push(fresh);
-      tunes.add(fresh.tune);
+  for (const takesToo of [false, true]) {
+    for (let pass = 0; picked.length < n; pass++) {
+      let progress = false;
+      for (const i of order) {
+        if (picked.length >= n) break;
+        const perfs = ordered[i];
+        if (pass >= perfs.length) continue;
+        progress = true;
+        // Rotate within a session by `mix`, so another mix can also mean other tunes.
+        const fresh = perfs.map((_, k) => perfs[(k + pass + mix) % perfs.length])
+          .find((p) => !tunes.has(p.tune) && !picked.includes(p) && (takesToo || !TAKE.test(p.title)));
+        if (!fresh) continue;
+        picked.push(fresh);
+        tunes.add(fresh.tune);
+      }
+      if (!progress) break;
     }
-    if (!progress) break;
   }
 
   const tracks: PlaylistTrack[] = picked
