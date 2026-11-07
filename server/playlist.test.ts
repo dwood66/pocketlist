@@ -64,3 +64,9 @@ test("a rehearsal is a take of the tune, and the finished version wins", () => {
   const rows = [...both("reh", "Madness (rehearsal take)", "1967-06-13"), ...both("fin", "Madness", "1967-06-13")];
   assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 10).tracks.map((t) => t.title), ["Madness"]);
 });
+
+test("a session with only a rehearsal gives way to one with a finished take", () => {
+  const rows = [...both("reh", "I Have a Dream (Rehearsal take)", "1968-01-01"), ...both("fin", "Byrdlike", "1977-07-16")];
+  assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 1).tracks.map((t) => t.title), ["Byrdlike"]);
+  assert.equal(samplePlaylist(rows, [RON, HERBIE], 2).tracks.length, 2); // still used when needed
+});

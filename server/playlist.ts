@@ -27,6 +27,7 @@ export type SeedCreditRow = {
 const yearOf = (d?: string | null) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : undefined);
 
 type Perf = PlaylistTrack & { tune: string; when: string };
+const TAKE = /\((alternate|alt\b|take|rehearsal|outtake|incomplete|false start|breakdown)/i;
 
 export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number, mix = 0) {
   // 1. Every seed on it.
@@ -82,7 +83,10 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
       const perfs = ordered[i];
       if (pass >= perfs.length) continue;
       // Rotate within a session by `mix`, so another mix can also mean other tunes.
-      const fresh = perfs.map((_, k) => perfs[(k + pass + mix) % perfs.length]).find((p) => !tunes.has(p.tune) && !picked.includes(p));
+      // The first time round, takes and rehearsals wait: a session with only those gives
+      // way to one with a finished version. They come in later if there's nothing else.
+      const fresh = perfs.map((_, k) => perfs[(k + pass + mix) % perfs.length])
+        .find((p) => !tunes.has(p.tune) && !picked.includes(p) && (pass > 0 || !TAKE.test(p.title)));
       progress = true;
       if (!fresh) continue;
       picked.push(fresh);
