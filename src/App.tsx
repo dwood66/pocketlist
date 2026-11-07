@@ -35,6 +35,23 @@ export default function App() {
               Pick a jazz musician and see everyone they recorded with, drawn as a galaxy. Click anyone to
               travel to them, and keep going.
             </p>
+            <details className="group max-w-prose text-sm text-muted-foreground">
+              <summary className="w-fit cursor-pointer select-none rounded text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Why jazz?
+              </summary>
+              <div className="mt-2 flex flex-col gap-2">
+                <p>
+                  On a jazz record, who’s playing is the point. Fans follow a drummer or a bassist from session to
+                  session the way other listeners follow bands, and the same few hundred players turn up on
+                  thousands of records, in every combination. That makes jazz a web you can actually walk.
+                </p>
+                <p>
+                  The credits are unusually well kept, too, down to the track, in MusicBrainz’s open data. Pocketlist
+                  counts people on the same track, not just the same album, so a pianist who sat in on one tune isn’t
+                  credited with the whole record.
+                </p>
+              </div>
+            </details>
           </section>
         )}
 
