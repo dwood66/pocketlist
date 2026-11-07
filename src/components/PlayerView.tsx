@@ -10,7 +10,7 @@ import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
 
 const PAGE = 100;
-let heldHeight = 0; // the last player view's height; see the comment on the outer div
+let heldHeight = 0; // set when a star is clicked; see the comment on the outer div
 
 export function PlayerView({ id, trail, galaxy, go }: {
   id: string; trail: string[]; galaxy: boolean; go: (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
@@ -22,6 +22,7 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const [open, setOpen] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const box = useRef<HTMLDivElement>(null);
+  const [hold] = useState(() => { const h = heldHeight; heldHeight = 0; return h; });
 
   useEffect(() => {
     setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null);
@@ -50,9 +51,10 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const setGalaxy = (on: boolean) => go({ view: "player", id, trail, galaxy: on }, { replace: true });
 
   return (
-    // While the next player loads, hold the page at the height the last one left it, so a
-    // recentre that keeps the scroll position isn't yanked up by a momentarily short page.
-    <div ref={box} className="flex flex-col gap-4" style={!snap && galaxy ? { minHeight: heldHeight } : undefined}>
+    // After a recentre, hold the page at the height the last galaxy left it, so keeping the
+    // scroll position isn't undone by a momentarily short page (while loading, and for the
+    // frame before the new canvas has measured itself).
+    <div ref={box} className="flex flex-col gap-4" style={galaxy && hold ? { minHeight: hold } : undefined}>
       <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} />
 
       <header>
