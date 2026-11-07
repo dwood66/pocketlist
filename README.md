@@ -5,7 +5,7 @@ can fly through. Click any name to keep going.
 
 **Live:** https://pocketlist.damonwood.dev
 
-![Searching for Ron Carter, whose 1,344 collaborators form a galaxy around him; pointing at Herbie Hancock, then clicking Wayne Shorter, who slides to the centre of his own galaxy](docs/pocketlist.gif)
+![From the home page, searching for Ron Carter, whose 1,344 collaborators form a galaxy around him; pointing at Herbie Hancock and Wayne Shorter shows who they are, and clicking Shorter makes him the centre of his own galaxy](docs/pocketlist.gif)
 
 **Status:** the galaxy, the collaborator list, **Connect** (six degrees, played in the galaxy) and a first **playlist sampler** (with text/CSV download) work: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
