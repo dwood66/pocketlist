@@ -23,8 +23,20 @@ export function mb<T = unknown>(path: string): Promise<T> {
       last = Date.now();
       requestCount++;
       const url = `${BASE}${path}${path.includes("?") ? "&" : "?"}fmt=json`;
-      const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
-      if (res.ok) return (await res.json()) as T;
+      let res: Response;
+      let body: unknown;
+      try {
+        res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: AbortSignal.timeout(30_000) });
+        body = res.ok ? await res.json() : undefined;
+      } catch (e) {
+        // The connection dropped, timed out or never opened ("fetch failed"). Usually a blip:
+        // wait and try again. The real reason hides in e.cause, so log that.
+        const cause = e instanceof Error && e.cause instanceof Error ? e.cause.message : e instanceof Error ? e.message : String(e);
+        console.warn(`MusicBrainz network error (attempt ${attempt + 1}) for ${path}: ${cause}`);
+        if (attempt < 4) { await sleep(3000 * (attempt + 1)); continue; }
+        throw new Error(`Couldn't reach MusicBrainz: ${cause}`);
+      }
+      if (res.ok) return body as T;
       if (res.status === 404) throw new NotFound(path);
       // 503 is MusicBrainz saying "slow down". Back off and try again a few times.
       if ((res.status === 503 || res.status >= 500) && attempt < 4) {

@@ -169,7 +169,7 @@ export function Galaxy({ snap, matches, onOpen }: {
       primary: cssColor("--primary"), cool: cssColor("--star-cool"), hot: cssColor("--star-hot"),
       bg: cssColor("--card"),
     };
-    const DURATION = reduceMotion() ? 0 : 700;
+    const DURATION = reduceMotion() ? 0 : 1200;
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 
     const draw = (now: number) => {

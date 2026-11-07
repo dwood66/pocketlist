@@ -23,7 +23,9 @@ export function PlayerView({ id, trail, galaxy, go }: {
 
   useEffect(() => {
     setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null);
-    return streamPlayer(id, { snapshot: setSnap, problem: setProblem });
+    // A snapshot means reading is going again, so it clears an earlier problem; the server
+    // re-sends the problem after each snapshot for as long as it stands.
+    return streamPlayer(id, { snapshot: (s) => { setSnap(s); setProblem(null); }, problem: setProblem });
   }, [id]);
 
   // A new player is a new page: move focus to its name so keyboard and screen-reader

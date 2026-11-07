@@ -17,22 +17,24 @@ import { ingestArtistIndex, ingestRecording, ingestRelease, PERFORMER_TYPES, ski
 import { mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
 type Listener = () => void;
-type Job = { id: string; wantedAt: number; listeners: Set<Listener>; done: boolean; error?: string };
+type Job = { id: string; wantedAt: number; listeners: Set<Listener>; done: boolean; error?: string; failures: number };
 
 const jobs = new Map<string, Job>();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const STALE_MS = 15 * 60_000; // stop filling a player nobody has looked at for 15 minutes
 let running = false;
 
 export function watch(artistId: string, listener: Listener): () => void {
   let job = jobs.get(artistId);
   if (!job) {
-    job = { id: artistId, wantedAt: Date.now(), listeners: new Set(), done: false };
+    job = { id: artistId, wantedAt: Date.now(), listeners: new Set(), done: false, failures: 0 };
     jobs.set(artistId, job);
   }
   if (job.error) {
     // A failed crawl gets another try when someone asks again.
     job.error = undefined;
     job.done = false;
+    job.failures = 0;
   }
   job.wantedAt = Date.now();
   job.listeners.add(listener);
@@ -60,10 +62,18 @@ async function loop() {
       if (!next) break;
       try {
         next.done = await step(next.id);
+        next.failures = 0;
       } catch (e) {
-        next.error = e instanceof Error ? e.message : String(e);
+        const why = e instanceof Error ? e.message : String(e);
+        console.error(`crawl ${next.id}: ${why}`);
+        // Give a player a few more chances, with a pause, before stopping. Everything read so
+        // far is saved, so a retry carries on where it stopped.
+        if (++next.failures < 3) {
+          await sleep(15_000 * next.failures);
+          continue;
+        }
+        next.error = "MusicBrainz stopped answering partway through, so this galaxy is incomplete. What's here is real. Reload in a minute or two to carry on reading.";
         next.done = true;
-        console.error(`crawl ${next.id}: ${next.error}`);
       }
       for (const l of next.listeners) l();
     }
