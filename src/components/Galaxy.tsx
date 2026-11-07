@@ -429,17 +429,28 @@ function Key({ open }: { open: boolean }) {
   );
 }
 
-// The hover card on desktop: next to the star, kept inside the galaxy, and reachable.
+// The hover card on desktop: next to the star, on the side away from the centre (so it never
+// covers the closest partners), kept inside the galaxy. It ignores the pointer until the
+// pointer has rested on the star for a moment: passing over stars on the way somewhere
+// shouldn't throw up cards that block the way.
 function FloatingCard({ star, at, box, onEnter, onLeave, ...rest }: {
   star: Star; at: { sx: number; sy: number }; box: { w: number; h: number }; playerId: string;
   onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void; onEnter: () => void; onLeave: () => void;
 }) {
   const W = 280, H = 150, GAP = 14;
-  const left = at.sx + GAP + W > box.w - 8 ? at.sx - GAP - W : at.sx + GAP;
-  const top = Math.min(Math.max(8, at.sy - 24), box.h - H - 8);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(false);
+    const t = setTimeout(() => setReady(true), 450);
+    return () => clearTimeout(t);
+  }, [star.c.id]);
+  const outward = at.sx < box.w / 2 ? at.sx - GAP - W : at.sx + GAP;
+  const left = Math.min(Math.max(8, outward), box.w - W - 8);
+  const below = at.sy > box.h / 2;
+  const top = Math.min(Math.max(8, below ? at.sy + GAP - 20 : at.sy - H + 20), box.h - H - 8);
   return (
-    <div className="absolute z-10 rounded-lg border border-border bg-card p-3 shadow-lg" style={{ left: Math.max(8, left), top, width: W }}
-      onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div className={"absolute z-10 rounded-lg border border-border bg-card p-3 shadow-lg transition-opacity " + (ready ? "" : "pointer-events-none opacity-90")}
+      style={{ left, top, width: W }} onMouseEnter={onEnter} onMouseLeave={onLeave}>
       <StarCard star={star} {...rest} compact />
     </div>
   );
