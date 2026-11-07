@@ -173,9 +173,17 @@ page; a placeholder while a player loads.
   something you'd share.
 - **Playlists:** no way to add or swap seeds from the page; no listen links yet; the track list
   is plain.
-- **Years from reissues:** a session only known from a later reissue takes the reissue's year,
-  so Wynton Kelly (d. 1971) shows "1956–2013, long and steady" with Chambers. Use credit dates
-  and artists' life spans (MusicBrainz has them) to cap the span; this also fixes heat.
+- **Years from reissues** (a known issue in music metadata: providers' coverage is incomplete or
+  wrong, Damon 2026-11-07): a session only known from a later reissue takes the reissue's year,
+  so Wynton Kelly (d. 1971) shows "1956–2013, long and steady" with Chambers. The ℗ line
+  (MusicBrainz's "phonographic copyright" relationship) doesn't rescue it: it's often missing,
+  and when present it usually dates the reissue, not the session. What the data can support:
+  - A release date is only an *upper bound* on when something was played. Treat undated
+    sessions' years as "by 2013", not "in 2013".
+  - A performer's death year is a hard cap (MusicBrainz artist life spans), and so is the
+    earliest release of any recording from the same session.
+  - Spans and heat from dated sessions only, when there are enough of them; otherwise say the
+    span is uncertain rather than drawing a confident colour.
 - **Streaming and empty states** (first pass done): "Reading credits: 49 of 440" is accurate but not friendly;
   a sparse galaxy while reading should look intentional, not broken.
 - **Visual identity** (first pass done): type scale, a mark, colour beyond the defaults. It should feel like a
