@@ -3,7 +3,7 @@
 Type a jazz musician's name and see everyone they've recorded with, as a list or as a galaxy you
 can fly through. Click any name to keep going.
 
-**Live:** https://pocketlist-tau.vercel.app
+**Live:** https://pocketlist.damonwood.dev
 
 **Status:** the collaborator list works: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
