@@ -22,10 +22,6 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const [open, setOpen] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = box.current;
-    return () => { if (el) heldHeight = el.offsetHeight; };
-  }, []);
 
   useEffect(() => {
     setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null);
@@ -90,7 +86,11 @@ export function PlayerView({ id, trail, galaxy, go }: {
 
           {galaxy ? (
             <Galaxy snap={snap} matches={matches}
-              onOpen={(c) => go({ view: "player", id: c.id, trail: childTrail, galaxy: true }, { keepScroll: true })} />
+              onOpen={(c) => {
+                // Measure now: the next player renders before this one is gone.
+                heldHeight = box.current?.offsetHeight ?? 0;
+                go({ view: "player", id: c.id, trail: childTrail, galaxy: true }, { keepScroll: true });
+              }} />
           ) : (
             <>
               <ol className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
