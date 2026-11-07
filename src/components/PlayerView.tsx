@@ -10,6 +10,7 @@ import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
 
 const PAGE = 100;
+let heldHeight = 0; // the last player view's height; see the comment on the outer div
 
 export function PlayerView({ id, trail, galaxy, go }: {
   id: string; trail: string[]; galaxy: boolean; go: (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
@@ -20,6 +21,11 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    return () => { if (el) heldHeight = el.offsetHeight; };
+  }, []);
 
   useEffect(() => {
     setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null);
@@ -48,9 +54,9 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const setGalaxy = (on: boolean) => go({ view: "player", id, trail, galaxy: on }, { replace: true });
 
   return (
-    // While the next player loads, hold the page's height so a recentre that keeps the scroll
-    // position doesn't get yanked up by a momentarily short page.
-    <div className="flex flex-col gap-4" style={!snap && galaxy ? { minHeight: "100vh" } : undefined}>
+    // While the next player loads, hold the page at the height the last one left it, so a
+    // recentre that keeps the scroll position isn't yanked up by a momentarily short page.
+    <div ref={box} className="flex flex-col gap-4" style={!snap && galaxy ? { minHeight: heldHeight } : undefined}>
       <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} />
 
       <header>
