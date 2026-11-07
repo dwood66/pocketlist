@@ -3,7 +3,7 @@
 // everything read so far.
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, Copy, Flag, Route as RouteIcon, X } from "lucide-react";
+import { Check, Copy, Flag, Lightbulb, X } from "lucide-react";
 import type { Path, Player, PlayerCandidate, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,51 +90,123 @@ export function ConnectFrom({ id, name, go, onClose }: { id: string; name: strin
   );
 }
 
-/** The game's status line while playing, and the result card when you get there. */
-export function ConnectBanner({ id, trail, goal, snap, galaxy, go }: {
+/** One line for the full-screen galaxy: where you're headed and how far you've come. */
+export function GoalLine({ id, trail, goal }: { id: string; trail: string[]; goal: string }) {
+  const [goalName, setGoalName] = useState<string | null>(null);
+  const [par, setPar] = useState<number | null>(null);
+  useEffect(() => { getPlayer(goal).then((p) => setGoalName(p.name)).catch(() => {}); }, [goal]);
+  useEffect(() => { shortestPath(trail[0] ?? id, goal).then((p) => setPar(p.players.length - 1)).catch(() => {}); }, [trail[0] ?? id, goal]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (id === goal) return <p className="text-sm text-[color:var(--goal)]">You made it. Exit full screen to see your result.</p>;
+  return (
+    <p className="text-sm">
+      <span className="text-muted-foreground">Connect to </span>
+      <span className="font-medium text-[color:var(--goal)]">{goalName ?? "…"}</span>
+      <span className="tabular-nums text-muted-foreground"> · {trail.length} {trail.length === 1 ? "hop" : "hops"}{par !== null ? ` · par ${par}` : ""}</span>
+    </p>
+  );
+}
+
+/** The game while you play: where you're going, how far you've come, what to do next, and a
+ *  hint when you're stuck. The result card when you get there. */
+export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
   id: string; trail: string[]; goal: string; snap: Snapshot | null; galaxy: boolean; go: Go;
+  onHint?: (name: string) => void; // highlight a player in the galaxy or list
 }) {
   const start = trail[0] ?? id;
   const hops = trail.length;
-  const [goalPlayer, setGoalPlayer] = useState<Player | null>(null);
+  const [names, setNames] = useState<Record<string, string>>({});
   const [par, setPar] = useState<Path | null | "unknown">(null);
-  const [showRoute, setShowRoute] = useState(false);
+  const [hint, setHint] = useState<Player | "none" | null>(null);
+  const [answer, setAnswer] = useState(false);
 
-  useEffect(() => { getPlayer(goal).then(setGoalPlayer).catch(() => {}); }, [goal]);
+  const ids = [...trail, id, goal];
+  useEffect(() => {
+    for (const p of ids) if (!names[p]) getPlayer(p).then((pl) => setNames((n) => ({ ...n, [p]: pl.name }))).catch(() => {});
+  }, [ids.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setPar(null); shortestPath(start, goal).then(setPar).catch(() => setPar("unknown")); }, [start, goal]);
+  useEffect(() => { setHint(null); setAnswer(false); }, [id]);
 
-  const goalName = goalPlayer?.name ?? "the goal";
+  const name = (p: string) => names[p] ?? "…";
+  const goalName = names[goal] ?? "the goal";
   const parHops = par && par !== "unknown" ? par.players.length - 1 : null;
   const stop = () => go({ view: "player", id, trail, galaxy }, { replace: true });
 
   if (id === goal) return <ConnectWin path={[...trail, id]} par={parHops} go={go} />;
 
   const inGalaxy = snap?.collaborators.some((c) => c.id === goal);
+  const where = galaxy ? "the star marked" : "their name in the list";
+
+  async function askHint() {
+    try {
+      const route = await shortestPath(id, goal);
+      const next = route.players[1];
+      setHint(next ?? "none");
+      if (next) onHint?.(next.name);
+    } catch { setHint("none"); }
+  }
+
   return (
-    <section aria-label="Connect" className="flex flex-col gap-2 rounded-xl border border-[color:var(--goal)] bg-card p-3 text-sm">
-      <p className="flex flex-wrap items-baseline gap-x-3">
-        <span className="font-semibold">Connect: get to {goalName}</span>
-        <span className="tabular-nums text-muted-foreground">
-          {hops} {hops === 1 ? "hop" : "hops"} so far · par {parHops ?? (par === "unknown" ? "unknown" : "…")}
-        </span>
-      </p>
+    <section aria-label="Connect" className="flex flex-col gap-3 rounded-xl border-2 border-[color:var(--goal)] bg-card p-4">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="rounded-full bg-[color:var(--goal)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[color:var(--card)]">Connect</span>
+        <h2 className="text-lg font-semibold">
+          {name(start)} <span className="text-muted-foreground">→</span> <span className="text-[color:var(--goal)]">{goalName}</span>
+        </h2>
+      </div>
+
+      {/* The path so far, then the gap to the goal. */}
+      <ol className="flex flex-wrap items-center gap-1.5 text-sm" aria-label="Your path so far">
+        {[...trail, id].map((p, i) => (
+          <li key={`${p}-${i}`} className="flex items-center gap-1.5">
+            {i > 0 && <span className="text-muted-foreground" aria-hidden>→</span>}
+            <span className={p === id ? "rounded-full border border-border px-2 py-0.5 font-medium" : "text-muted-foreground"}>{name(p)}</span>
+          </li>
+        ))}
+        <li className="flex items-center gap-1.5">
+          <span className="text-muted-foreground" aria-hidden>{inGalaxy ? "→" : "⋯"}</span>
+          <span className="rounded-full border border-dashed border-[color:var(--goal)] px-2 py-0.5 text-[color:var(--goal)]">{goalName}</span>
+        </li>
+        <li className="ml-auto tabular-nums text-muted-foreground">
+          {hops} {hops === 1 ? "hop" : "hops"} · par {parHops ?? (par === "unknown" ? "?" : "…")}
+        </li>
+      </ol>
+
       {snap && (
-        <p className="text-muted-foreground">
-          {inGalaxy
-            ? `${goalName} is right here${galaxy ? ": the gold star" : ""}. One more hop.`
-            : `${goalName} isn't in this galaxy. Who here might have played with them?`}
+        <p className="text-base">
+          {inGalaxy ? (
+            <>
+              <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--goal)] align-middle" aria-hidden />
+              {goalName} is right here. Click {where} to finish.
+            </>
+          ) : hops === 0 ? (
+            <>Pick someone in {name(id)}’s galaxy who might have played with {goalName}. Same era, same scene, or a session player who was on everything is a good bet.</>
+          ) : parHops !== null && hops >= parHops ? (
+            <>Past par, but keep going: who here might know {goalName}?</>
+          ) : (
+            <>Not here yet. Who in {name(id)}’s circle might have played with {goalName}?</>
+          )}
         </p>
       )}
-      {showRoute && par && par !== "unknown" && (
-        <p>
-          A shortest known route: {par.players.map((p) => p.name).join(" → ")}
+
+      {!inGalaxy && hint && (
+        <p className="text-sm">
+          {hint === "none"
+            ? "No hint yet: there's no known route from here."
+            : <>Try <strong>{hint.name}</strong>: they’re one step closer to {goalName}. {onHint && "Highlighted below."}</>}
         </p>
       )}
-      <div className="flex flex-wrap gap-2">
-        {!showRoute && parHops !== null && (
-          <Button variant="outline" size="sm" onClick={() => setShowRoute(true)}><RouteIcon className="mr-1.5 h-4 w-4" /> Show a route</Button>
+      {answer && par && par !== "unknown" && (
+        <p className="text-sm">One shortest route: {par.players.map((p) => p.name).join(" → ")}</p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {!inGalaxy && !hint && snap && (
+          <Button variant="outline" size="sm" onClick={askHint}><Lightbulb className="h-4 w-4" /> Hint</Button>
         )}
-        <Button variant="outline" size="sm" onClick={stop}><X className="mr-1.5 h-4 w-4" /> Stop playing</Button>
+        {!answer && parHops !== null && (
+          <button type="button" onClick={() => setAnswer(true)} className="text-sm text-muted-foreground underline hover:text-foreground">Show the answer</button>
+        )}
+        <button type="button" onClick={stop} className="text-sm text-muted-foreground underline hover:text-foreground">Stop playing</button>
       </div>
     </section>
   );

@@ -10,7 +10,7 @@
 // accessible view; here the keyboard can still step through stars by rank.
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { Info, Minus, Plus, RotateCcw, X } from "lucide-react";
+import { Info, Maximize2, Minimize2, Minus, Plus, RotateCcw, X } from "lucide-react";
 import type { Collaborator, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { sharedRecordings } from "@/lib/api";
@@ -23,7 +23,11 @@ const MAX_LABELS = 14;
 // Where the last galaxy left its stars, so the next one can grow out of it: click a star and
 // it slides to the centre while everyone you both know moves to their new places.
 let lastFrame: { centerId: string; at: Map<string, { x: number; y: number }> } | null = null;
-export function forgetGalaxy() { lastFrame = null; }
+export function forgetGalaxy() { lastFrame = null; fullScreen = false; }
+
+let fullScreen = false;
+/** Whether the galaxy is full screen, so the page can cover the gap while the next player loads. */
+export const isFullScreen = () => fullScreen;
 
 function heatWords(c: Collaborator, heat: number | null) {
   if (heat === null) return null;
@@ -45,14 +49,31 @@ function mix(a: string, b: string, t: number) {
 
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
+export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
   snap: Snapshot;
+  overlay?: React.ReactNode; // shown over the galaxy in full screen (the player's name, the goal)
   matches: Set<string> | null; // the list's filter, applied here as dimming
   goal?: string; // Connect's target, marked in gold wherever it appears
   onOpen: (c: Collaborator) => void;
   onPlaylist?: (c: Collaborator) => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
+  // Full screen, remembered across players so travelling star to star stays full screen.
+  const [expanded, setExpandedState] = useState(fullScreen);
+  const expandedRef = useRef(expanded);
+  const setExpanded = (on: boolean) => { fullScreen = on; expandedRef.current = on; setExpandedState(on); };
+  useEffect(() => {
+    expandedRef.current = expanded;
+    // Re-measure for the new frame, and keep the page behind from scrolling.
+    const el = wrap.current;
+    if (el) setSize({ w: el.clientWidth, h: Math.round(expanded ? el.clientHeight : Math.min(el.clientWidth, Math.max(340, innerHeight * 0.72))) });
+    if (!expanded) return;
+    const before = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") setExpanded(false); };
+    addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = before; removeEventListener("keydown", onKey); };
+  }, [expanded]); // eslint-disable-line react-hooks/exhaustive-deps
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
@@ -88,7 +109,8 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth;
-      setSize({ w, h: Math.round(Math.min(w, Math.max(340, innerHeight * 0.72))) });
+      const h = expandedRef.current ? el.clientHeight : Math.min(w, Math.max(340, innerHeight * 0.72));
+      setSize({ w, h: Math.round(h) });
     });
     ro.observe(el);
     const mo = new MutationObserver(() => setTheme((t) => t + 1));
@@ -361,7 +383,8 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
 
   return (
     <div className="flex flex-col gap-3">
-      <div ref={wrap} className="relative overflow-hidden rounded-xl border border-border bg-card">
+      <div ref={wrap} className={expanded ? "fixed inset-0 z-50 overflow-hidden bg-card" : "relative overflow-hidden rounded-xl border border-border bg-card"}
+        role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? `${snap.player.name}'s galaxy, full screen` : undefined}>
         <canvas
           ref={canvas}
           style={{ width: size.w, height: size.h, touchAction: "none" }}
@@ -399,16 +422,32 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist }: {
           <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Zoom in" onClick={() => zoomAt(1.4)}><Plus className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.4)}><Minus className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="Reset view" onClick={() => setView({ k: 1, x: 0, y: 0 })}><RotateCcw className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label={expanded ? "Exit full screen" : "Full screen"}
+            aria-pressed={expanded} onClick={() => setExpanded(!expanded)}>
+            {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
           <Button variant="outline" size="icon" className="bg-card/85 backdrop-blur" aria-label="How to read it" aria-expanded={keyOpen} onClick={() => setKeyOpen((v) => !v)}><Info className="h-4 w-4" /></Button>
         </div>
 
+        {expanded && overlay && (
+          <div className="pointer-events-auto absolute left-1/2 top-3 max-w-[60%] -translate-x-1/2 rounded-lg bg-card/90 px-3 py-1.5 text-center shadow-sm backdrop-blur">
+            {overlay}
+          </div>
+        )}
+
         <Key open={keyOpen} />
+
+        {picked && expanded && (
+          <div className="absolute bottom-12 left-2 right-2 z-10 sm:left-auto sm:w-80">
+            <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
+          </div>
+        )}
 
         {hovered && !coarse && (
           <FloatingCard star={hovered} at={at(hovered)} box={size} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
         )}
       </div>
-      {picked && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
+      {picked && !expanded && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
     </div>
   );
 }

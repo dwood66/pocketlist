@@ -3,10 +3,10 @@
 
 import { useEffect, useState } from "react";
 import { Download, Shuffle, X } from "lucide-react";
-import type { Playlist, PlaylistTrack } from "../../contract/index.ts";
+import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
-import { playlist } from "@/lib/api";
+import { pathPlaylist, playlist } from "@/lib/api";
 import type { Route } from "@/lib/route";
 
 const SIZES = [10, 20, 30];
@@ -122,15 +122,145 @@ function save(list: Playlist, kind: "txt" | "csv") {
       `   ${why(list, t)}`,
     ]), "", "Credits from MusicBrainz. https://pocketlist.damonwood.dev", ""].join("\n");
   } else {
-    const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     // The byte-order mark tells Excel it's UTF-8, so "1963–1964" doesn't turn into mojibake.
     text = "\uFEFF" + [["#", "title", "album", "date", "players"].join(","),
       ...list.tracks.map((t, i) => [i + 1, t.title, t.album, t.date ?? t.year, why(list, t)].map(cell).join(","))].join("\n") + "\n";
   }
+  download(name, kind, text);
+}
+
+const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+function download(name: string, kind: "txt" | "csv", text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: kind === "csv" ? "text/csv" : "text/plain" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = `${name.replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase()}.${kind}`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// A playlist along a path: your breadcrumb trail, a few songs for each link. The first sketch of
+// the bridge playlist in DESIGN.md: every song shares a player with the next link.
+// ---------------------------------------------------------------------------
+
+export function PathPlaylistView({ ids, per, mix, go }: {
+  ids: string[]; per: number; mix: number; go: (r: Route, opts?: { replace?: boolean }) => void;
+}) {
+  const [list, setList] = useState<PathPlaylist | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setError(null);
+    pathPlaylist(ids, per, mix, ctrl.signal).then(setList).catch((e: unknown) => {
+      if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "Couldn't make the playlist");
+    });
+    return () => ctrl.abort();
+  }, [ids.join(","), per, mix]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, ...next }, { replace: true });
+  const byId = new Map((list?.players ?? []).map((p) => [p.id, p]));
+  const title = list ? list.players.map((p) => p.name).join(" → ") : "Playlist of a path";
+  const count = list?.links.reduce((n, l) => n + l.tracks.length, 0) ?? 0;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
+        <p className="text-sm text-muted-foreground">
+          A playlist along your path: for each step, songs both players are on, so every song hands off to the next.
+        </p>
+      </header>
+
+      {error && <p role="alert" className="text-sm">{error}</p>}
+      {!list && !error && <p className="text-sm text-muted-foreground">Picking songs…</p>}
+
+      {list && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="Songs per step" className="flex items-center rounded-lg border border-border p-0.5">
+              {[1, 2, 3].map((n) => (
+                <button key={n} type="button" aria-pressed={per === n} onClick={() => set({ per: n })}
+                  className={"rounded-md px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                    (per === n ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
+                  {n}
+                </button>
+              ))}
+              <span className="px-2 text-sm text-muted-foreground">per step</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
+            <Button variant="outline" size="sm" disabled={!count} onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>
+            <Button variant="outline" size="sm" disabled={!count} onClick={() => savePath(list, "csv")}><Download className="mr-1.5 h-4 w-4" /> CSV</Button>
+          </div>
+
+          <ol className="flex flex-col gap-4">
+            {list.links.map((l, i) => {
+              const a = byId.get(l.from), b = byId.get(l.to);
+              return (
+                <li key={`${l.from}-${l.to}-${i}`} className="flex flex-col gap-2">
+                  <h2 className="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
+                    <span className="text-sm tabular-nums text-muted-foreground">Step {i + 1}</span>
+                    {a && <Link to={{ view: "player", id: a.id, trail: [] }} go={go} className="hover:underline">{a.name}</Link>}
+                    <span className="text-muted-foreground">→</span>
+                    {b && <Link to={{ view: "player", id: b.id, trail: [] }} go={go} className="hover:underline">{b.name}</Link>}
+                  </h2>
+                  {l.tracks.length ? (
+                    <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
+                      {l.tracks.map((t) => (
+                        <li key={t.recordingId} className="flex gap-3 px-4 py-3 text-sm">
+                          <span className="min-w-0 flex-1">
+                            <span className="font-medium">{t.title}</span>
+                            {t.album && <span className="text-muted-foreground"> · {t.album}</span>}
+                            <span className="block text-xs text-muted-foreground">
+                              <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{pairWhy(a, b, t)}
+                            </span>
+                          </span>
+                          <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No songs with both of them, in what's been read so far.</p>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
+    </div>
+  );
+}
+
+function pairWhy(a: Player | undefined, b: Player | undefined, t: PlaylistTrack) {
+  return [a, b].filter((p): p is Player => !!p).map((p) => `${p.name}: ${t.instruments[p.id]?.join(", ") || "?"}`).join(" · ");
+}
+
+function savePath(list: PathPlaylist, kind: "txt" | "csv") {
+  const byId = new Map(list.players.map((p) => [p.id, p]));
+  const name = list.players.map((p) => p.name).join(" to ");
+  let n = 0;
+  if (kind === "txt") {
+    const lines = [`${list.players.map((p) => p.name).join(" → ")}: a Pocketlist path playlist`, ""];
+    list.links.forEach((l, i) => {
+      const a = byId.get(l.from), b = byId.get(l.to);
+      lines.push(`Step ${i + 1}: ${a?.name} → ${b?.name}`);
+      for (const t of l.tracks) {
+        lines.push(`${++n}. ${t.title}${t.album ? ` (${t.album})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`);
+        lines.push(`   ${pairWhy(a, b, t)}`);
+      }
+      lines.push("");
+    });
+    lines.push("Credits from MusicBrainz. https://pocketlist.damonwood.dev", "");
+    download(name, kind, lines.join("\n"));
+  } else {
+    const rows = [["#", "step", "title", "album", "date", "players"].join(",")];
+    list.links.forEach((l) => {
+      const a = byId.get(l.from), b = byId.get(l.to);
+      for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.album, t.date ?? t.year, pairWhy(a, b, t)].map(cell).join(","));
+    });
+    download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
+  }
 }

@@ -3,14 +3,18 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Mark } from "@/components/Mark";
 import { Link } from "@/components/Link";
 import { PlayerView } from "@/components/PlayerView";
-import { PlaylistView } from "@/components/PlaylistView";
+import { PathPlaylistView, PlaylistView } from "@/components/PlaylistView";
 import { ConnectIntro } from "@/components/Connect";
 import { SearchForm, SearchResults } from "@/components/Search";
+import { useEffect } from "react";
+import { forgetGalaxy } from "@/components/Galaxy";
 import { useRoute, type Route } from "@/lib/route";
 
 export default function App() {
   const [route, go] = useRoute();
   const home = route.view === "home";
+  // Leaving the galaxy ends full screen and the travel animation's memory.
+  useEffect(() => { if (route.view !== "player") forgetGalaxy(); }, [route.view]);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -41,6 +45,7 @@ export default function App() {
           {route.view === "search" && <SearchResults q={route.q} instrument={route.instrument} go={go} />}
           {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} goal={route.goal} go={go} />}
           {route.view === "playlist" && <PlaylistView seeds={route.seeds} n={route.n} mix={route.mix} go={go} />}
+          {route.view === "pathlist" && <PathPlaylistView ids={route.ids} per={route.per} mix={route.mix} go={go} />}
         </main>
 
         <footer className="mt-8 text-center text-xs text-muted-foreground">

@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, watch } from "./crawler.ts";
 import { samplePlaylist, type SeedCreditRow } from "./playlist.ts";
@@ -238,15 +238,9 @@ const BEST_ALBUM = `
            coalesce(array_length(rl.rg_secondary, 1), 0) asc, rl.date asc nulls last
   limit 1`;
 
-// Sampler playlist: ?seeds=<id>,<id>&n=10&mix=0. Songs every seed played on; see playlist.ts.
-app.get("/api/playlist", async (c) => {
-  const seeds = [...new Set((c.req.query("seeds") ?? "").split(",").filter((id) => MBID.test(id)))];
-  if (seeds.length < 1 || seeds.length > 4) return c.json({ error: "one to four players, please" }, 400);
-  const n = Math.min(50, Math.max(1, Number(c.req.query("n")) || 10));
-  const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
-  const players = await Promise.all(seeds.map(findPlayer));
-  if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
-  const found = await rows<SeedCreditRow>(
+// Every seed's credits on the recordings they were all on, for the playlist rules.
+function seedRows(seeds: string[]) {
+  return rows<SeedCreditRow>(
     `with shared as (
        select recording_id from credits where artist_id = any($1) and rel_type = any($2)
        group by recording_id having count(distinct artist_id) = $3
@@ -259,7 +253,37 @@ app.get("/api/playlist", async (c) => {
      where c.artist_id = any($1) and c.rel_type = any($2) and r.credits_loaded`,
     [seeds, PERFORMER_TYPES, seeds.length],
   );
+}
+
+// Sampler playlist: ?seeds=<id>,<id>&n=10&mix=0. Songs every seed played on; see playlist.ts.
+app.get("/api/playlist", async (c) => {
+  const seeds = [...new Set((c.req.query("seeds") ?? "").split(",").filter((id) => MBID.test(id)))];
+  if (seeds.length < 1 || seeds.length > 4) return c.json({ error: "one to four players, please" }, 400);
+  const n = Math.min(50, Math.max(1, Number(c.req.query("n")) || 10));
+  const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
+  const players = await Promise.all(seeds.map(findPlayer));
+  if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
+  const found = await seedRows(seeds);
   const body: Playlist = { seeds: players as Player[], ...samplePlaylist(found, seeds, n, mix) };
+  return c.json(body);
+});
+
+// A playlist along a path of players (your breadcrumb trail): ?ids=<a>,<b>,<c>&per=2&mix=0.
+// For each link, a few songs both players are on, picked by the same rules as the sampler.
+app.get("/api/path-playlist", async (c) => {
+  const ids = (c.req.query("ids") ?? "").split(",").filter((id) => MBID.test(id));
+  if (ids.length < 2 || ids.length > 12) return c.json({ error: "two to twelve players, please" }, 400);
+  const per = Math.min(5, Math.max(1, Number(c.req.query("per")) || 2));
+  const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
+  const players = await Promise.all(ids.map(findPlayer));
+  if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
+  const links: PathPlaylist["links"] = [];
+  for (let i = 0; i + 1 < ids.length; i++) {
+    const pair = [ids[i], ids[i + 1]];
+    const sample = samplePlaylist(await seedRows(pair), pair, per, mix);
+    links.push({ from: ids[i], to: ids[i + 1], performances: sample.performances, tracks: sample.tracks });
+  }
+  const body: PathPlaylist = { players: players as Player[], links };
   return c.json(body);
 });
 

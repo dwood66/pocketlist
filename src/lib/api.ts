@@ -2,7 +2,7 @@
 // the rest of the app sees it.
 
 import {
-  isPath, isPlaylist, type Path, type Playlist,
+  isPath, isPathPlaylist, isPlaylist, type Path, type PathPlaylist, type Playlist,
   isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
   type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
@@ -56,6 +56,13 @@ export async function playlist(seeds: string[], n: number, mix: number, signal?:
   const data = await getJson(`/api/playlist?seeds=${seeds.join(",")}&n=${n}&mix=${mix}`, signal);
   if (!isPlaylist(data)) throw new Error("Unexpected playlist response");
   for (const p of data.seeds) players.set(p.id, p);
+  return data;
+}
+
+export async function pathPlaylist(ids: string[], per: number, mix: number, signal?: AbortSignal): Promise<PathPlaylist> {
+  const data = await getJson(`/api/path-playlist?ids=${ids.join(",")}&per=${per}&mix=${mix}`, signal);
+  if (!isPathPlaylist(data)) throw new Error("Unexpected playlist response");
+  for (const p of data.players) players.set(p.id, p);
   return data;
 }
 

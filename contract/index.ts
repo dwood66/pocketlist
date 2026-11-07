@@ -134,3 +134,15 @@ export function isPath(v: unknown): v is Path {
   return isObj(v) && Array.isArray(v.players) && v.players.every(isPlayer) && Array.isArray(v.links) &&
     v.links.every((l) => isObj(l) && isStr(l.recordingId) && isStr(l.title) && optStr(l.album) && optNum(l.year));
 }
+
+/** A playlist along a path of players: a few songs for each link, in order. */
+export type PathPlaylist = {
+  players: Player[];
+  links: { from: string; to: string; performances: number; tracks: PlaylistTrack[] }[];
+};
+
+export function isPathPlaylist(v: unknown): v is PathPlaylist {
+  return isObj(v) && Array.isArray(v.players) && v.players.every(isPlayer) && Array.isArray(v.links) &&
+    v.links.every((l) => isObj(l) && isStr(l.from) && isStr(l.to) && typeof l.performances === "number" &&
+      Array.isArray(l.tracks) && l.tracks.every(isPlaylistTrack));
+}

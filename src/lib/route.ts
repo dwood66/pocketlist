@@ -6,6 +6,7 @@
 //   /?p=<id>&v=list                 the same player, as a list (the galaxy is the default)
 //   /?p=<id>&goal=<id>              playing Connect: get from here to the goal
 //   /?pl=<id>,<id>&n=10&mix=0       a sampler playlist of songs all of them played on
+//   /?pp=<a>,<b>,<c>&per=2&mix=0    a playlist along a path: a few songs for each link
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,12 +14,18 @@ export type Route =
   | { view: "home" }
   | { view: "search"; q: string; instrument: string }
   | { view: "player"; id: string; trail: string[]; galaxy?: boolean; goal?: string } // galaxy unless false
-  | { view: "playlist"; seeds: string[]; n: number; mix: number };
+  | { view: "playlist"; seeds: string[]; n: number; mix: number }
+  | { view: "pathlist"; ids: string[]; per: number; mix: number };
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function parse(search: string): Route {
   const params = new URLSearchParams(search);
+  const pp = (params.get("pp") ?? "").split(",").filter((id) => MBID.test(id));
+  if (pp.length >= 2) {
+    return { view: "pathlist", ids: pp.slice(0, 12), per: Math.min(5, Math.max(1, Number(params.get("per")) || 2)),
+      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)) };
+  }
   const pl = (params.get("pl") ?? "").split(",").filter((id) => MBID.test(id));
   if (pl.length) {
     return { view: "playlist", seeds: [...new Set(pl)].slice(0, 4), n: Math.min(50, Math.max(1, Number(params.get("n")) || 10)),
@@ -42,6 +49,10 @@ export function href(route: Route): string {
     if (route.trail.length) params.set("trail", route.trail.join(","));
     if (route.galaxy === false) params.set("v", "list");
     if (route.goal) params.set("goal", route.goal);
+  } else if (route.view === "pathlist") {
+    params.set("pp", route.ids.join(","));
+    if (route.per !== 2) params.set("per", String(route.per));
+    if (route.mix) params.set("mix", String(route.mix));
   } else if (route.view === "playlist") {
     params.set("pl", route.seeds.join(","));
     if (route.n !== 10) params.set("n", String(route.n));

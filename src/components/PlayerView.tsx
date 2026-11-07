@@ -4,8 +4,8 @@ import type { Collaborator, Player, SharedRecording, Snapshot } from "../../cont
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/Link";
-import { Galaxy, forgetGalaxy } from "@/components/Galaxy";
-import { ConnectBanner, ConnectFrom } from "@/components/Connect";
+import { Galaxy, forgetGalaxy, isFullScreen } from "@/components/Galaxy";
+import { ConnectBanner, ConnectFrom, GoalLine } from "@/components/Connect";
 import { getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
 import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
@@ -84,12 +84,16 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
       </header>
 
       {snap && <ProgressLine snap={snap} />}
+      {!snap && galaxy && isFullScreen() && (
+        // Travelling in full screen: cover the page until the next galaxy arrives.
+        <div className="fixed inset-0 z-50 grid place-items-center bg-card text-muted-foreground" aria-hidden>Opening…</div>
+      )}
       {!snap && !problem && (
         // Where the galaxy will be, so the page doesn't jump when it arrives.
         <div className="aspect-square max-h-[72vh] w-full animate-pulse rounded-xl border border-border bg-card" aria-hidden />
       )}
       {goal
-        ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} />
+        ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} onHint={(n) => { setFilter(n); setShown(PAGE); }} />
         : snap && connecting && <ConnectFrom id={id} name={snap.player.name} go={go} onClose={() => setConnecting(false)} />}
       {problem && <p role="alert" className="text-sm">{problem}</p>}
 
@@ -112,6 +116,10 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
 
           {galaxy ? (
             <Galaxy snap={snap} matches={matches} goal={goal}
+              overlay={<>
+                <p className="font-display text-lg font-semibold leading-tight">{snap.player.name}</p>
+                {goal && <GoalLine id={id} trail={trail} goal={goal} />}
+              </>}
               onPlaylist={(c) => go({ view: "playlist", seeds: [id, c.id], n: 10, mix: 0 })}
               onOpen={(c) => {
                 // Measure now: the next player renders before this one is gone.
@@ -275,6 +283,14 @@ function Breadcrumbs({ trail, go, current, galaxy, goal }: { trail: string[]; go
           </li>
         ))}
         <li aria-current="page" className="text-foreground">{current?.name ?? "…"}</li>
+        {current && (
+          <li className="ml-1">
+            <Link to={{ view: "pathlist", ids: [...trail, current.id], per: 2, mix: 0 }} go={go}
+              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-foreground hover:bg-muted">
+              <ListMusic className="h-3.5 w-3.5" aria-hidden /> Playlist of this path
+            </Link>
+          </li>
+        )}
       </ol>
     </nav>
   );
