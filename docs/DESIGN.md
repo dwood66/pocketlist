@@ -172,7 +172,7 @@ Album-level credits would connect everyone on a compilation, which is noise.
 |---|---|---|
 | M0 ✅ | **Data test** (done 2026-11-05; see `data-test/FINDINGS.md`) | a script pulls credits for five players from MusicBrainz and Discogs; a short findings note says which source to use and what's missing |
 | M1 ✅ | Scaffold and deploy (live 2026-11-06: Vercel + Railway + Neon) | public repo, starter app renamed, live "hello" URL |
-| M2 🔨 | **Collaborators v1** (live 2026-11-06; hero GIF to go) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
+| M2 ✅ | **Collaborators v1** (live 2026-11-06; GIF 2026-11-07) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
 | M3 | **Galaxy view** | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
 | M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |

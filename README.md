@@ -5,6 +5,8 @@ can fly through. Click any name to keep going.
 
 **Live:** https://pocketlist.damonwood.dev
 
+![Searching for Ron Carter, opening his 1,344 collaborators, and expanding the sessions he shared with Herbie Hancock](docs/pocketlist.gif)
+
 **Status:** the collaborator list works: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
 recordings behind each connection. The app is on Vercel; the API and crawler run on Railway;
