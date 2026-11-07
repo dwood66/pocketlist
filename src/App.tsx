@@ -32,8 +32,8 @@ export default function App() {
           <section className="flex flex-col gap-2 pt-2">
             <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">Who played with whom, track by track.</h1>
             <p className="max-w-prose text-muted-foreground">
-              Pocketlist reads jazz credits one track at a time, so a pianist who sat in on one tune
-              isn’t credited with the whole record. Pick a player and travel through the people they played with.
+              Pick a jazz musician and see everyone they recorded with, drawn as a galaxy. Click anyone to
+              travel to them, and keep going.
             </p>
           </section>
         )}
