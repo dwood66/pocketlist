@@ -10,7 +10,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test server/*.test.ts",
+    "test": "node --import tsx --test server/*.test.ts src/lib/*.test.ts",
     "warm": "tsx server/warm.ts",
     "dev:warm": "POCKETLIST_WARM=1 concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "start": "tsx server/index.ts",

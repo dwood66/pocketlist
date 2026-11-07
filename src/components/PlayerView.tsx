@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const PAGE = 100;
 
 export function PlayerView({ id, trail, galaxy, go }: {
-  id: string; trail: string[]; galaxy: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
+  id: string; trail: string[]; galaxy: boolean; go: (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
 }) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -31,7 +31,8 @@ export function PlayerView({ id, trail, galaxy, go }: {
   // A new player is a new page: move focus to its name so keyboard and screen-reader
   // users start from the top, as they would after a full page load.
   const loadedId = snap?.player.id;
-  useEffect(() => { if (loadedId) heading.current?.focus(); }, [loadedId]);
+  // In the galaxy, focus without scrolling: the page stays put and the galaxy recentres in view.
+  useEffect(() => { if (loadedId) heading.current?.focus({ preventScroll: galaxy }); }, [loadedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const visible = useMemo(() => {
     const list = snap?.collaborators ?? [];
@@ -47,7 +48,9 @@ export function PlayerView({ id, trail, galaxy, go }: {
   const setGalaxy = (on: boolean) => go({ view: "player", id, trail, galaxy: on }, { replace: true });
 
   return (
-    <div className="flex flex-col gap-4">
+    // While the next player loads, hold the page's height so a recentre that keeps the scroll
+    // position doesn't get yanked up by a momentarily short page.
+    <div className="flex flex-col gap-4" style={!snap && galaxy ? { minHeight: "100vh" } : undefined}>
       <Breadcrumbs trail={trail} go={go} current={snap?.player} galaxy={galaxy} />
 
       <header>
@@ -81,7 +84,7 @@ export function PlayerView({ id, trail, galaxy, go }: {
 
           {galaxy ? (
             <Galaxy snap={snap} matches={matches}
-              onOpen={(c) => go({ view: "player", id: c.id, trail: childTrail, galaxy: true })} />
+              onOpen={(c) => go({ view: "player", id: c.id, trail: childTrail, galaxy: true }, { keepScroll: true })} />
           ) : (
             <>
               <ol className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">

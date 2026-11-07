@@ -50,12 +50,13 @@ export function useRoute() {
   }, []);
 
   // `replace` swaps the current history entry and keeps the scroll position: for switching
-  // views of the same page, which shouldn't take a press of Back to undo.
-  const go = useCallback((next: Route, opts?: { replace?: boolean }) => {
+  // views of the same page, which shouldn't take a press of Back to undo. `keepScroll` is a
+  // new page that stays where it is on screen: clicking a star recentres the galaxy in place.
+  const go = useCallback((next: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => {
     if (opts?.replace) history.replaceState(null, "", href(next));
     else history.pushState(null, "", href(next));
     setRoute(next);
-    if (!opts?.replace) scrollTo({ top: 0 });
+    if (!opts?.replace && !opts?.keepScroll) scrollTo({ top: 0 });
   }, []);
 
   return [route, go] as const;
