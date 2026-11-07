@@ -42,6 +42,18 @@ every collaborator is a star around them.
   of the shared recordings.
 - **The list stays** as the accessible, screen-reader-friendly view of the same data.
 
+**As built (2026-11-07):** a canvas, no physics: every star's place is computed, so the same
+data always draws the same galaxy and a thousand stars stay smooth.
+- **Angle = the year the collaboration began**, clockwise from the top. Each year gets room in
+  proportion to how many partnerships began in it, so a busy decade spreads out instead of
+  piling into one wedge; the decade marks follow the same scale.
+- **Heat** = sessions per year of the partnership on a log scale: about 1.5 a year or fewer is
+  cool, 15 or more is hot. Fewer than 3 sessions stays grey.
+- Clicking a star recentres on it: the clicked star slides to the middle and shared
+  collaborators move to their new places. A player still being read fills in live.
+- Keyboard: arrow keys step through stars closest-first, Enter opens, +/- zoom. The list's
+  filter dims everyone who doesn't match. `?v=galaxy` in the URL keeps the view when shared.
+
 **Open:** a minimum session count before heat applies (2 tracks in 1 year shouldn't look like a
 real burst); a time slider to watch the galaxy form (stretch); SVG with d3-force up to a few
 hundred stars, canvas beyond that.
@@ -173,7 +185,7 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M0 ✅ | **Data test** (done 2026-11-05; see `data-test/FINDINGS.md`) | a script pulls credits for five players from MusicBrainz and Discogs; a short findings note says which source to use and what's missing |
 | M1 ✅ | Scaffold and deploy (live 2026-11-06: Vercel + Railway + Neon) | public repo, starter app renamed, live "hello" URL |
 | M2 ✅ | **Collaborators v1** (live 2026-11-06; GIF 2026-11-07) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
-| M3 | **Galaxy view** | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
+| M3 🔨 | **Galaxy view** (first version live 2026-11-07) | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
 | M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |

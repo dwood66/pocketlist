@@ -7,7 +7,7 @@ can fly through. Click any name to keep going.
 
 ![Searching for Ron Carter, opening his 1,344 collaborators, and expanding the sessions he shared with Herbie Hancock](docs/pocketlist.gif)
 
-**Status:** the collaborator list works: search (alias-aware, with a "which one?" step),
+**Status:** the collaborator list and a first galaxy view work: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
 recordings behind each connection. The app is on Vercel; the API and crawler run on Railway;
 the cache is Postgres on Neon. The plan and the decisions behind it are in
