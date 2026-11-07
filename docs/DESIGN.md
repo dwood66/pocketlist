@@ -207,8 +207,8 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M2 ✅ | **Collaborators v1** (live 2026-11-06; GIF 2026-11-07) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
 | M3 🔨 | **Galaxy view** (first version live 2026-11-07) | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
-| M3c | Connect | the six-degrees game in the galaxy: goal marker, hops, best-known par, result card; puzzle of the day |
-| M4 | Playlists | sampler first (POC 2026-11-07; N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
+| M3c 🔨 | Connect (first version live 2026-11-07) | the six-degrees game in the galaxy: goal marker, hops, best-known par, result card; puzzle of the day |
+| M4 🔨 | Playlists | sampler first (first version live 2026-11-07; N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
 | M6 | Wider credits | engineers, producers and others as an option |
 

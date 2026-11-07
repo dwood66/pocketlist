@@ -7,7 +7,7 @@ can fly through. Click any name to keep going.
 
 ![Searching for Ron Carter, whose 1,344 collaborators form a galaxy around him; pointing at Herbie Hancock, then clicking Wayne Shorter, who slides to the centre of his own galaxy](docs/pocketlist.gif)
 
-**Status:** the collaborator list and a first galaxy view work: search (alias-aware, with a "which one?" step),
+**Status:** the galaxy, the collaborator list, **Connect** (six degrees, played in the galaxy) and a first **playlist sampler** (with text/CSV download) work: search (alias-aware, with a "which one?" step),
 a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
 recordings behind each connection. The app is on Vercel; the API and crawler run on Railway;
 the cache is Postgres on Neon. The plan and the decisions behind it are in
