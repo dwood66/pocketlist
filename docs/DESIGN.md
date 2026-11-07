@@ -137,6 +137,36 @@ names or one-off groups): a player is one person with an ID and aliases.
   already crowdsourced, so the first version is a "suggest a fix on MusicBrainz" link; a review
   queue of our own covers what upstream won't model.
 
+## UI/UX pass (todo, Damon, 2026-11-07)
+
+The features work, but the app is rudimentary and it isn't clear what you should or can do.
+A real design pass, before more features. Measured against `GREAT-APP-CHECKLIST.md` in the
+job-search repo. What's been noticed so far:
+
+- **First visit:** the home page is a paragraph and a search box. It should show, in a glance,
+  the three things you can do (explore a player's galaxy, play Connect, make a playlist) with
+  one obvious first click for each.
+- **Player page hierarchy:** the view switch, filter, "Play Connect from here" and "Playlist"
+  sit in one undifferentiated row. Decide what's primary (the galaxy) and what's an action on
+  it.
+- **Reading the galaxy:** the encodings (distance, clockwise time, heat) are only explained in
+  a legend below the canvas. Needs a light first-run hint, legend on the canvas, and axis cues
+  you can see without reading.
+- **Discoverability:** tap-to-select, tap-again-to-open on mobile; "Playlist with…" only lives
+  in the star card; zoom and pan aren't signposted.
+- **The star card** sits below the canvas, far from the pointer on desktop and often off
+  screen on a phone. Consider a card that follows the star, or a sheet on mobile.
+- **Connect:** starting a game of your own is buried; the goal's progress could show on the
+  canvas itself (a direction hint toward the goal); the result card deserves to look like
+  something you'd share.
+- **Playlists:** no way to add or swap seeds from the page; no listen links yet; the track list
+  is plain.
+- **Streaming and empty states:** "Reading credits: 49 of 440" is accurate but not friendly;
+  a sparse galaxy while reading should look intentional, not broken.
+- **Visual identity:** type scale, a mark, colour beyond the defaults. It should feel like a
+  jazz thing, not a template.
+- **Mobile pass:** card placement, tap targets on dense galaxies, pinch.
+
 ## Later
 
 - **Wider credits:** a setting to count engineers, producers and other credited roles as
@@ -208,6 +238,7 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M3 🔨 | **Galaxy view** (first version live 2026-11-07) | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
 | M3c 🔨 | Connect (first version live 2026-11-07) | the six-degrees game in the galaxy: goal marker, hops, best-known par, result card; puzzle of the day |
+| M3d | **UI/UX pass** | see "UI/UX pass" above: first-visit clarity, page hierarchy, galaxy legibility, discoverability, mobile, a visual identity. Before more features |
 | M4 🔨 | Playlists | sampler first (first version live 2026-11-07; N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
 | M6 | Wider credits | engineers, producers and others as an option |
