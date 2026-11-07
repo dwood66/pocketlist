@@ -59,3 +59,8 @@ test("the plain title wins over an alternate take of the same tune", () => {
   const rows = [...both("alt", "Oliloqui Valley (alternate take)", "1964-06-17"), ...both("master", "Oliloqui Valley", "1964-06-17")];
   assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 10).tracks.map((t) => [t.title, t.recordingId]), [["Oliloqui Valley", "master"]]);
 });
+
+test("a rehearsal is a take of the tune, and the finished version wins", () => {
+  const rows = [...both("reh", "Madness (rehearsal take)", "1967-06-13"), ...both("fin", "Madness", "1967-06-13")];
+  assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 10).tracks.map((t) => t.title), ["Madness"]);
+});

@@ -25,7 +25,7 @@ export function normalizeTitle(t: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
-    .replace(/\((alternate|alt\.?|take|master|version|mono|stereo|remaster)[^)]*\)/g, "")
+    .replace(/\((alternate|alt\.?|take|master|version|mono|stereo|remaster|rehearsal|outtake|incomplete|false start|breakdown)[^)]*\)/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }

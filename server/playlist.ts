@@ -63,7 +63,8 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
 
   // 3. Sessions in time order; pick n of them spaced evenly, then the rest as a fallback.
   const ordered = [...sessions.values()]
-    .map((perfs) => [...perfs.values()].sort((a, b) => a.title.localeCompare(b.title)))
+    // Finished versions before takes and rehearsals, then alphabetical.
+    .map((perfs) => [...perfs.values()].sort((a, b) => Number(/\(/.test(a.title)) - Number(/\(/.test(b.title)) || a.title.localeCompare(b.title)))
     .sort((a, b) => a[0].when.localeCompare(b[0].when) || a[0].title.localeCompare(b[0].title));
   const step = ordered.length / Math.max(1, n);
   const offset = step > 1 ? ((mix * 0.618034) % 1) * step : 0;
