@@ -62,6 +62,30 @@ with a one-line reason for each song. Streaming-service export can come later.
    ("both have Paul Chambers on bass"). Shortest path by default; "about X" uses a bounded
    search rather than padding with detours.
 
+## Playlist games: hide one half
+
+A bridge is two lists woven together: the **songs**, and the **connections** between them
+(the shared players). Hide one half and the playlist becomes a low-key game.
+
+1. **Reveal:** the songs are shown and the connections are hidden. Listen, guess who links
+   each pair, then tap **Show connection** to reveal them one step at a time. Works as a
+   listening companion: put the playlist on and reveal as you go.
+2. **Guess the song:** the reverse. The connections are shown ("Paul Chambers on bass →
+   Philly Joe Jones on drums → ...") and the songs are hidden. Work out which recording each
+   step is; reveal one at a time.
+
+**Notes**
+- Both are display modes over the same bridge result, so they come almost free once bridges
+   exist (M4). The text/CSV download can include a "spoilers" section at the end.
+- Hints before a full reveal, cheapest first: year → album → instrument → first letter.
+- "Guess the song" needs a way to type a guess: matched against the title with the same
+   normalizing as dedupe (case, accents, "(take 2)"). Or multiple choice from songs in the same
+   session, which makes a fair, hard set of decoys.
+- Keep it low-key: no timers or leaderboards to start. A share link that opens the same puzzle
+   is enough.
+- Accessibility: hidden items are real buttons ("Show connection 3 of 8"), and a revealed item
+   is announced politely.
+
 ## Duplicates and identity
 
 The hard part of any credits data, in two halves.
@@ -151,7 +175,7 @@ Album-level credits would connect everyone on a compilation, which is noise.
 | M2 🔨 | **Collaborators v1** (live 2026-11-06; hero GIF to go) | name (+instrument) → disambiguation → streamed, clickable collaborator list with breadcrumbs; Postgres cache; README with a hero GIF. **First thing worth showing.** |
 | M3 | **Galaxy view** | collaborators as a navigable galaxy: distance = shared sessions, heat = intensity over time; list stays as the accessible view. **The hero GIF.** |
 | M3b | Recordings | each connection expands to the shared recordings; recording pages |
-| M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step |
+| M4 | Playlists | sampler first (N songs for one or more seed players), then bridges (A → ~X songs → B); download as text/CSV with the reason for each step; then the reveal and guess-the-song modes |
 | M5 | AI | name disambiguation, plain-language playlists, one-sentence explanations |
 | M6 | Wider credits | engineers, producers and others as an option |
 
