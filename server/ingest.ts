@@ -16,13 +16,30 @@ function instrumentsOf(rel: MbRelation): string[] {
   return [];
 }
 
-async function insertCredit(tx: Transaction, recordingId: string, rel: MbRelation, artist: { id: string; name: string; disambiguation?: string }) {
-  await tx.query(
-    `insert into credits (recording_id, artist_id, artist_name, artist_disambiguation, rel_type, instruments, date)
-     values ($1,$2,$3,$4,$5,$6,$7) on conflict do nothing`,
-    [recordingId, artist.id, artist.name, artist.disambiguation || null, rel.type, instrumentsOf(rel), rel.begin || null],
-  );
+type Credit = [recordingId: string, artistId: string, name: string, disambiguation: string | null, relType: string, instruments: string[], date: string | null];
+
+function credit(recordingId: string, rel: MbRelation, artist: { id: string; name: string; disambiguation?: string }): Credit {
+  return [recordingId, artist.id, artist.name, artist.disambiguation || null, rel.type, instrumentsOf(rel), rel.begin || null];
 }
+
+// Many rows per statement: against a hosted database each statement is a network round trip,
+// and an album or a busy session player's recording list can mean hundreds of rows. Chunked
+// to stay well inside Postgres's limit on parameters per statement.
+const CHUNK = 500;
+async function insertMany(tx: Transaction, head: string, rows: unknown[][], tail: string) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const params: unknown[] = [];
+    const values = rows.slice(i, i + CHUNK).map((r) => `(${r.map((v) => { params.push(v); return `$${params.length}`; }).join(",")})`);
+    await tx.query(`${head} values ${values.join(",")} ${tail}`, params);
+  }
+}
+
+// An upsert that updates can't touch the same row twice in one statement, so drop repeats first.
+const uniqueBy = <T>(rows: T[], key: (r: T) => string) => [...new Map(rows.map((r) => [key(r), r])).values()];
+
+const insertCredits = (tx: Transaction, credits: Credit[]) =>
+  insertMany(tx, `insert into credits (recording_id, artist_id, artist_name, artist_disambiguation, rel_type, instruments, date)`,
+    credits, `on conflict do nothing`);
 
 /** An artist's own recording list: which recordings they're credited on, and as what. */
 export async function ingestArtistIndex(artist: MbArtist) {
@@ -33,11 +50,10 @@ export async function ingestArtistIndex(artist: MbArtist) {
        type = excluded.type, indexed_at = now()`,
       [artist.id, artist.name, artist.disambiguation || null, artist.type ?? null],
     );
-    for (const rel of artist.relations ?? []) {
-      if (rel["target-type"] !== "recording" || !rel.recording) continue;
-      await tx.query(`insert into recordings (id, title) values ($1,$2) on conflict do nothing`, [rel.recording.id, rel.recording.title]);
-      await insertCredit(tx, rel.recording.id, rel, artist);
-    }
+    const rels = (artist.relations ?? []).filter((rel) => rel["target-type"] === "recording" && rel.recording);
+    await insertMany(tx, `insert into recordings (id, title)`,
+      uniqueBy(rels, (rel) => rel.recording!.id).map((rel) => [rel.recording!.id, rel.recording!.title]), `on conflict do nothing`);
+    await insertCredits(tx, rels.map((rel) => credit(rel.recording!.id, rel, artist)));
   });
 }
 
@@ -49,54 +65,50 @@ export async function rememberArtist(a: { id: string; name: string; disambiguati
   );
 }
 
-/** A recording's full personnel. Replaces whatever partial credits we had for it. */
-async function replaceRecording(tx: Transaction, rec: MbRecording) {
-  await tx.query(
-    `insert into recordings (id, title, first_release_date, credits_loaded) values ($1,$2,$3,true)
-     on conflict (id) do update set title = excluded.title,
+/** Recordings' full personnel. Replaces whatever partial credits we had for them. */
+async function replaceRecordings(tx: Transaction, recs: MbRecording[]) {
+  const unique = uniqueBy(recs, (r) => r.id);
+  if (!unique.length) return;
+  await insertMany(tx, `insert into recordings (id, title, first_release_date, credits_loaded)`,
+    unique.map((r) => [r.id, r.title, r["first-release-date"] || null, true]),
+    `on conflict (id) do update set title = excluded.title,
        first_release_date = coalesce(excluded.first_release_date, recordings.first_release_date),
-       credits_loaded = true`,
-    [rec.id, rec.title, rec["first-release-date"] || null],
-  );
-  await tx.query(`delete from credits where recording_id = $1`, [rec.id]);
-  for (const rel of rec.relations ?? []) {
-    if (rel["target-type"] !== "artist" || !rel.artist) continue;
-    await insertCredit(tx, rec.id, rel, rel.artist);
-  }
+       credits_loaded = true`);
+  await tx.query(`delete from credits where recording_id = any($1)`, [unique.map((r) => r.id)]);
+  await insertCredits(tx, unique.flatMap((r) => (r.relations ?? [])
+    .filter((rel) => rel["target-type"] === "artist" && rel.artist)
+    .map((rel) => credit(r.id, rel, rel.artist!))));
 }
 
-async function upsertRelease(tx: Transaction, r: MbRelease, fetched: boolean) {
-  const rg = r["release-group"];
-  await tx.query(
-    `insert into releases (id, title, date, status, rg_id, rg_title, rg_primary, rg_secondary, fetched)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-     on conflict (id) do update set fetched = releases.fetched or excluded.fetched`,
-    [r.id, r.title, r.date || null, r.status ?? null, rg?.id ?? null, rg?.title ?? null,
-      rg?.["primary-type"] ?? null, rg?.["secondary-types"] ?? [], fetched],
-  );
+async function upsertReleases(tx: Transaction, releases: MbRelease[], fetched: boolean) {
+  await insertMany(tx, `insert into releases (id, title, date, status, rg_id, rg_title, rg_primary, rg_secondary, fetched)`,
+    uniqueBy(releases, (r) => r.id).map((r) => {
+      const rg = r["release-group"];
+      return [r.id, r.title, r.date || null, r.status ?? null, rg?.id ?? null, rg?.title ?? null,
+        rg?.["primary-type"] ?? null, rg?.["secondary-types"] ?? [], fetched];
+    }),
+    `on conflict (id) do update set fetched = releases.fetched or excluded.fetched`);
 }
 
 /** One recording, looked up on its own: its personnel plus every release it appears on. */
 export async function ingestRecording(rec: MbRecording) {
   await db.transaction(async (tx) => {
-    await replaceRecording(tx, rec);
-    for (const r of rec.releases ?? []) {
-      await upsertRelease(tx, r, false);
-      await tx.query(`insert into recording_releases values ($1,$2) on conflict do nothing`, [rec.id, r.id]);
-    }
+    await replaceRecordings(tx, [rec]);
+    const releases = rec.releases ?? [];
+    await upsertReleases(tx, releases, false);
+    await insertMany(tx, `insert into recording_releases (recording_id, release_id)`,
+      releases.map((r) => [rec.id, r.id]), `on conflict do nothing`);
   });
 }
 
 /** A whole release: every track's personnel in one go. */
 export async function ingestRelease(release: MbRelease) {
   await db.transaction(async (tx) => {
-    await upsertRelease(tx, release, true);
-    for (const medium of release.media ?? []) {
-      for (const track of medium.tracks ?? []) {
-        await replaceRecording(tx, track.recording);
-        await tx.query(`insert into recording_releases values ($1,$2) on conflict do nothing`, [track.recording.id, release.id]);
-      }
-    }
+    await upsertReleases(tx, [release], true);
+    const recs = (release.media ?? []).flatMap((m) => (m.tracks ?? []).map((t) => t.recording));
+    await replaceRecordings(tx, recs);
+    await insertMany(tx, `insert into recording_releases (recording_id, release_id)`,
+      recs.map((r) => [r.id, release.id]), `on conflict do nothing`);
   });
 }
 
