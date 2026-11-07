@@ -17,17 +17,22 @@ import { ingestArtistIndex, ingestRecording, ingestRelease, PERFORMER_TYPES, ski
 import { mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
 type Listener = () => void;
-type Job = { id: string; wantedAt: number; listeners: Set<Listener>; done: boolean; error?: string; failures: number };
+type Job = {
+  id: string; wantedAt: number; listeners: Set<Listener>; done: boolean; error?: string; failures: number;
+  /** Listeners that are background warm-up, not a person: they keep a job alive but never outrank one. */
+  background: Set<Listener>;
+};
 
 const jobs = new Map<string, Job>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const STALE_MS = 15 * 60_000; // stop filling a player nobody has looked at for 15 minutes
 let running = false;
+const people = (j: Job) => j.listeners.size - j.background.size;
 
-export function watch(artistId: string, listener: Listener): () => void {
+export function watch(artistId: string, listener: Listener, opts?: { background?: boolean }): () => void {
   let job = jobs.get(artistId);
   if (!job) {
-    job = { id: artistId, wantedAt: Date.now(), listeners: new Set(), done: false, failures: 0 };
+    job = { id: artistId, wantedAt: Date.now(), listeners: new Set(), background: new Set(), done: false, failures: 0 };
     jobs.set(artistId, job);
   }
   if (job.error) {
@@ -36,12 +41,14 @@ export function watch(artistId: string, listener: Listener): () => void {
     job.done = false;
     job.failures = 0;
   }
-  job.wantedAt = Date.now();
+  if (!opts?.background) job.wantedAt = Date.now();
   job.listeners.add(listener);
+  if (opts?.background) job.background.add(listener);
   void loop();
   const j = job;
   return () => {
     j.listeners.delete(listener);
+    if (j.background.delete(listener)) return;
     j.wantedAt = Date.now();
   };
 }
@@ -58,7 +65,9 @@ async function loop() {
       const now = Date.now();
       const next = [...jobs.values()]
         .filter((j) => !j.done && (j.listeners.size > 0 || now - j.wantedAt < STALE_MS))
-        .sort((a, b) => b.listeners.size - a.listeners.size || b.wantedAt - a.wantedAt)[0];
+        // People first: most watched, then most recently wanted. Background warm-up only when
+        // nobody's waiting on anything else.
+        .sort((a, b) => people(b) - people(a) || b.wantedAt - a.wantedAt)[0];
       if (!next) break;
       try {
         next.done = await step(next.id);

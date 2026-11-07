@@ -346,6 +346,6 @@ serve({ fetch: app.fetch, port });
 console.log(`Pocketlist API on http://localhost:${port}`);
 
 if (process.env.POCKETLIST_WARM) {
-  const { warm, STARTER_IDS } = await import("./warm.ts");
-  void warm(STARTER_IDS);
+  const { warm, WARM_IDS } = await import("./warm.ts");
+  void warm(WARM_IDS);
 }
