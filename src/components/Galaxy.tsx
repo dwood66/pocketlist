@@ -19,6 +19,7 @@ import { layout, type Star } from "@/lib/galaxy";
 type Shown = { x: number; y: number; a: number };
 
 const MAX_LABELS = 14;
+const MAX_LABELS_ZOOMED = 80; // names on screen at most, however far in you zoom
 
 // Where the last galaxy left its stars, so the next one can grow out of it: click a star and
 // it slides to the centre while everyone you both know moves to their new places.
@@ -215,14 +216,28 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
       const cp = toScreen(centerFrom.current.x * (1 - e), centerFrom.current.y * (1 - e));
       ctx.fillStyle = col.primary;
       ctx.beginPath(); ctx.arc(cp.sx, cp.sy, 7, 0, Math.PI * 2); ctx.fill();
-      const taken: Box[] = [label(ctx, snap.player.name, cp.sx, cp.sy + 17, col.fg, col.bg, true)];
+      const taken: Box[] = [
+        label(ctx, snap.player.name, cp.sx, cp.sy + 17, col.fg, col.bg, true),
+        // Keep names out from under the zoom and view buttons in the top right corner.
+        { x0: size.w - 52, y0: 0, x1: size.w, y1: 212 },
+      ];
 
       // Names: whatever is under the pointer or selected first, then the closest few. A name
       // that would overlap one already drawn is skipped; pointing at the star shows it.
+      // Zoomed in, the stars spread apart, so more names fit: every star on screen becomes a
+      // candidate, closest first, and the overlap check decides how many actually get drawn.
       const named = new Set<string>();
       for (const id of [goal, hover, selected]) if (id) named.add(id);
-      for (const s of galaxy.stars.slice(0, MAX_LABELS)) if (!matches || matches.has(s.c.id)) named.add(s.c.id);
+      const zoomed = view.k > 1.05;
+      const onScreen = (id: string) => {
+        const p = pos.get(id);
+        return !!p && p.sx > 0 && p.sx < size.w && p.sy > 0 && p.sy < size.h;
+      };
+      const candidates = zoomed ? galaxy.stars.filter((s) => onScreen(s.c.id)) : galaxy.stars.slice(0, MAX_LABELS);
+      for (const s of candidates) if (!matches || matches.has(s.c.id)) named.add(s.c.id);
       if (matches && matches.size <= 20) matches.forEach((id) => named.add(id));
+      let drawn = 0;
+      const cap = zoomed ? Math.min(MAX_LABELS_ZOOMED, Math.round(MAX_LABELS * view.k * view.k)) : Infinity;
       for (const id of named) {
         const s = byId.get(id);
         const p = pos.get(id);
@@ -239,8 +254,11 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
           ctx.strokeStyle = col.fg; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(p.sx, p.sy, s.size * Math.sqrt(view.k) + 4, 0, Math.PI * 2); ctx.stroke();
         }
+        if (!ring && drawn >= cap) continue;
+        const before = taken.length;
         const box = label(ctx, s.c.name, p.sx, p.sy - s.size * Math.sqrt(view.k) - 9, col.fg, col.bg, ring, ring ? undefined : taken);
         if (ring) taken.push(box);
+        else if (taken.length > before) drawn++;
       }
 
       if (t < 1) frame.current = requestAnimationFrame(draw);
@@ -495,6 +513,8 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
   const w = ctx.measureText(text).width;
   const box = { x0: x - w / 2 - 3, y0: y - 8, x1: x + w / 2 + 3, y1: y + 8 };
   if (taken) {
+    // Names that would run off the edge are skipped too, rather than cut in half.
+    if (box.x0 < 0 || box.x1 > ctx.canvas.clientWidth || box.y0 < 0 || box.y1 > ctx.canvas.clientHeight) return box;
     if (taken.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) return box;
     taken.push(box);
   }
