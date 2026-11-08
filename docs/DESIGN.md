@@ -61,7 +61,12 @@ hundred stars, canvas beyond that.
 ## Playlists
 
 A secondary feature, not the headline. Output is a **downloadable file** (plain text and CSV),
-with a one-line reason for each song. Streaming-service export can come later.
+with a one-line reason for each song. Each song links to a search for it on Spotify, Apple Music
+and YouTube Music (no sign-in). Saving a whole playlist to a service is the next step: Spotify
+caps a new app at five users (Feb 2026) and only lifts that for registered businesses with 250k
+monthly users, so "Save to Spotify" would be a demo for a handful of people; Apple Music's
+MusicKit has no such cap. Either way the hard part is matching a MusicBrainz recording to the
+service's track: exact by ISRC where MusicBrainz has one, otherwise a scored search.
 
 **Seeds.** Every mode starts from one player or several. With several, a song only qualifies if
 **all of them** played on it ("everything Ron Carter and Herbie Hancock played on together").

@@ -1,5 +1,6 @@
 // A sampler playlist: songs every seed player is on, spread across their sessions, with what
-// each of them played. Downloads as plain text or CSV; streaming-service export comes later.
+// each of them played. Each song links to a search for it on the streaming services; the whole
+// list downloads as plain text or CSV.
 
 import { useEffect, useState } from "react";
 import { Download, Shuffle, X } from "lucide-react";
@@ -7,6 +8,7 @@ import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contra
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
 import { pathPlaylist, playlist } from "@/lib/api";
+import { listenQuery, SERVICES } from "@/lib/listen";
 import type { Route } from "@/lib/route";
 
 const SIZES = [10, 20, 30];
@@ -97,6 +99,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
                   <span className="block text-xs text-muted-foreground">
                     <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{why(list, t)}
                   </span>
+                  <Listen track={t} who={list.seeds.map((p) => p.name)} />
                 </span>
                 <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
               </li>
@@ -216,6 +219,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
                             <span className="block text-xs text-muted-foreground">
                               <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{pairWhy(a, b, t)}
                             </span>
+                            <Listen track={t} who={[a?.name, b?.name].filter((n): n is string => !!n)} />
                           </span>
                           <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
                         </li>
@@ -263,4 +267,25 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
     });
     download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Listen links: a search for the song on each streaming service. No sign-in, so they work for
+// everyone. A search, not an exact match: the same tune can be on dozens of reissues, so the
+// album name does most of the work. Exact matching (by ISRC) needs a service's API; see DESIGN.md.
+// ---------------------------------------------------------------------------
+
+function Listen({ track, who }: { track: PlaylistTrack; who: string[] }) {
+  const q = listenQuery(track, who);
+  return (
+    <span className="mt-1 flex flex-wrap gap-x-3 text-xs">
+      {SERVICES.map((svc) => (
+        <a key={svc.name} href={svc.url(q)} target="_blank" rel="noopener noreferrer"
+          aria-label={`Find ${track.title} on ${svc.name} (opens in a new tab)`}
+          className="text-muted-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-current">
+          {svc.name}
+        </a>
+      ))}
+    </span>
+  );
 }
