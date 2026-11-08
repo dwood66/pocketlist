@@ -453,7 +453,8 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
           </div>
         )}
 
-        <Key open={keyOpen} />
+        <Key />
+        {keyOpen && <HowToRead coarse={coarse} onClose={() => setKeyOpen(false)} />}
 
         {picked && expanded && (
           <div className="absolute bottom-12 left-2 right-2 z-10 sm:left-auto sm:w-80">
@@ -473,15 +474,53 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
 const HINT_KEY = "pocketlist.galaxy-hint-seen";
 
 // How to read it, on the canvas: always on wider screens, behind the (i) button on phones.
-function Key({ open }: { open: boolean }) {
+function Key() {
   return (
-    <div className={(open ? "flex" : "hidden sm:flex") + " pointer-events-none absolute bottom-2 left-2 right-2 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:right-auto"}>
+    <div className={"hidden sm:flex pointer-events-none absolute bottom-2 left-2 right-2 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:right-auto"}>
       <span className="rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">Closer = more sessions together</span>
       <span className="rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">Clockwise from the top = when they first recorded</span>
       <span className="flex items-center gap-1.5 rounded bg-card/85 px-1.5 py-0.5 backdrop-blur">
         <span className="h-1.5 w-10 rounded-full" style={{ background: "linear-gradient(90deg, var(--star-cool), var(--star-hot))" }} aria-hidden />
         steady → a burst · grey: too few to say
       </span>
+    </div>
+  );
+}
+
+// The Info button: everything the drawing encodes, and how to move around it. On phones the
+// short key along the bottom is hidden, so this is where it lives there.
+function HowToRead({ coarse, onClose }: { coarse: boolean; onClose: () => void }) {
+  const row = "grid grid-cols-[5.5rem_1fr] gap-x-3";
+  return (
+    <div role="dialog" aria-label="How to read the galaxy"
+      className="absolute right-14 top-2 z-20 max-h-[calc(100%-1rem)] w-80 max-w-[calc(100%-4.5rem)] overflow-y-auto rounded-lg border border-border bg-card/95 p-4 text-sm shadow-lg backdrop-blur">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h2 className="text-base font-semibold">How to read it</h2>
+        <button type="button" aria-label="Close" onClick={onClose} className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <dl className="flex flex-col gap-2 text-muted-foreground">
+        <div className={row}><dt className="font-medium text-foreground">Centre</dt><dd>The player whose galaxy this is.</dd></div>
+        <div className={row}><dt className="font-medium text-foreground">Each star</dt><dd>Someone they recorded with.</dd></div>
+        <div className={row}><dt className="font-medium text-foreground">Distance</dt><dd>How many sessions together. Closer is more; the rings mark 1, 3, 10, 30 and 100.</dd></div>
+        <div className={row}><dt className="font-medium text-foreground">Direction</dt><dd>When they first recorded together, clockwise from the top like a clock. The decades are marked round the edge.</dd></div>
+        <div className={row}><dt className="font-medium text-foreground">Size</dt><dd>How many tracks together.</dd></div>
+        <div className={row}><dt className="font-medium text-foreground">Colour</dt>
+          <dd>
+            <span className="mb-1 flex items-center gap-2">
+              <span className="h-1.5 w-12 rounded-full" style={{ background: "linear-gradient(90deg, var(--star-cool), var(--star-hot))" }} aria-hidden />
+            </span>
+            Blue is a long, steady partnership; orange is a burst, lots of sessions in a short time. Grey: too few sessions to say.
+          </dd>
+        </div>
+        <div className={row}><dt className="font-medium text-foreground">Names</dt><dd>The closest few are named. Zoom in to see more.</dd></div>
+      </dl>
+      <p className="mt-3 border-t border-border pt-3 text-muted-foreground">
+        {coarse
+          ? "Tap a star to see who it is, tap again to go to their galaxy. Pinch to zoom, drag to move."
+          : "Point at a star to see who it is; click to go to their galaxy, shift-click for a playlist of the two of you. Scroll to zoom, drag to move. Arrow keys step through the stars, closest first."}
+      </p>
     </div>
   );
 }
