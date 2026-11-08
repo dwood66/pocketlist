@@ -120,7 +120,7 @@ function save(list: Playlist, kind: "txt" | "csv") {
     text = [`${name}: a Pocketlist playlist`, "", ...list.tracks.flatMap((t, i) => [
       `${i + 1}. ${t.title}${t.album ? ` (${t.album})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`,
       `   ${why(list, t)}`,
-    ]), "", "Credits from MusicBrainz. https://pocketlist.damonwood.dev", ""].join("\n");
+    ]), "", "Credits from MusicBrainz. https://pocketlist.music", ""].join("\n");
   } else {
     // The byte-order mark tells Excel it's UTF-8, so "1963–1964" doesn't turn into mojibake.
     text = "\uFEFF" + [["#", "title", "album", "date", "players"].join(","),
@@ -253,7 +253,7 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
       }
       lines.push("");
     });
-    lines.push("Credits from MusicBrainz. https://pocketlist.damonwood.dev", "");
+    lines.push("Credits from MusicBrainz. https://pocketlist.music", "");
     download(name, kind, lines.join("\n"));
   } else {
     const rows = [["#", "step", "title", "album", "date", "players"].join(",")];

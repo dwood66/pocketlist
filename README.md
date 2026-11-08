@@ -3,7 +3,7 @@
 Type a jazz musician's name and see everyone they've recorded with, as a list or as a galaxy you
 can fly through. Click any name to keep going.
 
-**Live:** https://pocketlist.damonwood.dev
+**Live:** https://pocketlist.music
 
 ![From the home page, searching for Ron Carter, whose 1,344 collaborators form a galaxy around him; pointing at Herbie Hancock and Wayne Shorter shows who they are, clicking Shorter makes him the centre of his own galaxy, and zooming in on Shorter's galaxy brings out dozens more names, from Art Blakey to Milton Nascimento](docs/pocketlist.gif)
 

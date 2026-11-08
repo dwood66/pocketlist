@@ -14,7 +14,7 @@ You type a jazz musician's name. Pocketlist finds them in [MusicBrainz](https://
 they recorded with: as a **galaxy** of stars around them, or as a **list**. Click anyone to travel
 to them. On top of that sit two features built from the same data: **Connect**, a six-degrees
 game played in the galaxy, and a **playlist sampler** that picks songs two or more players made
-together. Everything is live at <https://pocketlist.damonwood.dev>.
+together. Everything is live at <https://pocketlist.music>.
 
 ## 2. The big picture
 
@@ -24,7 +24,7 @@ flowchart LR
     UI["React app<br/>(galaxy, list, Connect, playlists)"]
   end
   subgraph Vercel
-    Static["Static site<br/>pocketlist.damonwood.dev"]
+    Static["Static site<br/>pocketlist.music"]
   end
   subgraph Railway
     API["Hono API<br/>(search, snapshots, paths, playlists)"]
@@ -56,7 +56,9 @@ instead of Neon, so there's nothing to install: `npm run dev`.
 
 ## 3. Hosting, configuration and deploys
 
-- **Domain:** `pocketlist.damonwood.dev` is a CNAME at GoDaddy pointing at Vercel. The API is on
+- **Domain:** `pocketlist.music`, registered at GoDaddy: an A record for the apex and a CNAME for
+  `www` (which redirects to the apex). The original `pocketlist.damonwood.dev` redirects to it. A new
+  front-end address also has to be added to the API's `ALLOWED_ORIGINS`. The API is on
   Railway's own domain, `pocketlist-production.up.railway.app`.
 - **Deploys:** a push to `main` deploys both halves: Vercel rebuilds the site; Railway rebuilds
   the API (its GitHub trigger was connected on 2026-11-07). `railway up --detach` from the repo
