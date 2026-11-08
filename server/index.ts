@@ -10,7 +10,7 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
-import { jobError, watch } from "./crawler.ts";
+import { jobError, refresh, refreshing, watch } from "./crawler.ts";
 import { samplePlaylist, type SeedCreditRow } from "./playlist.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
@@ -139,13 +139,15 @@ async function snapshot(player: Player): Promise<Snapshot> {
      where c.artist_id = $1 and c.rel_type = any($2)`,
     [player.id, PERFORMER_TYPES],
   );
+  const again = refreshing(player.id);
   return {
     player,
     instruments: ownInstruments(player.id, own),
     progress: {
       recordingsTotal: counts.total,
       recordingsLoaded: counts.loaded,
-      done: !!counts.indexed && counts.loaded >= counts.total,
+      done: !!counts.indexed && counts.loaded >= counts.total && again === null,
+      ...(again !== null && { refreshing: again }),
     },
     collaborators: aggregate(player.id, credits),
   };
@@ -156,6 +158,9 @@ app.get("/api/players/:id/stream", async (c) => {
   if (!MBID.test(id)) return c.json({ error: "not a MusicBrainz ID" }, 400);
   const player = await findPlayer(id);
   if (!player) return c.json({ error: "not found" }, 404);
+
+  // ?refresh=1 re-reads the player from MusicBrainz (see crawler.ts), at most every few minutes.
+  const tooSoon = c.req.query("refresh") === "1" && !refresh(id);
 
   return streamSSE(c, async (stream) => {
     let dirty = true;
@@ -170,7 +175,7 @@ app.get("/api/players/:id/stream", async (c) => {
         dirty = false;
         const snap = await snapshot(player);
         await stream.writeSSE({ event: "snapshot", data: JSON.stringify(snap) });
-        const err = jobError(id);
+        const err = jobError(id) ?? (tooSoon ? "Re-read from MusicBrainz a few minutes ago. Give it ten minutes before trying again." : undefined);
         if (err) await stream.writeSSE({ event: "problem", data: JSON.stringify({ message: err }) });
         if (snap.progress.done) break;
       }

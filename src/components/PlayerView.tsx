@@ -22,16 +22,20 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [refreshes, setRefreshes] = useState(0); // bumped by "Re-read from MusicBrainz"
   const heading = useRef<HTMLHeadingElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const [hold] = useState(() => { const h = heldHeight; heldHeight = 0; return h; });
 
   useEffect(() => {
-    setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null);
-    // A snapshot means reading is going again, so it clears an earlier problem; the server
-    // re-sends the problem after each snapshot for as long as it stands.
-    return streamPlayer(id, { snapshot: (s) => { setSnap(s); setProblem(null); }, problem: setProblem });
+    setSnap(null); setProblem(null); setFilter(""); setShown(PAGE); setOpen(null); setRefreshes(0);
   }, [id]);
+  useEffect(() => {
+    // A snapshot means reading is going again, so it clears an earlier problem; the server
+    // re-sends the problem after each snapshot for as long as it stands. A re-read keeps the
+    // galaxy on screen and updates it in place.
+    return streamPlayer(id, { snapshot: (s) => { setSnap(s); setProblem(null); }, problem: setProblem }, { refresh: refreshes > 0 });
+  }, [id, refreshes]);
 
   // A new player is a new page: move focus to its name so keyboard and screen-reader
   // users start from the top, as they would after a full page load.
@@ -83,7 +87,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         )}
       </header>
 
-      {snap && <ProgressLine snap={snap} />}
+      {snap && <ProgressLine snap={snap} onRefresh={() => setRefreshes((n) => n + 1)} />}
       {!snap && galaxy && isFullScreen() && (
         // Travelling in full screen: cover the page until the next galaxy arrives.
         <div className="fixed inset-0 z-50 grid place-items-center bg-card text-muted-foreground" aria-hidden>Opening…</div>
@@ -158,17 +162,28 @@ function ViewButton({ on, onClick, icon, children }: { on: boolean; onClick: () 
   );
 }
 
-function ProgressLine({ snap }: { snap: Snapshot }) {
-  const { recordingsTotal: total, recordingsLoaded: loaded, done } = snap.progress;
+function ProgressLine({ snap, onRefresh }: { snap: Snapshot; onRefresh: () => void }) {
+  const { recordingsTotal: total, recordingsLoaded: loaded, done, refreshing } = snap.progress;
   const people = snap.collaborators.length;
   const pct = total ? Math.round((loaded / total) * 100) : 0;
   // Screen readers hear the coarse version (every quarter), not every tick.
-  const spoken = done ? `All ${total} recordings read.` : total ? `Reading credits, about ${Math.floor(pct / 25) * 25} percent.` : "Finding recordings.";
+  const spoken = done ? `All ${total} recordings read.` : refreshing !== undefined ? "Re-reading from MusicBrainz."
+    : total ? `Reading credits, about ${Math.floor(pct / 25) * 25} percent.` : "Finding recordings.";
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-sm text-muted-foreground">
         {done
-          ? `${people.toLocaleString()} ${people === 1 ? "person" : "people"}, from ${total.toLocaleString()} recordings.`
+          ? <>
+              {`${people.toLocaleString()} ${people === 1 ? "person" : "people"}, from ${total.toLocaleString()} recordings. `}
+              <button type="button" onClick={onRefresh} className="underline hover:text-foreground"
+                title="Pick up credits added to MusicBrainz since this player was read">
+                Re-read from MusicBrainz
+              </button>
+            </>
+          : refreshing !== undefined && loaded >= total
+            ? (refreshing
+              ? `Re-reading from MusicBrainz: ${refreshing.toLocaleString()} ${refreshing === 1 ? "recording" : "recordings"} to go. New credits appear as they come in.`
+              : "Re-reading their recording list from MusicBrainz…")
           : total
             ? `Listening through ${total.toLocaleString()} recordings: ${loaded.toLocaleString()} so far. New people appear as albums come in.`
             : "Looking up their recordings…"}

@@ -38,6 +38,8 @@ export type Progress = {
   recordingsLoaded: number;
   /** True once every recording has been read (or skipped as unreadable). */
   done: boolean;
+  /** During a re-read from MusicBrainz: recordings left to re-read. */
+  refreshing?: number;
 };
 
 /** What the stream sends each time new credits arrive. */
@@ -85,7 +87,7 @@ export function isCollaborator(v: unknown): v is Collaborator {
 export function isSnapshot(v: unknown): v is Snapshot {
   if (!isObj(v) || !isPlayer(v.player) || !isStrArr(v.instruments) || !isObj(v.progress)) return false;
   const p = v.progress;
-  return isNum(p.recordingsTotal) && isNum(p.recordingsLoaded) && typeof p.done === "boolean" &&
+  return isNum(p.recordingsTotal) && isNum(p.recordingsLoaded) && typeof p.done === "boolean" && optNum(p.refreshing) &&
     Array.isArray(v.collaborators) && v.collaborators.every(isCollaborator);
 }
 

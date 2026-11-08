@@ -120,8 +120,14 @@ Everything is shaped by that.
 - **When things go wrong:** a failing player gets two more tries with a pause (15, then 30
   seconds) before the page is told, in plain words, that reading stopped partway. Anything already
   read is kept, so the next visit carries on where it stopped.
+- **Keeping up with MusicBrainz:** people add credits every day. A player's recording list is
+  re-read on the first visit after 30 days, which picks up recordings they've been credited on
+  since. "Re-read from MusicBrainz" on the player page does that now and also re-reads the
+  personnel of every recording already stored for them (up to 300, one request each), which
+  picks up people added to old songs. It's limited to once every ten minutes per player, and the
+  galaxy stays on screen and updates in place while it runs.
 - **Scale, for a feel:** Ron Carter has 3,701 recordings. At one request a second, a player like
-  that takes an hour or two to read completely the first time, and is instant forever after.
+  that takes an hour or two to read completely the first time, and is instant after that.
   The page shows results within seconds and fills in as albums arrive.
 - **Helpers:** `server/warm.ts` pre-reads a starter set; `server/copy-to-postgres.ts` copied the
   local cache into Neon at launch, merging with anything already there.

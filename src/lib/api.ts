@@ -89,8 +89,9 @@ export async function sharedRecordings(a: string, b: string, signal?: AbortSigna
 export function streamPlayer(
   id: string,
   on: { snapshot: (s: Snapshot) => void; problem: (message: string) => void },
+  opts?: { refresh?: boolean },
 ): () => void {
-  const es = new EventSource(`${API}/api/players/${id}/stream`);
+  const es = new EventSource(`${API}/api/players/${id}/stream${opts?.refresh ? "?refresh=1" : ""}`);
   let finished = false;
   es.addEventListener("snapshot", (e) => {
     try {
