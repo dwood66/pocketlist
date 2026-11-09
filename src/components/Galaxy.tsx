@@ -68,7 +68,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
     expandedRef.current = expanded;
     // Re-measure for the new frame, and keep the page behind from scrolling.
     const el = wrap.current;
-    if (el) setSize({ w: el.clientWidth, h: Math.round(expanded ? el.clientHeight : Math.min(el.clientWidth, Math.max(340, innerHeight * 0.72))) });
+    if (el) setSize({ w: el.clientWidth, h: Math.round(expanded ? el.clientHeight : Math.min(el.clientWidth * tall(), Math.max(340, innerHeight * 0.72))) });
     if (!expanded) return;
     const before = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -111,7 +111,7 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth;
-      const h = expandedRef.current ? el.clientHeight : Math.min(w, Math.max(340, innerHeight * 0.72));
+      const h = expandedRef.current ? el.clientHeight : Math.min(w * tall(), Math.max(340, innerHeight * 0.72));
       setSize({ w, h: Math.round(h) });
     });
     ro.observe(el);
@@ -344,13 +344,13 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
     if (!hit) { setSelected(null); return; }
     if (e.pointerType === "mouse" && e.shiftKey && onPlaylist) onPlaylist(hit.c);
     else if (e.pointerType === "mouse" || g.touchSelected === hit.c.id) onOpen(hit.c);
-    else setSelected(hit.c.id);
+    else { setSelected(hit.c.id); keepClearOfCard(hit); }
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLCanvasElement>) {
     const list = galaxy.stars.filter((s) => !matches || matches.has(s.c.id));
     const i = list.findIndex((s) => s.c.id === selected);
-    const pick = (j: number) => { const s = list[(j + list.length) % list.length]; if (s) setSelected(s.c.id); };
+    const pick = (j: number) => { const s = list[(j + list.length) % list.length]; if (s) { setSelected(s.c.id); keepClearOfCard(s); } };
     const keys: Record<string, () => void> = {
       ArrowRight: () => pick(i + 1), ArrowDown: () => pick(i + 1),
       ArrowLeft: () => pick(i < 0 ? -1 : i - 1), ArrowUp: () => pick(i < 0 ? -1 : i - 1),
@@ -400,9 +400,32 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
   const picked = selected ? byId.get(selected) : undefined;
   const at = (s: Star) => { const cur = shown.current.get(s.c.id) ?? s; return toScreen(cur.x, cur.y); };
 
+  // On touch screens (and full screen) the picked star's card sits over the bottom of the sky,
+  // not below it, so tapping a star never sends its details off the bottom of the phone. If the
+  // star itself would end up under the card, slide the sky up just enough to keep it in view.
+  const cardInside = expanded || coarse;
+  const CARD_ROOM = 190;
+  function keepClearOfCard(s: Star) {
+    if (!cardInside) return;
+    const top = canvas.current?.getBoundingClientRect().top ?? 0;
+    const y = at(s).sy, limit = Math.min(size.h, innerHeight - top) - CARD_ROOM;
+    if (y <= limit) return;
+    // Glide rather than jump: a quarter of a second, easing out.
+    const shift = y - limit, start = performance.now();
+    let done = 0;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / 250), eased = 1 - (1 - t) ** 3;
+      const d = shift * eased - done;
+      done += d;
+      setView((v) => ({ ...v, y: v.y - d }));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <div ref={wrap} className={expanded ? "fixed inset-0 z-50 overflow-hidden bg-card" : "relative overflow-hidden rounded-xl border border-border bg-card"}
+      <div ref={wrap} className={expanded ? "fixed inset-0 z-50 overflow-clip bg-card" : "relative overflow-clip rounded-xl border border-border bg-card"}
         role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? `${snap.player.name}'s galaxy, full screen` : undefined}>
         <canvas
           ref={canvas}
@@ -457,9 +480,14 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
         <Key />
         {keyOpen && <HowToRead coarse={coarse} onClose={() => setKeyOpen(false)} />}
 
-        {picked && expanded && (
-          <div className="absolute bottom-12 left-2 right-2 z-10 sm:left-auto sm:w-80">
-            <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
+        {picked && cardInside && (
+          // Sticky, so it rests on the bottom of whatever part of the sky is on screen: when the
+          // galaxy runs past the bottom of a phone, the card is still in view, and nothing moves.
+          // (overflow-clip above, not -hidden, or sticky has nothing to stick to.)
+          <div className="sticky bottom-0 z-10 h-0">
+            <div className={"absolute left-2 right-2 sm:left-auto sm:w-80 " + (expanded && !coarse ? "bottom-12" : "bottom-2")}>
+              <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} onClose={() => setSelected(null)} />
+            </div>
           </div>
         )}
 
@@ -467,12 +495,15 @@ export function Galaxy({ snap, matches, goal, onOpen, onPlaylist, overlay }: {
           <FloatingCard star={hovered} at={at(hovered)} box={size} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />
         )}
       </div>
-      {picked && !expanded && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
+      {picked && !cardInside && <StarCard star={picked} playerId={snap.player.id} onOpen={onOpen} onPlaylist={onPlaylist} />}
     </div>
   );
 }
 
 const HINT_KEY = "pocketlist.galaxy-hint-seen";
+
+// Phones get a taller-than-square sky: the picked star's card covers its bottom edge.
+const tall = () => (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches ? 1.25 : 1);
 
 // How to read it, on the canvas: always on wider screens, behind the (i) button on phones.
 function Key() {
@@ -570,9 +601,9 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 const shared = new Map<string, Promise<SharedRecording[]>>();
 
-function StarCard({ star, playerId, onOpen, onPlaylist, compact, tooltip }: {
+function StarCard({ star, playerId, onOpen, onPlaylist, onClose, compact, tooltip }: {
   star: Star; playerId: string; onOpen: (c: Collaborator) => void; onPlaylist?: (c: Collaborator) => void;
-  compact?: boolean; tooltip?: string; // tooltip: no buttons, this line instead
+  onClose?: () => void; compact?: boolean; tooltip?: string; // tooltip: no buttons, this line instead
 }) {
   const [recs, setRecs] = useState<SharedRecording[] | null>(null);
   const id = star.c.id;
@@ -591,7 +622,13 @@ function StarCard({ star, playerId, onOpen, onPlaylist, compact, tooltip }: {
   const span = c.firstYear ? (c.firstYear === c.lastYear ? `${c.firstYear}` : `${c.firstYear}–${c.lastYear}`) : "";
   const words = heatWords(c, heat);
   return (
-    <div className={"flex flex-col gap-1 text-sm " + (compact ? "" : "rounded-xl border border-border bg-card p-3")} aria-live="polite">
+    <div className={"relative flex flex-col gap-1 text-sm " + (compact ? "" : "rounded-xl border border-border bg-card p-3") + (onClose ? " pr-9 shadow-lg" : "")} aria-live="polite">
+      {onClose && (
+        <button type="button" aria-label="Close" onClick={onClose}
+          className="absolute right-1.5 top-1.5 rounded p-1.5 text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </button>
+      )}
       <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-semibold">{c.name}</span>
         <span className="text-muted-foreground" title={`What ${c.name} played on their recordings together`}>{c.instruments.slice(0, 3).join(", ")}</span>

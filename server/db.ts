@@ -111,6 +111,16 @@ export const SCHEMA = `
 
   -- Apple Music matches, found by searching Apple's catalogue and comparing lengths. A row with
   -- no url means we looked and found no confident match (so we don't keep asking).
+  -- Usage counts; see usage.ts. No addresses: visitors are daily hashes whose salt is thrown away.
+  create table if not exists usage_salts (day date primary key, salt text not null);
+  create table if not exists usage_events (
+    day date not null,
+    visitor text not null,
+    kind text not null,
+    subject text not null default '',
+    primary key (day, visitor, kind, subject)
+  );
+
   create table if not exists apple_matches (
     recording_id text primary key,
     url text,

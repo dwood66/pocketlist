@@ -77,6 +77,13 @@ instead of Neon, so there's nothing to install: `npm run dev`.
 | `ALLOWED_ORIGINS` | Railway | Which sites may call the API (CORS). Takes `*` within one label, so Vercel preview URLs work. |
 | `POCKETLIST_WARM` | optional | Pre-reads a starter set of players in the background when the server starts. |
 
+- **Usage, two ways.** Visitors, pages and referrers: Vercel Web Analytics (`<Analytics />` in
+  `src/main.tsx`, switched on in Vercel's dashboard; no cookies). What people do: the API counts
+  players opened, searches, samplers, journeys and Connect games in `usage_events`
+  (`server/usage.ts`). No addresses are stored. A visitor is a hash of address and browser with a
+  salt that belongs to one day and is deleted when the day is over, so visitors can be counted per
+  day but never traced or followed from one day to the next. Bots and scripts aren't counted.
+  `railway run npm run usage [days]` prints the last two weeks and the most looked-up players.
 - **Node 22** is pinned (`engines`, `.nvmrc`). Railway's default Node crashed the server.
 - **Moved off `railway.json`** (retired by Railway on 2026-12-01) to `.railway/railway.ts` on
   2026-11-08.

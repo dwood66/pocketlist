@@ -14,6 +14,7 @@ import { jobError, refresh, refreshing, watch } from "./crawler.ts";
 import { alsoOn, performanceKeys, samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
 import { appleMatches } from "./apple.ts";
 import { rows } from "./db.ts";
+import { track } from "./usage.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
 import { creditName, mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
@@ -43,6 +44,7 @@ const escapeLucene = (s: string) => s.replace(/[+\-&|!(){}[\]^"~*?:\\/]/g, "\\$&
 
 app.get("/api/search", async (c) => {
   const q = (c.req.query("q") ?? "").trim().slice(0, 100);
+  if (q.length >= 3) track(c, "search");
   const instrument = fold(c.req.query("instrument") ?? "");
   if (!q) return c.json([]);
 
@@ -159,6 +161,7 @@ app.get("/api/players/:id/stream", async (c) => {
   if (!MBID.test(id)) return c.json({ error: "not a MusicBrainz ID" }, 400);
   const player = await findPlayer(id);
   if (!player) return c.json({ error: "not found" }, 404);
+  track(c, "player", id);
 
   // ?refresh=1 re-reads the player from MusicBrainz (see crawler.ts), at most every few minutes.
   const tooSoon = c.req.query("refresh") === "1" && !refresh(id);
@@ -333,6 +336,7 @@ app.get("/api/playlist", async (c) => {
   const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
   const players = await Promise.all(seeds.map(findPlayer));
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
+  track(c, "sampler", [...seeds].sort().join(","));
   const sample = samplePlaylist(await seedRows(seeds), seeds, n, mix);
   const body: Playlist = { seeds: players as Player[], ...sample, tracks: await withDetails(sample.tracks) };
   return c.json(body);
@@ -384,6 +388,7 @@ app.get("/api/path-playlist", async (c) => {
   const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
   const players = await Promise.all(ids.map(findPlayer));
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
+  track(c, "journey", ids.join(","));
   // No tune twice in the whole list: a player in the middle of the path is in two pairs, so
   // the same song (or another take of it) would otherwise turn up in neighbouring steps.
   const used = new Set<string>();
@@ -423,6 +428,7 @@ async function neighbours(ids: string[]) {
 app.get("/api/path", async (c) => {
   const from = c.req.query("from") ?? "", to = c.req.query("to") ?? "";
   if (!MBID.test(from) || !MBID.test(to)) return c.json({ error: "not a MusicBrainz ID" }, 400);
+  track(c, "connect", `${from},${to}`);
   const prev = [new Map<string, string | null>([[from, null]]), new Map<string, string | null>([[to, null]])];
   let frontier = [[from], [to]];
   let meet: string | null = from === to ? from : null;
