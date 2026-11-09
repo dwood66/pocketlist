@@ -259,8 +259,13 @@ export function PathPlaylistView({ ids, per, mix, go }: {
               return (
                 <li key={`${l.from}-${l.to}-${i}`} className="flex flex-col gap-2 pb-5">
                   <Stop player={a} edge={i === 0} go={go} />
-                  <p className="text-xs text-muted-foreground" title="Songs both of these players are on">
-                    Step {i + 1} · {a?.name} and {b?.name} together
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span title="Songs both of these players are on">Step {i + 1} · {a?.name} and {b?.name} together</span>
+                    <Link to={{ view: "playlist", seeds: [l.from, l.to], n: 10, mix: 0 }} go={go}
+                      title={`A sampler of everything ${a?.name ?? "they"} and ${b?.name ?? "the next player"} recorded together`}
+                      className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-foreground hover:bg-muted">
+                      <SamplerIcon className="h-3 w-3 text-primary" aria-hidden /> Sampler of these two
+                    </Link>
                   </p>
                   {l.tracks.length ? (
                     <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
