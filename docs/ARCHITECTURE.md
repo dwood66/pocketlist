@@ -207,7 +207,13 @@ your place, and Back walks back along your trail:
 - **Connect** (`Connect.tsx`): a puzzle of the day, or "Connect from here" to pick any goal. The
   goal glows wherever it appears; the banner shows hops against **par** (the shortest known
   chain). Arriving shows the chain, the record behind each link, and a **Copy result** for sharing.
-- **Playlists** (`PlaylistView.tsx`, rules in `server/playlist.ts`): songs every seed played on,
+- **Two kinds of playlist**, each with its own mark (`src/components/marks.ts`) on every way in:
+  a **Sampler** (record icon, amber) is songs a player or players made together: exploring. A
+  **Journey** (Connect's route icon, rose) travels from one player to another, hand to hand: a
+  Connect path you can listen to, drawn as a route map with a stop at each player. Ways in: the
+  player page (Sampler), shift-click in the galaxy (a sampler of the two of you), the breadcrumb
+  trail (Journey playlist) and the Connect result (Listen to this journey).
+- **Samplers** (`PlaylistView.tsx`, rules in `server/playlist.ts`): songs every seed played on,
   one per session, spread across the years, no tune twice, finished versions before takes. 10, 20
   or 30 songs, "Another mix", and text or CSV downloads that say who played what. Each song
   shows its album and **album artist** ("Seven Steps… by Miles Davis"), so a tune that's on
@@ -231,7 +237,7 @@ your place, and Back walks back along your trail:
   - **Swap** (↻ on each song, `/api/swap`) replaces one song with another by the same players
     (the same step, on a path), never a tune already in the list. Swaps live on the page only;
     they aren't in the URL.
-- **Path playlists** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
+- **Journeys** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
   twice across the whole list. A player in the middle of a path is in two pairs, so without that
   the same song turns up in neighbouring steps; a repeat is allowed only if a step would
   otherwise be empty.

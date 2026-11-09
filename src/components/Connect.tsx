@@ -299,6 +299,10 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         <Button size="sm" onClick={() => navigator.clipboard?.writeText(share).then(() => setCopied(true))}>
           {copied ? <Check className="mr-1.5 h-4 w-4" /> : <Copy className="mr-1.5 h-4 w-4" />} {copied ? "Copied" : "Copy result"}
         </Button>
+        <Link to={{ view: "pathlist", ids: path, per: 2, mix: 0 }} go={go}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[color:var(--goal)] px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <ConnectIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Listen to this journey
+        </Link>
         <Button variant="outline" size="sm" onClick={() => go({ view: "home" })}>Play another</Button>
       </div>
     </section>

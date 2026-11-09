@@ -6,7 +6,8 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ClipboardList, Download, ListMusic, RefreshCw, Route as RouteIcon, Shuffle, X } from "lucide-react";
+import { Check, ClipboardList, Download, RefreshCw, Shuffle, X } from "lucide-react";
+import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
@@ -46,12 +47,12 @@ export function PlaylistView({ seeds, n, mix, go }: {
   const tracks = list?.tracks ?? [];
   const apple = useApple(tracks);
   const replace = (i: number, t: PlaylistTrack) => setList((l) => l && { ...l, tracks: l.tracks.map((x, k) => (k === i ? t : x)) });
-  const title = names.length ? names.join(" + ") : "Playlist";
+  const title = names.length ? names.join(" + ") : "Sampler";
 
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><ListMusic className="h-4 w-4" aria-hidden /> Playlist</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {names.length > 1 ? "Songs they all played on" : "Songs with them on"}, one per session, spread across the years.
@@ -138,7 +139,7 @@ function save(list: Playlist, kind: "txt" | "csv") {
   const name = list.seeds.map((s) => s.name).join(" + ");
   let text: string;
   if (kind === "txt") {
-    text = [`${name}: a Pocketlist playlist`, "", ...list.tracks.flatMap((t, i) => [
+    text = [`${name}: a Pocketlist sampler`, "", ...list.tracks.flatMap((t, i) => [
       `${i + 1}. ${t.title}${t.artist ? ` – ${t.artist}` : ""}${t.album ? ` (${t.album}${t.albumArtist ? `, ${t.albumArtist}` : ""})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}${t.length ? ` [${formatLength(t.length)}]` : ""}`,
       `   ${why(list, t)}`,
     ]), "", "Credits from MusicBrainz. https://pocketlist.music", ""].join("\n");
@@ -192,7 +193,8 @@ export function PathPlaylistView({ ids, per, mix, go }: {
 
   const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, ...next }, { replace: true });
   const byId = new Map((list?.players ?? []).map((p) => [p.id, p]));
-  const title = list ? list.players.map((p) => p.name).join(" → ") : "Playlist of a path";
+  const ends = list ? [list.players[0], list.players[list.players.length - 1]] : [];
+  const title = list ? `${ends[0].name} → ${ends[1].name}` : "Journey";
   const count = list?.links.reduce((n, l) => n + l.tracks.length, 0) ?? 0;
   const all = list?.links.flatMap((l) => l.tracks) ?? [];
   const apple = useApple(all);
@@ -203,12 +205,26 @@ export function PathPlaylistView({ ids, per, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
-          <ListMusic className="h-4 w-4" aria-hidden /> Playlist <span className="text-muted-foreground">of a path</span> <RouteIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+        <p className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--goal)]">
+          <JourneyIcon className="h-4 w-4" aria-hidden /> Journey
         </p>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
+        {list && (
+          <ol className="flex flex-wrap items-center gap-1.5 text-sm" aria-label="The route">
+            {list.players.map((p, i) => (
+              <li key={`${p.id}-${i}`} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-muted-foreground" aria-hidden>→</span>}
+                <Link to={{ view: "player", id: p.id, trail: [] }} go={go}
+                  className={"rounded-full border px-2 py-0.5 hover:bg-muted " +
+                    (i === 0 || i === list.players.length - 1 ? "border-[color:var(--goal)] text-[color:var(--goal)]" : "border-border")}>
+                  {p.name}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
         <p className="text-sm text-muted-foreground">
-          A playlist along your path: for each step, songs both players are on, so every song hands off to the next.
+          From {ends[0]?.name ?? "one player"} to {ends[1]?.name ?? "another"}, hand to hand: for each step, songs both players are on, so every song passes to the next.
         </p>
       </header>
 
@@ -234,17 +250,18 @@ export function PathPlaylistView({ ids, per, mix, go }: {
             <CopyList lines={list.links.flatMap((l) => l.tracks.map((t) => textListLine(t, [byId.get(l.from)?.name ?? ""])))} />
           </div>
 
-          <ol className="flex flex-col gap-4">
+          {/* A route map: a line down the left with a stop at each player, and the songs that
+              carry you from one stop to the next hanging between them. */}
+          <ol className="relative pl-8" aria-label="Journey, step by step">
+            <span aria-hidden className="absolute bottom-3 left-[9px] top-3 w-0.5 rounded-full bg-[color:var(--goal)] opacity-40" />
             {list.links.map((l, i) => {
               const a = byId.get(l.from), b = byId.get(l.to);
               return (
-                <li key={`${l.from}-${l.to}-${i}`} className="flex flex-col gap-2">
-                  <h2 className="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-                    <span className="text-sm tabular-nums text-muted-foreground" title="Step along your path: songs both of these players are on">Step {i + 1}</span>
-                    {a && <Link to={{ view: "player", id: a.id, trail: [] }} go={go} className="hover:underline">{a.name}</Link>}
-                    <span className="text-muted-foreground">→</span>
-                    {b && <Link to={{ view: "player", id: b.id, trail: [] }} go={go} className="hover:underline">{b.name}</Link>}
-                  </h2>
+                <li key={`${l.from}-${l.to}-${i}`} className="flex flex-col gap-2 pb-5">
+                  <Stop player={a} edge={i === 0} go={go} />
+                  <p className="text-xs text-muted-foreground" title="Songs both of these players are on">
+                    Step {i + 1} · {a?.name} and {b?.name} together
+                  </p>
                   {l.tracks.length ? (
                     <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
                       {l.tracks.map((t, j) => (
@@ -258,9 +275,22 @@ export function PathPlaylistView({ ids, per, mix, go }: {
                 </li>
               );
             })}
+            <li><Stop player={byId.get(list.links[list.links.length - 1]?.to ?? "")} edge go={go} /></li>
           </ol>
         </>
       )}
+    </div>
+  );
+}
+
+/** A stop on the route map: a dot on the line, and the player's name. The ends are filled in. */
+function Stop({ player, edge, go }: { player?: Player; edge?: boolean; go: (r: Route) => void }) {
+  if (!player) return null;
+  return (
+    <div className="relative flex items-center">
+      <span aria-hidden className={"absolute -left-[29px] h-3.5 w-3.5 rounded-full border-2 border-[color:var(--goal)] " +
+        (edge ? "bg-[color:var(--goal)]" : "bg-card")} />
+      <Link to={{ view: "player", id: player.id, trail: [] }} go={go} className="font-display text-lg font-semibold hover:underline">{player.name}</Link>
     </div>
   );
 }
@@ -274,7 +304,7 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
   const name = list.players.map((p) => p.name).join(" to ");
   let n = 0;
   if (kind === "txt") {
-    const lines = [`${list.players.map((p) => p.name).join(" → ")}: a Pocketlist path playlist`, ""];
+    const lines = [`${list.players.map((p) => p.name).join(" → ")}: a Pocketlist journey`, ""];
     list.links.forEach((l, i) => {
       const a = byId.get(l.from), b = byId.get(l.to);
       lines.push(`Step ${i + 1}: ${a?.name} → ${b?.name}`);

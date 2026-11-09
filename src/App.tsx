@@ -1,4 +1,5 @@
-import { ListMusic, Orbit } from "lucide-react";
+import { Orbit } from "lucide-react";
+import { SamplerIcon } from "@/components/marks";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Mark } from "@/components/Mark";
 import { Link } from "@/components/Link";
@@ -98,8 +99,8 @@ function Home({ go }: { go: (r: Route) => void }) {
         ))}
       </StartCard>
       <ConnectIntro go={go} />
-      <StartCard icon={<ListMusic className="h-5 w-5" />} title="Make a playlist"
-        text="Songs two players made together, one per session, ready to download.">
+      <StartCard icon={<SamplerIcon className="h-5 w-5" />} title="Make a sampler"
+        text="Songs two players made together, one per session, with links to listen.">
         {PAIRS.map((p) => (
           <Link key={p.name} to={{ view: "playlist", seeds: p.seeds, n: 10, mix: 0 }} go={go} className={chip + " rounded-lg text-left"}>{p.name}</Link>
         ))}

@@ -520,7 +520,7 @@ function HowToRead({ coarse, onClose }: { coarse: boolean; onClose: () => void }
       <p className="mt-3 border-t border-border pt-3 text-muted-foreground">
         {coarse
           ? "Tap a star to see who it is, tap again to go to their galaxy. Pinch to zoom, drag to move."
-          : "Point at a star to see who it is; click to go to their galaxy, shift-click for a playlist of the two of you. Scroll to zoom, drag to move. Arrow keys step through the stars, closest first."}
+          : "Point at a star to see who it is; click to go to their galaxy, shift-click for a sampler of the two of you. Scroll to zoom, drag to move. Arrow keys step through the stars, closest first."}
       </p>
     </div>
   );
@@ -540,7 +540,7 @@ function FloatingCard({ star, at, box, ...rest }: {
   const top = Math.min(Math.max(8, at.sy > box.h / 2 ? at.sy + 4 : at.sy - H + 4), box.h - H - 8);
   return (
     <div className="pointer-events-none absolute z-10 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur" style={{ left, top, width: W }}>
-      <StarCard star={star} {...rest} compact tooltip={rest.onPlaylist ? "Click to go there · shift-click for a playlist together" : "Click to go there"} />
+      <StarCard star={star} {...rest} compact tooltip={rest.onPlaylist ? "Click to go there · shift-click for a sampler together" : "Click to go there"} />
     </div>
   );
 }
@@ -610,7 +610,7 @@ function StarCard({ star, playerId, onOpen, onPlaylist, compact, tooltip }: {
       {tooltip ? <p className="text-xs text-primary">{tooltip}</p> : (
         <div className="mt-1 flex flex-wrap gap-2">
           <Button size="sm" onClick={() => onOpen(c)}>Go to {c.name.split(" ")[0]}</Button>
-          {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Playlist together</Button>}
+          {onPlaylist && <Button variant="outline" size="sm" onClick={() => onPlaylist(c)}>Sampler together</Button>}
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, List, ListMusic, Orbit } from "lucide-react";
+import { ChevronDown, ChevronRight, List, Orbit } from "lucide-react";
+import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
           <div className="flex flex-wrap gap-2">
             <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
               className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <ListMusic className="mr-1.5 h-4 w-4" /> Playlist
+              <SamplerIcon className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> Sampler
             </Link>
             <Button variant="outline" size="sm" aria-expanded={connecting} onClick={() => setConnecting((v) => !v)}>
               <ConnectIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Connect from here
@@ -313,8 +314,9 @@ function Breadcrumbs({ trail, go, current, galaxy, goal }: { trail: string[]; go
         {current && (
           <li className="ml-1">
             <Link to={{ view: "pathlist", ids: [...trail, current.id], per: 2, mix: 0 }} go={go}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-foreground hover:bg-muted">
-              <ListMusic className="h-3.5 w-3.5" aria-hidden /> Playlist of this path
+              title="Songs that carry you along this path, step by step"
+              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--goal)] px-2 py-0.5 text-xs text-foreground hover:bg-muted">
+              <JourneyIcon className="h-3.5 w-3.5 text-[color:var(--goal)]" aria-hidden /> Journey playlist
             </Link>
           </li>
         )}
