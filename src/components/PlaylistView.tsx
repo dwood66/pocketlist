@@ -1,5 +1,5 @@
 // A sampler playlist: songs every seed player is on, spread across their sessions, with what
-// each of them played. Each song shows its credited artist and length (the surest way to pick
+// each of them played. Each song shows its credited artist and length (the best clue for picking
 // the right take out of a streaming service's search), links to Spotify, Apple Music (straight
 // to the song when its length matches; see server/apple.ts) and YouTube Music, and can be
 // swapped for another. The whole list downloads as text or CSV, or copies as a list that
@@ -399,10 +399,12 @@ function Notes() {
           recording under other names, and streaming services label songs their own way. A title search is a guess.
         </p>
         <p>
-          What gives a recording away is its length. A different take almost never runs the same length; the same
-          recording on a renamed reissue does. So each song here shows its length, and Apple Music links marked
-          <Check className="mx-0.5 inline h-3 w-3 align-[-1px] text-primary" aria-label="with a tick" /> go straight
-          to the song whose length matches. Everything else is a search, and the length tells you which result to pick.
+          The best clue is length. It isn't exact: mastering, a different edit or a fade-out that comes in earlier
+          can move the same recording on a reissue by a second or more. But a different take, a live version or a
+          re-recording is usually off by much more than that. So each song here shows its length, and Apple Music
+          links marked <Check className="mx-0.5 inline h-3 w-3 align-[-1px] text-primary" aria-label="with a tick" /> go
+          straight to a song whose length is within a few seconds. Everything else is a search, and the length tells
+          you which result is most likely the one.
         </p>
         <p>
           Credits come from <a className="underline" href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>,
@@ -474,7 +476,7 @@ function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap
 }
 
 // Listen links. Spotify and YouTube Music: a search (the song's title, artist and album). Apple
-// Music: straight to the song when a match of the same length was found (✓), where "Add to
+// Music: straight to the song when one within a few seconds of its length was found (✓), where "Add to
 // Playlist" is in the ⋯ menu; otherwise a search too.
 function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; apple: AppleMatch }) {
   const q = listenQuery(track, who);
@@ -487,7 +489,7 @@ function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; ap
           <a key={svc.name} href={exact ?? svc.url(q)} target="_blank" rel="noopener noreferrer"
             aria-label={exact ? `${track.title} on ${svc.name}, matched by length (opens in a new tab)` : `Find ${track.title} on ${svc.name} (opens in a new tab)`}
             title={exact
-              ? `This exact recording on ${svc.name} (same length${apple && apple !== "pending" && apple.length ? `, ${formatLength(apple.length)}` : ""}). Add it to a playlist from the ⋯ menu.`
+              ? `This exact recording on ${svc.name} (within a few seconds of its length${apple && apple !== "pending" && apple.length ? `: ${formatLength(apple.length)}` : ""}). Add it to a playlist from the ⋯ menu.`
               : svc.name === "Apple Music" && apple === "pending" ? "Looking for this exact recording on Apple Music… (a search for now)"
               : `Search ${svc.name} for this song (opens in a new tab)`}
             className={link}>

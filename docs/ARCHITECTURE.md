@@ -222,9 +222,10 @@ your place, and Back walks back along your trail:
   nobody waits more than about three seconds: the rest carries on in the background. The shared
   recordings under each collaborator show it too, and pick their album the same way.
 - **Finding the songs on a streaming service.** In jazz the same tune is recorded again and again,
-  and reissues get new names, so a title search is a guess. What tells takes apart is **length**:
-  a re-recording or a live version almost never runs the same length, while a renamed reissue of
-  the same recording does. So each song shows its **credited artist** (as services label it) and
+  and reissues get new names, so a title search is a guess. The best clue is **length**: a
+  re-recording or a live version is usually off by much more than a renamed reissue of the same
+  recording, which (through mastering, edits or an earlier fade) can still differ by a second or
+  more. Hence a tolerance, not an exact match. So each song shows its **credited artist** (as services label it) and
   **length**, and:
   - **Apple Music ✓** links go straight to the song (`server/apple.ts`): Apple's free search API
     for title and artist, keeping only same-title results within 3 seconds (or 1.5%) of the

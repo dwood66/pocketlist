@@ -3,8 +3,9 @@
 //
 // How: Apple's public search API (no key, no sign-in) for the title and artist, then keep only
 // results with the same title whose length is within a few seconds of the recording's. Length is
-// what tells takes apart: a re-recording, a live version or an alternate take almost never runs
-// the same length, while a renamed reissue of the same recording does. No length, no match: we'd
+// the best clue to which take is which. Not exact: mastering, edits or an earlier fade can move a
+// reissue of the same recording by a second or more, hence the tolerance; but a re-recording, a
+// live version or an alternate take is usually off by much more. No length, no match: we'd
 // rather send someone to a search than to the wrong take.
 //
 // Apple allows about 20 searches a minute, so lookups go through one slow queue and every answer
