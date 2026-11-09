@@ -21,7 +21,7 @@ export const GoalIcon = Flag;
 /** The game's badge: route icon and name, white on rose. */
 export function ConnectBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--goal)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[color:var(--card)]">
+    <span className="inline-flex self-start items-center gap-1 rounded-full bg-[color:var(--goal)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[color:var(--card)]">
       <ConnectIcon className="h-3.5 w-3.5" aria-hidden /> Connect
     </span>
   );
