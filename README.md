@@ -21,6 +21,17 @@ Stuck? A hint names someone one step closer.
 
 ![Today's puzzle, Ron Carter to John Coltrane: the Connect banner sets the goal at par 2; a hint suggests Louis Hayes, highlighted in Carter's galaxy; clicking him travels to his galaxy, where Coltrane is marked in rose; clicking Coltrane finishes in 2 hops, par, with the recording behind each link](docs/connect.gif)
 
+## Playlists
+
+Two kinds. A **Sampler** is songs players made together, one per session, spread across the years;
+add players one at a time, from who else is on the songs, and watch a band come together. A
+**Journey** travels from one player to another, hand to hand, drawn as a route map. Each song shows
+its credited artist and **length**, since in jazz the same tune is recorded again and again and
+length is what tells takes apart; Apple Music links marked ✓ go straight to the take whose length
+matches. Swap any song, download the list, or copy it for TuneMyMusic to build it on any service.
+
+![The Ron Carter and Herbie Hancock sampler, each song with its artist, album, length and listen links; adding Tony Williams, then Miles Davis, narrows 562 performances to 253; one song is swapped for another; then a journey from Ron Carter to John Coltrane by way of Louis Hayes, drawn as a route map](docs/playlists.gif)
+
 ## Why
 
 In jazz, personnel is the point of a record. Fans follow players from session to session. The
