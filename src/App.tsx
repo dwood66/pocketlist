@@ -100,7 +100,7 @@ function Home({ go }: { go: (r: Route) => void }) {
       </StartCard>
       <ConnectIntro go={go} />
       <StartCard icon={<SamplerIcon className="h-5 w-5" />} title="Make a sampler"
-        text="Songs two players made together, one per session, with links to listen.">
+        text="Songs two players made together, one per session. Add more players to find a band.">
         {PAIRS.map((p) => (
           <Link key={p.name} to={{ view: "playlist", seeds: p.seeds, n: 10, mix: 0 }} go={go} className={chip + " rounded-lg text-left"}>{p.name}</Link>
         ))}

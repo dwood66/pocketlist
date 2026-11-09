@@ -6,12 +6,12 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ClipboardList, Download, RefreshCw, Shuffle, X } from "lucide-react";
+import { Check, ClipboardList, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
-import { appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
+import { alsoOn, appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
 import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
 import { href, type Route } from "@/lib/route";
 
@@ -72,6 +72,10 @@ export function PlaylistView({ seeds, n, mix, go }: {
             ))}
           </ul>
         )}
+        {list && seeds.length < 4 && list.performances > 0 && (
+          <AddPlayer seeds={seeds} performances={list.performances} names={names} add={(id) => set({ seeds: [...seeds, id], mix: 0 })} />
+        )}
+        <Notes />
       </header>
 
       {error && <p role="alert" className="text-sm">{error}</p>}
@@ -226,6 +230,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
         <p className="text-sm text-muted-foreground">
           From {ends[0]?.name ?? "one player"} to {ends[1]?.name ?? "another"}, hand to hand: for each step, songs both players are on, so every song passes to the next.
         </p>
+        <Notes />
       </header>
 
       {error && <p role="alert" className="text-sm">{error}</p>}
@@ -332,6 +337,78 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
     });
     download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
   }
+}
+
+// ---------------------------------------------------------------------------
+// "Add a player": who else is on the most of these songs. Suggestions come from the list itself,
+// with how many of its performances each is on, so adding one always leaves a real playlist and
+// you can see how far it narrows. Adding players one at a time is how you find a band.
+// ---------------------------------------------------------------------------
+
+function AddPlayer({ seeds, performances, names, add }: {
+  seeds: string[]; performances: number; names: string[]; add: (id: string) => void;
+}) {
+  const [found, setFound] = useState<{ player: Player; performances: number }[] | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setFound(null);
+    alsoOn(seeds, ctrl.signal).then((r) => setFound(r.players)).catch(() => setFound([]));
+    return () => ctrl.abort();
+  }, [seeds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!found?.length) return null;
+  const these = names.length > 1 ? "these" : `${names[0]}'s`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">Add a player:</span> who else is on {these} {performances.toLocaleString()} performances?
+      </p>
+      <ul className="flex flex-wrap gap-2" aria-label="Players to add">
+        {found.map(({ player, performances: n }) => (
+          <li key={player.id}>
+            <button type="button" onClick={() => add(player.id)}
+              title={`Add ${player.name}: the list narrows to the ${n.toLocaleString()} performances they're on too`}
+              className="inline-flex items-center gap-1 rounded-full border border-dashed border-border py-0.5 pl-2 pr-2.5 text-sm hover:border-solid hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Plus className="h-3.5 w-3.5 text-primary" aria-hidden />
+              {player.name}
+              <span className="tabular-nums text-muted-foreground">· {n.toLocaleString()}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Notes about this feature: why finding these songs on a streaming service is hard, and how the
+// page helps. Closed until asked for.
+// ---------------------------------------------------------------------------
+
+function Notes() {
+  return (
+    <details className="group text-sm">
+      <summary className="cursor-pointer select-none text-muted-foreground hover:text-foreground">Notes about this feature</summary>
+      <div className="mt-2 flex max-w-prose flex-col gap-2 rounded-lg border border-border bg-card p-4 text-muted-foreground">
+        {/* Damon's own lines about why he built this go here, first. */}
+        <p className="font-medium text-foreground">Why finding these songs is harder than it looks</p>
+        <p>
+          In jazz, a tune is rarely recorded once. Standards were played again and again: by different bands, by the
+          same band years apart, live and in the studio. Reissues get new titles, compilations repackage the same
+          recording under other names, and streaming services label songs their own way. A title search is a guess.
+        </p>
+        <p>
+          What gives a recording away is its length. A different take almost never runs the same length; the same
+          recording on a renamed reissue does. So each song here shows its length, and Apple Music links marked
+          <Check className="mx-0.5 inline h-3 w-3 align-[-1px] text-primary" aria-label="with a tick" /> go straight
+          to the song whose length matches. Everything else is a search, and the length tells you which result to pick.
+        </p>
+        <p>
+          Credits come from <a className="underline" href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">MusicBrainz</a>,
+          which is only as complete as the people who have entered them, so some sessions are missing players or dates.
+        </p>
+      </div>
+    </details>
+  );
 }
 
 // ---------------------------------------------------------------------------

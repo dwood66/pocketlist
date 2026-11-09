@@ -175,3 +175,9 @@ export type Swap = { track: PlaylistTrack | null };
 export function isSwap(v: unknown): v is Swap {
   return isObj(v) && (v.track === null || isPlaylistTrack(v.track));
 }
+
+/** Players to add to a sampler: who else is on the most of its performances. */
+export type AlsoOn = { players: { player: Player; performances: number }[] };
+export function isAlsoOn(v: unknown): v is AlsoOn {
+  return isObj(v) && Array.isArray(v.players) && v.players.every((p) => isObj(p) && isPlayer(p.player) && isNum(p.performances));
+}

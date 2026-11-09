@@ -125,3 +125,35 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
     tracks,
   };
 }
+
+/** Each qualifying recording's performance (session and tune), keyed the same way as the
+ *  sampler counts them, so "who else is on these" can be counted in the same units. */
+export function performanceKeys(rows: SeedCreditRow[], seeds: string[]): Map<string, string> {
+  const byRec = new Map<string, SeedCreditRow[]>();
+  for (const r of rows) byRec.set(r.recording_id, [...(byRec.get(r.recording_id) ?? []), r]);
+  const keys = new Map<string, string>();
+  for (const [id, credits] of byRec) {
+    if (!seeds.every((s) => credits.some((c) => c.artist_id === s))) continue;
+    const date = credits.map((c) => c.date).filter((d): d is string => !!d).sort()[0];
+    const session = date ? `d:${date}` : credits[0].rg_id ? `g:${credits[0].rg_id}` : `r:${id}`;
+    keys.set(id, `${session}|${normalizeTitle(credits[0].title)}`);
+  }
+  return keys;
+}
+
+/** Who else plays on the most of these performances: suggestions for adding a player to a
+ *  sampler. `others` are every other performer credit on the qualifying recordings. */
+export function alsoOn(keys: Map<string, string>, others: { recording_id: string; artist_id: string; artist_name: string }[], seeds: string[], limit = 8) {
+  const perf = new Map<string, { name: string; keys: Set<string> }>();
+  for (const o of others) {
+    const key = keys.get(o.recording_id);
+    if (!key || seeds.includes(o.artist_id) || /^\[.*\]$/.test(o.artist_name)) continue;
+    const p = perf.get(o.artist_id) ?? { name: o.artist_name, keys: new Set<string>() };
+    p.keys.add(key);
+    perf.set(o.artist_id, p);
+  }
+  return [...perf.entries()]
+    .map(([id, p]) => ({ player: { id, name: p.name }, performances: p.keys.size }))
+    .sort((a, b) => b.performances - a.performances || a.player.name.localeCompare(b.player.name))
+    .slice(0, limit);
+}

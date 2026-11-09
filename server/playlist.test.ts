@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { samplePlaylist, type SeedCreditRow } from "./playlist.ts";
+import { alsoOn, performanceKeys, samplePlaylist, type SeedCreditRow } from "./playlist.ts";
 
 const RON = "ron", HERBIE = "herbie", TONY = "tony";
 
@@ -81,4 +81,20 @@ test("avoid: tunes used in earlier steps are skipped while there's something els
 test("avoid: one repeat rather than an empty step", () => {
   const rows = both("r1", "Joshua", "1963-05-14");
   assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 2, 0, new Set(["joshua"])).tracks.map((t) => t.title), ["Joshua"]);
+});
+
+test("who else is on these: counted in performances, like the sampler", () => {
+  const rows = [...both("r1", "Footprints", "1966-10-24"), ...both("r1b", "Footprints (alternate take)", "1966-10-24"),
+    ...both("r2", "Dolores", "1966-10-25"), ...both("r3", "Joshua", "1963-05-14")];
+  const keys = performanceKeys(rows, [RON, HERBIE]);
+  assert.equal(new Set(keys.values()).size, samplePlaylist(rows, [RON, HERBIE], 10).performances);
+  const others = [
+    { recording_id: "r1", artist_id: "tony", artist_name: "Tony Williams" },
+    { recording_id: "r1b", artist_id: "tony", artist_name: "Tony Williams" },
+    { recording_id: "r2", artist_id: "tony", artist_name: "Tony Williams" },
+    { recording_id: "r3", artist_id: "miles", artist_name: "Miles Davis" },
+    { recording_id: "r3", artist_id: "x", artist_name: "[unknown]" },
+    { recording_id: "r2", artist_id: RON, artist_name: "Ron Carter" },
+  ];
+  assert.deepEqual(alsoOn(keys, others, [RON, HERBIE]).map((s) => [s.player.name, s.performances]), [["Tony Williams", 2], ["Miles Davis", 1]]);
 });

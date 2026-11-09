@@ -2,7 +2,7 @@
 // the rest of the app sees it.
 
 import {
-  isAppleMatches, isPath, isPathPlaylist, isPlaylist, isSwap, type AppleMatches, type Path, type PathPlaylist, type Playlist, type Swap,
+  isAlsoOn, isAppleMatches, isPath, isPathPlaylist, isPlaylist, isSwap, type AlsoOn, type AppleMatches, type Path, type PathPlaylist, type Playlist, type Swap,
   isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
   type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
@@ -70,6 +70,13 @@ export async function pathPlaylist(ids: string[], per: number, mix: number, sign
 export async function appleMatches(ids: string[], signal?: AbortSignal): Promise<AppleMatches> {
   const data = await getJson(`/api/apple?ids=${ids.join(",")}`, signal);
   if (!isAppleMatches(data)) throw new Error("Unexpected response");
+  return data;
+}
+
+/** Who else is on the most of a sampler's songs. */
+export async function alsoOn(seeds: string[], signal?: AbortSignal): Promise<AlsoOn> {
+  const data = await getJson(`/api/also-on?seeds=${seeds.join(",")}`, signal);
+  if (!isAlsoOn(data)) throw new Error("Unexpected response");
   return data;
 }
 

@@ -8,10 +8,10 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot, Swap } from "../contract/index.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Snapshot, Swap } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, refresh, refreshing, watch } from "./crawler.ts";
-import { samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
+import { alsoOn, performanceKeys, samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
 import { appleMatches } from "./apple.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
@@ -335,6 +335,19 @@ app.get("/api/playlist", async (c) => {
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
   const sample = samplePlaylist(await seedRows(seeds), seeds, n, mix);
   const body: Playlist = { seeds: players as Player[], ...sample, tracks: await withDetails(sample.tracks) };
+  return c.json(body);
+});
+
+// Who else is on a sampler's songs: ?seeds=<a>,<b>. Players credited on the most of its
+// performances, counted the way the sampler counts, so adding one never leaves an empty list.
+app.get("/api/also-on", async (c) => {
+  const seeds = [...new Set((c.req.query("seeds") ?? "").split(",").filter((id) => MBID.test(id)))];
+  if (seeds.length < 1 || seeds.length > 3) return c.json({ error: "one to three players, please" }, 400);
+  const keys = performanceKeys(await seedRows(seeds), seeds);
+  const others = keys.size ? await rows<{ recording_id: string; artist_id: string; artist_name: string }>(
+    `select recording_id, artist_id, artist_name from credits where recording_id = any($1) and rel_type = any($2)`,
+    [[...keys.keys()], PERFORMER_TYPES]) : [];
+  const body: AlsoOn = { players: alsoOn(keys, others, seeds) };
   return c.json(body);
 });
 

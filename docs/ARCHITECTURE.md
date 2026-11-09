@@ -237,6 +237,13 @@ your place, and Back walks back along your trail:
   - **Swap** (↻ on each song, `/api/swap`) replaces one song with another by the same players
     (the same step, on a path), never a tune already in the list. Swaps live on the page only;
     they aren't in the URL.
+- **Add a player** (up to four, `/api/also-on`): a sampler suggests who else is on the most of its
+  performances, counted the way the sampler counts them, with the number on each chip. Suggestions
+  come from the list itself, so adding one never empties it, and you can see how far it narrows.
+  Adding players one at a time is how you find a band: Carter + Hancock suggests Tony Williams,
+  then Miles Davis and Wayne Shorter.
+- **Notes about this feature**, a closed-by-default note on both playlist pages: why finding these
+  songs on a streaming service is hard (standards, reissues, renamed compilations) and how length helps.
 - **Journeys** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
   twice across the whole list. A player in the middle of a path is in two pairs, so without that
   the same song turns up in neighbouring steps; a repeat is allowed only if a step would
