@@ -7,8 +7,9 @@ export const SERVICES = [
 ];
 
 /** What to search for: the title without "(alternate take)" and the like, plus the album, or failing that, who's on it. */
-export function listenQuery(track: { title: string; album?: string }, who: string[]) {
+export function listenQuery(track: { title: string; album?: string; albumArtist?: string }, who: string[]) {
   const title = track.title.replace(/\s*[([][^)\]]*[)\]]/g, "").trim() || track.title;
-  return `${title} ${track.album ?? who.slice(0, 2).join(" ")}`.trim();
+  if (track.album) return `${title} ${track.albumArtist ?? ""} ${track.album}`.replace(/\s+/g, " ").trim();
+  return `${title} ${who.slice(0, 2).join(" ")}`.trim();
 }
 

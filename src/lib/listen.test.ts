@@ -7,6 +7,10 @@ test("searches for the title and album, without take notes", () => {
   assert.equal(listenQuery({ title: "Blue Day [rough mix]", album: "Smooth & Nasty" }, []), "Blue Day Smooth & Nasty");
 });
 
+test("adds the album artist when known", () => {
+  assert.equal(listenQuery({ title: "Joshua", album: "Seven Steps to Heaven", albumArtist: "Miles Davis" }, []), "Joshua Miles Davis Seven Steps to Heaven");
+});
+
 test("falls back to the players when there's no album", () => {
   assert.equal(listenQuery({ title: "Driving (Again)" }, ["Damon Wood", "Kenny Brooks", "Adam Beach"]), "Driving Damon Wood Kenny Brooks");
 });

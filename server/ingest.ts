@@ -1,7 +1,7 @@
 // Writes MusicBrainz responses into the cache.
 
 import { db, type Tx as Transaction } from "./db.ts";
-import type { MbArtist, MbRecording, MbRelation, MbRelease } from "./mb.ts";
+import { creditName, type MbArtist, type MbRecording, type MbRelation, type MbRelease } from "./mb.ts";
 
 /** Relationship types that mean "played or sang on this recording". */
 export const PERFORMER_TYPES = ["instrument", "vocal", "performer", "performing orchestra"];
@@ -81,13 +81,14 @@ async function replaceRecordings(tx: Transaction, recs: MbRecording[]) {
 }
 
 async function upsertReleases(tx: Transaction, releases: MbRelease[], fetched: boolean) {
-  await insertMany(tx, `insert into releases (id, title, date, status, rg_id, rg_title, rg_primary, rg_secondary, fetched)`,
+  await insertMany(tx, `insert into releases (id, title, date, status, rg_id, rg_title, rg_primary, rg_secondary, fetched, artist_credit)`,
     uniqueBy(releases, (r) => r.id).map((r) => {
       const rg = r["release-group"];
       return [r.id, r.title, r.date || null, r.status ?? null, rg?.id ?? null, rg?.title ?? null,
-        rg?.["primary-type"] ?? null, rg?.["secondary-types"] ?? [], fetched];
+        rg?.["primary-type"] ?? null, rg?.["secondary-types"] ?? [], fetched, creditName(r["artist-credit"])];
     }),
-    `on conflict (id) do update set fetched = releases.fetched or excluded.fetched`);
+    `on conflict (id) do update set fetched = releases.fetched or excluded.fetched,
+       artist_credit = coalesce(excluded.artist_credit, releases.artist_credit)`);
 }
 
 /** One recording, looked up on its own: its personnel plus every release it appears on. */

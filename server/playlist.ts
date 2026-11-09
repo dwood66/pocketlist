@@ -8,6 +8,8 @@
 //      sessions chosen are spaced across the years, so it isn't ten takes from one album.
 //   4. No tune twice: a second "So What" waits until there's nothing new left.
 //   5. Deterministic: the same seeds give the same list; `mix` asks for a different one.
+//   6. `avoid`: tunes already used elsewhere (earlier steps of a path playlist) are skipped,
+//      unless that would leave nothing at all, when one is allowed back.
 
 import type { PlaylistTrack } from "../contract/index.ts";
 import { normalizeTitle } from "./aggregate.ts";
@@ -19,6 +21,8 @@ export type SeedCreditRow = {
   first_release_date: string | null;
   rg_id: string | null;
   album: string | null;
+  release_id?: string | null;
+  album_artist?: string | null;
   artist_id: string;
   instruments: string[];
   date: string | null;
@@ -26,10 +30,14 @@ export type SeedCreditRow = {
 
 const yearOf = (d?: string | null) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : undefined);
 
-type Perf = PlaylistTrack & { tune: string; when: string };
+/** A picked song, plus the release its album name came from (for looking up the album artist). */
+export type SampledTrack = PlaylistTrack & { releaseId?: string };
+type Perf = SampledTrack & { tune: string; when: string };
 const TAKE = /\((alternate|alt\b|take|rehearsal|outtake|incomplete|false start|breakdown)/i;
 
-export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number, mix = 0) {
+export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number, mix = 0, avoid: ReadonlySet<string> = new Set()): {
+  performances: number; sessions: number; tracks: SampledTrack[];
+} {
   // 1. Every seed on it.
   const byRec = new Map<string, SeedCreditRow[]>();
   for (const r of rows) byRec.set(r.recording_id, [...(byRec.get(r.recording_id) ?? []), r]);
@@ -57,6 +65,7 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
     const year = yearOf(date) ?? yearOf(first.first_release_date);
     perfs.set(tune, {
       recordingId: id, title: first.title, album: first.album ?? undefined, date: date ?? undefined, year,
+      albumArtist: first.album_artist ?? undefined, releaseId: first.release_id ?? undefined,
       instruments, tune, when: date ?? (year ? String(year) : "9999"),
     });
     sessions.set(session, perfs);
@@ -87,7 +96,7 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
         progress = true;
         // Rotate within a session by `mix`, so another mix can also mean other tunes.
         const fresh = perfs.map((_, k) => perfs[(k + pass + mix) % perfs.length])
-          .find((p) => !tunes.has(p.tune) && !picked.includes(p) && (takesToo || !TAKE.test(p.title)));
+          .find((p) => !tunes.has(p.tune) && !avoid.has(p.tune) && !picked.includes(p) && (takesToo || !TAKE.test(p.title)));
         if (!fresh) continue;
         picked.push(fresh);
         tunes.add(fresh.tune);
@@ -96,7 +105,13 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
     }
   }
 
-  const tracks: PlaylistTrack[] = picked
+  // Everything left was already used: better one repeat than a step with no song at all.
+  if (!picked.length && avoid.size && n > 0) {
+    const again = samplePlaylist(rows, seeds, 1, mix);
+    return { ...again, performances: ordered.reduce((sum, perfs) => sum + perfs.length, 0), sessions: ordered.length };
+  }
+
+  const tracks: SampledTrack[] = picked
     .sort((a, b) => a.when.localeCompare(b.when) || a.title.localeCompare(b.title))
     .map(({ tune: _t, when: _w, ...t }) => t);
   return {

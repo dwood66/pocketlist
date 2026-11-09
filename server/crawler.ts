@@ -163,7 +163,7 @@ async function step(job: Job): Promise<boolean> {
   const again = job.recheck?.shift();
   if (again) {
     try {
-      await ingestRecording(await mb<MbRecording>(`recording/${again}?inc=artist-rels+releases+release-groups`));
+      await ingestRecording(await mb<MbRecording>(`recording/${again}?inc=artist-rels+releases+release-groups+artist-credits`));
     } catch (e) {
       if (!(e instanceof NotFound)) { job.recheck!.unshift(again); throw e; }
     }
@@ -181,7 +181,7 @@ async function step(job: Job): Promise<boolean> {
 
   let rec: MbRecording;
   try {
-    rec = await mb<MbRecording>(`recording/${next.id}?inc=artist-rels+releases+release-groups`);
+    rec = await mb<MbRecording>(`recording/${next.id}?inc=artist-rels+releases+release-groups+artist-credits`);
   } catch (e) {
     if (e instanceof NotFound) {
       await skipRecording(next.id);
@@ -205,7 +205,7 @@ async function step(job: Job): Promise<boolean> {
   );
   if (best) {
     try {
-      const release = await mb<MbRelease>(`release/${best.id}?inc=recordings+recording-level-rels+artist-rels+release-groups`);
+      const release = await mb<MbRelease>(`release/${best.id}?inc=recordings+recording-level-rels+artist-rels+release-groups+artist-credits`);
       await ingestRelease(release);
     } catch (e) {
       if (!(e instanceof NotFound)) throw e;

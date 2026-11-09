@@ -70,3 +70,15 @@ test("a session with only a rehearsal gives way to one with a finished take", ()
   assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 1).tracks.map((t) => t.title), ["Byrdlike"]);
   assert.equal(samplePlaylist(rows, [RON, HERBIE], 2).tracks.length, 2); // still used when needed
 });
+
+test("avoid: tunes used in earlier steps are skipped while there's something else", () => {
+  const rows = [...both("r1", "Joshua", "1963-05-14"), ...both("r2", "Seven Steps to Heaven", "1963-05-14"), ...both("r3", "So What", "1964-02-12")];
+  const titles = samplePlaylist(rows, [RON, HERBIE], 2, 0, new Set(["joshua"])).tracks.map((t) => t.title);
+  assert.equal(titles.includes("Joshua"), false);
+  assert.equal(titles.length, 2);
+});
+
+test("avoid: one repeat rather than an empty step", () => {
+  const rows = both("r1", "Joshua", "1963-05-14");
+  assert.deepEqual(samplePlaylist(rows, [RON, HERBIE], 2, 0, new Set(["joshua"])).tracks.map((t) => t.title), ["Joshua"]);
+});

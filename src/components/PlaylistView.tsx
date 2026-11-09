@@ -96,7 +96,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
                 <span className="w-6 shrink-0 text-right tabular-nums text-muted-foreground" title="Position in the playlist">{i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="font-medium" title="Song title">{t.title}</span>
-                  {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span></span>}
+                  {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
                   <span className="block text-xs text-muted-foreground">
                     <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{why(list, t)}</span>
                   </span>
@@ -122,13 +122,13 @@ function save(list: Playlist, kind: "txt" | "csv") {
   let text: string;
   if (kind === "txt") {
     text = [`${name}: a Pocketlist playlist`, "", ...list.tracks.flatMap((t, i) => [
-      `${i + 1}. ${t.title}${t.album ? ` (${t.album})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`,
+      `${i + 1}. ${t.title}${t.album ? ` (${t.album}${t.albumArtist ? `, ${t.albumArtist}` : ""})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`,
       `   ${why(list, t)}`,
     ]), "", "Credits from MusicBrainz. https://pocketlist.music", ""].join("\n");
   } else {
     // The byte-order mark tells Excel it's UTF-8, so "1963–1964" doesn't turn into mojibake.
-    text = "\uFEFF" + [["#", "title", "album", "date", "players"].join(","),
-      ...list.tracks.map((t, i) => [i + 1, t.title, t.album, t.date ?? t.year, why(list, t)].map(cell).join(","))].join("\n") + "\n";
+    text = "\uFEFF" + [["#", "title", "album", "album artist", "date", "players"].join(","),
+      ...list.tracks.map((t, i) => [i + 1, t.title, t.album, t.albumArtist, t.date ?? t.year, why(list, t)].map(cell).join(","))].join("\n") + "\n";
   }
   download(name, kind, text);
 }
@@ -219,7 +219,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
                         <li key={t.recordingId} className="flex gap-3 px-4 py-3 text-sm">
                           <span className="min-w-0 flex-1">
                             <span className="font-medium" title="Song title">{t.title}</span>
-                            {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span></span>}
+                            {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
                             <span className="block text-xs text-muted-foreground">
                               <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{pairWhy(a, b, t)}</span>
                             </span>
@@ -256,7 +256,7 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
       const a = byId.get(l.from), b = byId.get(l.to);
       lines.push(`Step ${i + 1}: ${a?.name} → ${b?.name}`);
       for (const t of l.tracks) {
-        lines.push(`${++n}. ${t.title}${t.album ? ` (${t.album})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`);
+        lines.push(`${++n}. ${t.title}${t.album ? ` (${t.album}${t.albumArtist ? `, ${t.albumArtist}` : ""})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}`);
         lines.push(`   ${pairWhy(a, b, t)}`);
       }
       lines.push("");
@@ -264,10 +264,10 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
     lines.push("Credits from MusicBrainz. https://pocketlist.music", "");
     download(name, kind, lines.join("\n"));
   } else {
-    const rows = [["#", "step", "title", "album", "date", "players"].join(",")];
+    const rows = [["#", "step", "title", "album", "album artist", "date", "players"].join(",")];
     list.links.forEach((l) => {
       const a = byId.get(l.from), b = byId.get(l.to);
-      for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.album, t.date ?? t.year, pairWhy(a, b, t)].map(cell).join(","));
+      for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.album, t.albumArtist, t.date ?? t.year, pairWhy(a, b, t)].map(cell).join(","));
     });
     download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
   }

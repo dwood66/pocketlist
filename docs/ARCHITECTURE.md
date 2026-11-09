@@ -209,7 +209,14 @@ your place, and Back walks back along your trail:
   chain). Arriving shows the chain, the record behind each link, and a **Copy result** for sharing.
 - **Playlists** (`PlaylistView.tsx`, rules in `server/playlist.ts`): songs every seed played on,
   one per session, spread across the years, no tune twice, finished versions before takes. 10, 20
-  or 30 songs, "Another mix", and text or CSV downloads that say who played what.
+  or 30 songs, "Another mix", and text or CSV downloads that say who played what. Each song
+  shows its album and **album artist** ("Seven Steps… by Miles Davis"), so a tune that's on
+  several records can be told apart. Album artists are stored as releases are read; for releases
+  read before that, one MusicBrainz search fills in up to 50 at a time when a playlist needs them.
+- **Path playlists** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
+  twice across the whole list. A player in the middle of a path is in two pairs, so without that
+  the same song turns up in neighbouring steps; a repeat is allowed only if a step would
+  otherwise be empty.
 
 ### Look and feel
 

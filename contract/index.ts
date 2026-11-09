@@ -102,6 +102,8 @@ export type PlaylistTrack = {
   recordingId: string;
   title: string;
   album?: string;
+  /** The album's artist as printed, e.g. "Miles Davis Quintet". */
+  albumArtist?: string;
   date?: string;
   year?: number;
   /** What each seed played on it, keyed by player id. */
@@ -123,7 +125,7 @@ export type Path = {
 };
 
 export function isPlaylistTrack(v: unknown): v is PlaylistTrack {
-  return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.album) && optStr(v.date) &&
+  return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.album) && optStr(v.albumArtist) && optStr(v.date) &&
     optNum(v.year) && isObj(v.instruments) && Object.values(v.instruments).every(isStrArr);
 }
 

@@ -102,6 +102,9 @@ export const SCHEMA = `
     fetched boolean not null default false
   );
 
+  -- The album artist as printed ("Miles Davis Quintet"), for telling albums apart.
+  alter table releases add column if not exists artist_credit text;
+
   create table if not exists recording_releases (
     recording_id text not null,
     release_id text not null,

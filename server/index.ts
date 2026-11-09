@@ -8,13 +8,13 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, PlaylistTrack, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, refresh, refreshing, watch } from "./crawler.ts";
-import { samplePlaylist, type SeedCreditRow } from "./playlist.ts";
+import { samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
-import { mb, NotFound, type MbArtist } from "./mb.ts";
+import { creditName, mb, NotFound, type MbArtist, type MbRelease } from "./mb.ts";
 
 const app = new Hono();
 
@@ -237,11 +237,38 @@ app.get("/api/players/:id/with/:other", async (c) => {
 // The album a recording is best known from: an official album with no "compilation" or
 // "live" tags first, then the earliest. Used wherever one album name stands for a song.
 const BEST_ALBUM = `
-  select rl.rg_id, rl.rg_title as album from recording_releases rr join releases rl on rl.id = rr.release_id
+  select rl.rg_id, rl.rg_title as album, rl.id as release_id, rl.artist_credit as album_artist
+  from recording_releases rr join releases rl on rl.id = rr.release_id
   where rr.recording_id = c.recording_id
   order by (rl.status = 'Official') desc nulls last, (rl.rg_primary = 'Album') desc nulls last,
            coalesce(array_length(rl.rg_secondary, 1), 0) asc, rl.date asc nulls last
   limit 1`;
+
+// Album artists for playlist tracks. Releases read since this was added carry their artist
+// credit; for older ones, one MusicBrainz search fetches up to 50 at a time, and the answers are
+// stored so the next playlist has them. Best effort: if MusicBrainz is slow, the tracks simply
+// go out without it.
+async function withAlbumArtists(tracks: SampledTrack[]): Promise<PlaylistTrack[]> {
+  const missing = [...new Set(tracks.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))];
+  const found = new Map<string, string>();
+  try {
+    for (let i = 0; i < missing.length; i += 50) {
+      const ids = missing.slice(i, i + 50);
+      const res = await mb<{ releases?: MbRelease[] }>(`release?query=${encodeURIComponent(`reid:(${ids.join(" OR ")})`)}&limit=100`);
+      for (const r of res.releases ?? []) {
+        const name = creditName(r["artist-credit"]);
+        if (name && ids.includes(r.id)) found.set(r.id, name);
+      }
+    }
+    if (found.size) {
+      await rows(`update releases r set artist_credit = v.ac from unnest($1::text[], $2::text[]) as v(id, ac) where r.id = v.id`,
+        [[...found.keys()], [...found.values()]]);
+    }
+  } catch (e) {
+    console.warn(`album artists: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  return tracks.map(({ releaseId, ...t }) => ({ ...t, albumArtist: t.albumArtist ?? (releaseId ? found.get(releaseId) : undefined) }));
+}
 
 // Every seed's credits on the recordings they were all on, for the playlist rules.
 function seedRows(seeds: string[]) {
@@ -250,7 +277,8 @@ function seedRows(seeds: string[]) {
        select recording_id from credits where artist_id = any($1) and rel_type = any($2)
        group by recording_id having count(distinct artist_id) = $3
      )
-     select c.recording_id, r.title, r.first_release_date, f.rg_id, f.album, c.artist_id, c.instruments, c.date
+     select c.recording_id, r.title, r.first_release_date, f.rg_id, f.album, f.release_id, f.album_artist,
+            c.artist_id, c.instruments, c.date
      from credits c
      join shared s on s.recording_id = c.recording_id
      join recordings r on r.id = c.recording_id
@@ -268,8 +296,8 @@ app.get("/api/playlist", async (c) => {
   const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
   const players = await Promise.all(seeds.map(findPlayer));
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
-  const found = await seedRows(seeds);
-  const body: Playlist = { seeds: players as Player[], ...samplePlaylist(found, seeds, n, mix) };
+  const sample = samplePlaylist(await seedRows(seeds), seeds, n, mix);
+  const body: Playlist = { seeds: players as Player[], ...sample, tracks: await withAlbumArtists(sample.tracks) };
   return c.json(body);
 });
 
@@ -282,12 +310,19 @@ app.get("/api/path-playlist", async (c) => {
   const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
   const players = await Promise.all(ids.map(findPlayer));
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
-  const links: PathPlaylist["links"] = [];
+  // No tune twice in the whole list: a player in the middle of the path is in two pairs, so
+  // the same song (or another take of it) would otherwise turn up in neighbouring steps.
+  const used = new Set<string>();
+  const steps: { from: string; to: string; performances: number; tracks: SampledTrack[] }[] = [];
   for (let i = 0; i + 1 < ids.length; i++) {
     const pair = [ids[i], ids[i + 1]];
-    const sample = samplePlaylist(await seedRows(pair), pair, per, mix);
-    links.push({ from: ids[i], to: ids[i + 1], performances: sample.performances, tracks: sample.tracks });
+    const sample = samplePlaylist(await seedRows(pair), pair, per, mix, used);
+    for (const t of sample.tracks) used.add(normalizeTitle(t.title));
+    steps.push({ from: ids[i], to: ids[i + 1], performances: sample.performances, tracks: sample.tracks });
   }
+  const filled = await withAlbumArtists(steps.flatMap((s) => s.tracks));
+  const byRec = new Map(filled.map((t) => [t.recordingId, t]));
+  const links: PathPlaylist["links"] = steps.map((s) => ({ ...s, tracks: s.tracks.map((t) => byRec.get(t.recordingId)!) }));
   const body: PathPlaylist = { players: players as Player[], links };
   return c.json(body);
 });

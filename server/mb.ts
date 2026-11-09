@@ -76,11 +76,20 @@ export type MbReleaseGroup = {
   "first-release-date"?: string;
 };
 
+export type MbArtistCredit = { name: string; joinphrase?: string }[];
+
+/** "Miles Davis Quintet", "Art Blakey & The Jazz Messengers": a credit as it's printed. */
+export function creditName(ac?: MbArtistCredit): string | null {
+  const s = (ac ?? []).map((a) => a.name + (a.joinphrase ?? "")).join("").trim();
+  return s || null;
+}
+
 export type MbRelease = {
   id: string;
   title: string;
   date?: string;
   status?: string | null;
+  "artist-credit"?: MbArtistCredit;
   "release-group"?: MbReleaseGroup;
   media?: { tracks?: { recording: MbRecording }[] }[];
 };
