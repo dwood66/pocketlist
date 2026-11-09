@@ -63,6 +63,11 @@ instead of Neon, so there's nothing to install: `npm run dev`.
 - **Deploys:** a push to `main` deploys both halves: Vercel rebuilds the site; Railway rebuilds
   the API (its GitHub trigger was connected on 2026-11-07). `railway up --detach` from the repo
   still works for a manual deploy.
+- **The server is built from the `Dockerfile`** (Node 22 from Docker Hub, `npm ci`, then `server/`
+  and `contract/`). Railway's default builder downloaded its own tools from GitHub on every build
+  and failed whenever those timed out. Railway's settings live in `.railway/railway.ts` (builder,
+  start command, health check); `railway config plan` previews a change and `railway config apply`
+  makes it. Variables aren't in that file: they stay in Railway.
 - **Settings** (environment variables, never in the code):
 
 | Variable | Where | What it does |
@@ -73,8 +78,8 @@ instead of Neon, so there's nothing to install: `npm run dev`.
 | `POCKETLIST_WARM` | optional | Pre-reads a starter set of players in the background when the server starts. |
 
 - **Node 22** is pinned (`engines`, `.nvmrc`). Railway's default Node crashed the server.
-- **To do before 2026-12-01:** Railway is retiring `railway.json`; move it to their new config
-  format (`railway config migrate`).
+- **Moved off `railway.json`** (retired by Railway on 2026-12-01) to `.railway/railway.ts` on
+  2026-11-08.
 
 ## 4. The data
 
@@ -353,5 +358,5 @@ src/lib/api.ts           the app's only door to the API
 src/lib/galaxy.ts        where every star goes         (+ galaxy.test.ts)
 src/components/          Galaxy, PlayerView, Connect, PlaylistView, Search, Mark, ui/
 docs/DESIGN.md           the plan, decisions, milestones, open questions
-railway.json, .nvmrc     deploy settings
+Dockerfile, .railway/    the server's build and Railway settings; .nvmrc pins Node
 ```
