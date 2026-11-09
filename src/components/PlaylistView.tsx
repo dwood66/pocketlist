@@ -25,10 +25,19 @@ export function PlaylistView({ seeds, n, mix, go }: {
   useEffect(() => {
     const ctrl = new AbortController();
     setError(null);
-    playlist(seeds, n, mix, ctrl.signal).then(setList).catch((e: unknown) => {
+    let timer: ReturnType<typeof setTimeout>;
+    playlist(seeds, n, mix, ctrl.signal).then((l) => {
+      setList(l);
+      // The first look at older data can come back before every song's details are in; they
+      // keep filling in on the server, so ask once more and add them to the songs on screen.
+      if (l.tracks.some(lacksDetails)) {
+        timer = setTimeout(() => playlist(seeds, n, mix, ctrl.signal)
+          .then((again) => setList((cur) => cur && { ...cur, tracks: withDetailsFrom(cur.tracks, again.tracks) })).catch(() => {}), 4000);
+      }
+    }).catch((e: unknown) => {
       if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "Couldn't make the playlist");
     });
-    return () => ctrl.abort();
+    return () => { ctrl.abort(); clearTimeout(timer); };
   }, [seeds.join(","), n, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (next: Partial<{ seeds: string[]; n: number; mix: number }>) =>
@@ -109,6 +118,17 @@ export function PlaylistView({ seeds, n, mix, go }: {
   );
 }
 
+const lacksDetails = (t: PlaylistTrack) => !t.artist || !t.length || (t.album && !t.albumArtist);
+
+/** The songs on screen (which may have been swapped), with any details the fresh copy has. */
+function withDetailsFrom(shown: PlaylistTrack[], fresh: PlaylistTrack[]) {
+  const byId = new Map(fresh.map((t) => [t.recordingId, t]));
+  return shown.map((t) => {
+    const f = byId.get(t.recordingId);
+    return f ? { ...t, artist: t.artist ?? f.artist, length: t.length ?? f.length, albumArtist: t.albumArtist ?? f.albumArtist } : t;
+  });
+}
+
 /** "Ron Carter: double bass · Herbie Hancock: piano" */
 function why(list: Playlist, t: PlaylistTrack) {
   return list.seeds.map((s) => `${s.name}: ${t.instruments[s.id]?.join(", ") || "?"}`).join(" · ");
@@ -155,10 +175,19 @@ export function PathPlaylistView({ ids, per, mix, go }: {
   useEffect(() => {
     const ctrl = new AbortController();
     setError(null);
-    pathPlaylist(ids, per, mix, ctrl.signal).then(setList).catch((e: unknown) => {
+    let timer: ReturnType<typeof setTimeout>;
+    pathPlaylist(ids, per, mix, ctrl.signal).then((l) => {
+      setList(l);
+      if (l.links.some((x) => x.tracks.some(lacksDetails))) {
+        timer = setTimeout(() => pathPlaylist(ids, per, mix, ctrl.signal).then((again) => {
+          const fresh = again.links.flatMap((x) => x.tracks);
+          setList((cur) => cur && { ...cur, links: cur.links.map((x) => ({ ...x, tracks: withDetailsFrom(x.tracks, fresh) })) });
+        }).catch(() => {}), 4000);
+      }
+    }).catch((e: unknown) => {
       if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "Couldn't make the playlist");
     });
-    return () => ctrl.abort();
+    return () => { ctrl.abort(); clearTimeout(timer); };
   }, [ids.join(","), per, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, ...next }, { replace: true });
