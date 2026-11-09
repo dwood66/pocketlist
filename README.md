@@ -13,6 +13,14 @@ recordings behind each connection. The app is on Vercel; the API and crawler run
 the cache is Postgres on Neon. The plan and the decisions behind it are in
 [docs/DESIGN.md](docs/DESIGN.md).
 
+## Connect
+
+Six degrees, jazz style: get from one player to another through people who recorded together, in
+as few hops as you can. Each day has a puzzle on the home page, or start one from any player.
+Stuck? A hint names someone one step closer.
+
+![Today's puzzle, Ron Carter to John Coltrane: the Connect banner sets the goal at par 2; a hint suggests Louis Hayes, highlighted in Carter's galaxy; clicking him travels to his galaxy, where Coltrane is marked in rose; clicking Coltrane finishes in 2 hops, par, with the recording behind each link](docs/connect.gif)
+
 ## Why
 
 In jazz, personnel is the point of a record. Fans follow players from session to session. The
