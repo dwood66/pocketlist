@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/Link";
 import { getPlayer, search, sharedRecordings, shortestPath } from "@/lib/api";
+import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { Route } from "@/lib/route";
 
 type Go = (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
@@ -38,6 +39,12 @@ const PUZZLES: { from: string; fromName: string; to: string; toName: string }[] 
   { from: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", fromName: "Bill Evans", to: "601e7466-eaf5-4a91-9909-ffd770b7e04a", toName: "Art Blakey" },
 ];
 
+// A finished game, for the home card's "hear one" link.
+const EXAMPLE = {
+  from: "57db3f59-9c58-4f68-a00e-e044666c4828", via: "1e15c55f-e661-4910-9c0c-49a7b77b4d55", to: "b625448e-bf4a-41c3-a421-72ad46cdb831",
+  label: "Ron Carter → Louis Hayes → John Coltrane",
+};
+
 /** Today's puzzle, the same for everyone on a given (UTC) day. */
 export function puzzleOfTheDay(offset = 0) {
   const day = Math.floor(Date.now() / 86_400_000);
@@ -52,6 +59,15 @@ export function ConnectIntro({ go }: { go: Go }) {
       <h2 className="flex items-center gap-2 text-lg font-semibold"><ConnectIcon className="h-5 w-5 text-[color:var(--goal)]" aria-hidden />Play Connect</h2>
       <p className="text-sm text-muted-foreground">
         Six degrees, jazz style: get from one player to another through people who recorded together.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Then listen to it. Your route becomes a{" "}
+        <span className="whitespace-nowrap font-medium text-foreground"><JourneyIcon className="mr-0.5 inline h-3.5 w-3.5 align-[-2px] text-[color:var(--goal)]" aria-hidden />Journey</span>{" "}
+        playlist, and any link along it a{" "}
+        <span className="whitespace-nowrap font-medium text-foreground"><SamplerIcon className="mr-0.5 inline h-3.5 w-3.5 align-[-2px] text-primary" aria-hidden />Sampler</span>.{" "}
+        <Link to={{ view: "pathlist", ids: [EXAMPLE.from, EXAMPLE.via, EXAMPLE.to], per: 2, mix: 0 }} go={go} className="underline hover:text-foreground">
+          Hear one: {EXAMPLE.label}
+        </Link>
       </p>
       <div className="mt-auto flex flex-col items-start gap-1.5 pt-1">
         <Link to={{ view: "player", id: p.from, trail: [], goal: p.to }} go={go}
@@ -284,14 +300,19 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
       </p>
       <ol className="flex flex-col gap-1.5 text-sm">
         {path.slice(1).map((b, i) => (
-          <li key={`${path[i]}-${b}`}>
-            <span className="font-medium">{name(path[i])} → {name(b)}</span>
+          <li key={`${path[i]}-${b}`} className="flex flex-wrap items-baseline gap-x-1">
+            <span className="font-medium">{name(path[i])} → {name(b)}{links[i] ? ":" : ""}</span>
             {links[i] && (
               <span className="text-muted-foreground" title="A recording they're both on">
-                : “{links[i]!.title}”
+                “{links[i]!.title}”
                 {(links[i]!.album || links[i]!.year) && <> ({links[i]!.album && <cite className="italic">{links[i]!.album}</cite>}{links[i]!.album && links[i]!.year ? ", " : ""}{links[i]!.year})</>}
               </span>
             )}
+            <Link to={{ view: "playlist", seeds: [path[i], b], n: 10, mix: 0 }} go={go}
+              title={`A sampler of everything ${name(path[i])} and ${name(b)} recorded together`}
+              className="ml-1 inline-flex items-center gap-1 self-center rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted">
+              <SamplerIcon className="h-3 w-3 text-primary" aria-hidden /> Sampler
+            </Link>
           </li>
         ))}
       </ol>
@@ -301,7 +322,7 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         </Button>
         <Link to={{ view: "pathlist", ids: path, per: 2, mix: 0 }} go={go}
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[color:var(--goal)] px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <ConnectIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Listen to this journey
+          <JourneyIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Listen to this journey
         </Link>
         <Button variant="outline" size="sm" onClick={() => go({ view: "home" })}>Play another</Button>
       </div>
