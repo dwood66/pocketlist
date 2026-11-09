@@ -76,11 +76,16 @@ export default function App() {
 }
 
 // Starting points that open instantly: these players' credits are already read.
+// Oldest to newest, so the home page shows how far back and forward the galaxy reaches.
 const EXPLORE = [
-  { id: "b6ff4fd0-03ae-41a6-942e-7de13124b970", name: "Paul Chambers" },
-  { id: "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7", name: "Elvin Jones" },
-  { id: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", name: "Bill Evans" },
-  { id: "57db3f59-9c58-4f68-a00e-e044666c4828", name: "Ron Carter" },
+  { id: "4e525f48-6ebf-45fe-8d57-3fd730970725", name: "Milt Hinton", years: "1930s–2000s" },
+  { id: "e9ba8ccb-505f-4e5c-b909-65998d0d35b5", name: "Dizzy Gillespie", years: "1930s–1990s" },
+  { id: "b6ff4fd0-03ae-41a6-942e-7de13124b970", name: "Paul Chambers", years: "1950s–60s" },
+  { id: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", name: "Bill Evans", years: "1950s–70s" },
+  { id: "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7", name: "Elvin Jones", years: "1950s–90s" },
+  { id: "57db3f59-9c58-4f68-a00e-e044666c4828", name: "Ron Carter", years: "1960s–today" },
+  { id: "f2d13d28-6f74-4dd5-b596-8bd0b6f67615", name: "Jack DeJohnette", years: "1960s–today" },
+  { id: "6035000d-b53b-4b01-b5a0-a7572c34e806", name: "Christian McBride", years: "1990s–today" },
 ];
 const PAIRS = [
   { seeds: ["57db3f59-9c58-4f68-a00e-e044666c4828", "27613b78-1b9d-4ec3-9db5-fa0743465fdd"], name: "Ron Carter + Herbie Hancock" },
@@ -94,9 +99,17 @@ function Home({ go }: { go: (r: Route) => void }) {
     <div className="grid gap-3 sm:grid-cols-3">
       <StartCard icon={<Orbit className="h-5 w-5" />} title="Explore a galaxy"
         text="Everyone a player recorded with, as stars around them. Click one to travel.">
-        {EXPLORE.map((p) => (
-          <Link key={p.id} to={{ view: "player", id: p.id, trail: [] }} go={go} className={chip}>{p.name}</Link>
-        ))}
+        <ul className="flex w-full flex-col" aria-label="Players, oldest to newest">
+          {EXPLORE.map((p) => (
+            <li key={p.id}>
+              <Link to={{ view: "player", id: p.id, trail: [] }} go={go}
+                className="-mx-1.5 flex items-baseline justify-between gap-2 rounded px-1.5 py-0.5 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="hover:underline">{p.name}</span>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground" title="When they were recording">{p.years}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </StartCard>
       <ConnectIntro go={go} />
       <StartCard icon={<SamplerIcon className="h-5 w-5" />} title="Make a sampler"

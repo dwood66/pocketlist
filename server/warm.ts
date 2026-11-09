@@ -87,6 +87,7 @@ const KEY: Record<string, string> = {
   "Dizzy Gillespie": "e9ba8ccb-505f-4e5c-b909-65998d0d35b5",
   "John Coltrane": "b625448e-bf4a-41c3-a421-72ad46cdb831",
   "Miles Davis": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+  "Christian McBride": "6035000d-b53b-4b01-b5a0-a7572c34e806",
 };
 
 /** Everything worth having read in advance, in order: the starters, then the key players. */
