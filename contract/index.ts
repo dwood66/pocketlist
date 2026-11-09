@@ -56,6 +56,7 @@ export type SharedRecording = {
   date?: string; // session date where known
   year?: number;
   album?: string;
+  albumArtist?: string;
   instruments: { player: string[]; collaborator: string[] };
 };
 
@@ -93,7 +94,7 @@ export function isSnapshot(v: unknown): v is Snapshot {
 
 export function isSharedRecording(v: unknown): v is SharedRecording {
   return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.date) && optNum(v.year) &&
-    optStr(v.album) && isObj(v.instruments) && isStrArr(v.instruments.player) &&
+    optStr(v.album) && optStr(v.albumArtist) && isObj(v.instruments) && isStrArr(v.instruments.player) &&
     isStrArr(v.instruments.collaborator);
 }
 

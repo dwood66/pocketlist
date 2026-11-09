@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, PlaylistTrack, SharedRecording, Snapshot } from "../contract/index.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, refresh, refreshing, watch } from "./crawler.ts";
 import { samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
@@ -190,15 +190,17 @@ app.get("/api/players/:id/with/:other", async (c) => {
   if (!MBID.test(id) || !MBID.test(other)) return c.json({ error: "not a MusicBrainz ID" }, 400);
   const found = await rows<{
     recording_id: string; title: string; first_release_date: string | null;
-    a_instruments: string[]; a_date: string | null; b_instruments: string[]; b_date: string | null; album: string | null;
+    a_instruments: string[]; a_date: string | null; b_instruments: string[]; b_date: string | null;
+    album: string | null; release_id: string | null; album_artist: string | null;
   }>(
+    // The album is picked the same way as in playlists: the original official album first.
     `select r.id as recording_id, r.title, r.first_release_date,
             a.instruments as a_instruments, a.date as a_date, b.instruments as b_instruments, b.date as b_date,
-            (select rl.rg_title from recording_releases rr join releases rl on rl.id = rr.release_id
-             where rr.recording_id = r.id order by rl.date asc nulls last limit 1) as album
+            f.album, f.release_id, f.album_artist
      from credits a
      join credits b on b.recording_id = a.recording_id
      join recordings r on r.id = a.recording_id
+     left join lateral (${BEST_ALBUM.replace("c.recording_id", "r.id")}) f on true
      where a.artist_id = $1 and b.artist_id = $2 and a.rel_type = any($3) and b.rel_type = any($3)`,
     [id, other, PERFORMER_TYPES],
   );
@@ -213,7 +215,7 @@ app.get("/api/players/:id/with/:other", async (c) => {
     seen.b_date = [seen.b_date, f.b_date].filter(Boolean).sort()[0] ?? null;
   }
   // Then the same rules as the counts: one entry per performance, not per duplicate recording.
-  const byKey = new Map<string, SharedRecording>();
+  const byKey = new Map<string, SharedRecording & { releaseId?: string }>();
   for (const f of byRecording.values()) {
     const date = f.a_date ?? f.b_date ?? undefined;
     const key = `${normalizeTitle(f.title)}|${date ?? f.album ?? f.recording_id}`;
@@ -226,12 +228,14 @@ app.get("/api/players/:id/with/:other", async (c) => {
     const y = (date ?? f.first_release_date ?? "").slice(0, 4);
     byKey.set(key, {
       recordingId: f.recording_id, title: f.title, date, year: /^\d{4}$/.test(y) ? Number(y) : undefined,
-      album: f.album ?? undefined, instruments: { player: f.a_instruments, collaborator: f.b_instruments },
+      album: f.album ?? undefined, albumArtist: f.album_artist ?? undefined, releaseId: f.release_id ?? undefined,
+      instruments: { player: f.a_instruments, collaborator: f.b_instruments },
     });
   }
   const list = [...byKey.values()].sort((x, y) =>
     (x.date ?? String(x.year ?? "9999")).localeCompare(y.date ?? String(y.year ?? "9999")) || x.title.localeCompare(y.title));
-  return c.json(list);
+  const body: SharedRecording[] = await withAlbumArtists(list);
+  return c.json(body);
 });
 
 // The album a recording is best known from: an official album with no "compilation" or
@@ -244,16 +248,17 @@ const BEST_ALBUM = `
            coalesce(array_length(rl.rg_secondary, 1), 0) asc, rl.date asc nulls last
   limit 1`;
 
-// Album artists for playlist tracks. Releases read since this was added carry their artist
-// credit; for older ones, one MusicBrainz search fetches up to 50 at a time, and the answers are
-// stored so the next playlist has them. Best effort: if MusicBrainz is slow, the tracks simply
-// go out without it.
-async function withAlbumArtists(tracks: SampledTrack[]): Promise<PlaylistTrack[]> {
-  const missing = [...new Set(tracks.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))];
+// Album artists for songs we're about to show. Releases read since this was added carry their
+// artist credit; for older ones, one MusicBrainz search fetches up to 100 at a time (at most two
+// searches per call, so a long list never waits more than a couple of seconds), and the answers
+// are stored, so each look fills in more. Best effort: if MusicBrainz is slow, songs simply go
+// out without it.
+async function withAlbumArtists<T extends { albumArtist?: string; releaseId?: string }>(items: T[]): Promise<Omit<T, "releaseId">[]> {
+  const missing = [...new Set(items.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))].slice(0, 200);
   const found = new Map<string, string>();
   try {
-    for (let i = 0; i < missing.length; i += 50) {
-      const ids = missing.slice(i, i + 50);
+    for (let i = 0; i < missing.length; i += 100) {
+      const ids = missing.slice(i, i + 100);
       const res = await mb<{ releases?: MbRelease[] }>(`release?query=${encodeURIComponent(`reid:(${ids.join(" OR ")})`)}&limit=100`);
       for (const r of res.releases ?? []) {
         const name = creditName(r["artist-credit"]);
@@ -267,7 +272,7 @@ async function withAlbumArtists(tracks: SampledTrack[]): Promise<PlaylistTrack[]
   } catch (e) {
     console.warn(`album artists: ${e instanceof Error ? e.message : String(e)}`);
   }
-  return tracks.map(({ releaseId, ...t }) => ({ ...t, albumArtist: t.albumArtist ?? (releaseId ? found.get(releaseId) : undefined) }));
+  return items.map(({ releaseId, ...t }) => ({ ...t, albumArtist: t.albumArtist ?? (releaseId ? found.get(releaseId) : undefined) }));
 }
 
 // Every seed's credits on the recordings they were all on, for the playlist rules.
