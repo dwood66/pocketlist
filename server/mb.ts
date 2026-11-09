@@ -99,6 +99,7 @@ export type MbRecording = {
   title: string;
   length?: number | null;
   "first-release-date"?: string;
+  "artist-credit"?: MbArtistCredit;
   relations?: MbRelation[];
   releases?: MbRelease[];
 };

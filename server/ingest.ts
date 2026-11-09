@@ -69,11 +69,13 @@ export async function rememberArtist(a: { id: string; name: string; disambiguati
 async function replaceRecordings(tx: Transaction, recs: MbRecording[]) {
   const unique = uniqueBy(recs, (r) => r.id);
   if (!unique.length) return;
-  await insertMany(tx, `insert into recordings (id, title, first_release_date, credits_loaded)`,
-    unique.map((r) => [r.id, r.title, r["first-release-date"] || null, true]),
+  await insertMany(tx, `insert into recordings (id, title, first_release_date, credits_loaded, length_ms, artist_credit)`,
+    unique.map((r) => [r.id, r.title, r["first-release-date"] || null, true, r.length ?? null, creditName(r["artist-credit"])]),
     `on conflict (id) do update set title = excluded.title,
        first_release_date = coalesce(excluded.first_release_date, recordings.first_release_date),
-       credits_loaded = true`);
+       credits_loaded = true,
+       length_ms = coalesce(excluded.length_ms, recordings.length_ms),
+       artist_credit = coalesce(excluded.artist_credit, recordings.artist_credit)`);
   await tx.query(`delete from credits where recording_id = any($1)`, [unique.map((r) => r.id)]);
   await insertCredits(tx, unique.flatMap((r) => (r.relations ?? [])
     .filter((rel) => rel["target-type"] === "artist" && rel.artist)

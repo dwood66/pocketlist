@@ -23,6 +23,8 @@ export type SeedCreditRow = {
   album: string | null;
   release_id?: string | null;
   album_artist?: string | null;
+  length_ms?: number | null;
+  recording_artist?: string | null;
   artist_id: string;
   instruments: string[];
   date: string | null;
@@ -59,13 +61,16 @@ export function samplePlaylist(rows: SeedCreditRow[], seeds: string[], n: number
     if (existing) {
       for (const s of seeds) existing.instruments[s] = [...new Set([...existing.instruments[s], ...instruments[s]])];
       // Prefer the plain title ("Oliloqui Valley") over a take ("Oliloqui Valley (alternate take)").
-      if (/\(/.test(existing.title) && !/\(/.test(first.title)) Object.assign(existing, { title: first.title, recordingId: id });
+      if (/\(/.test(existing.title) && !/\(/.test(first.title)) {
+        Object.assign(existing, { title: first.title, recordingId: id, length: first.length_ms ?? undefined, artist: first.recording_artist ?? existing.artist });
+      }
       continue;
     }
     const year = yearOf(date) ?? yearOf(first.first_release_date);
     perfs.set(tune, {
       recordingId: id, title: first.title, album: first.album ?? undefined, date: date ?? undefined, year,
       albumArtist: first.album_artist ?? undefined, releaseId: first.release_id ?? undefined,
+      length: first.length_ms ?? undefined, artist: first.recording_artist ?? undefined,
       instruments, tune, when: date ?? (year ? String(year) : "9999"),
     });
     sessions.set(session, perfs);

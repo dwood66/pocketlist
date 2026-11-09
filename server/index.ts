@@ -8,13 +8,14 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot } from "../contract/index.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, Playlist, SharedRecording, Snapshot, Swap } from "../contract/index.ts";
 import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
 import { jobError, refresh, refreshing, watch } from "./crawler.ts";
 import { samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
+import { appleMatches } from "./apple.ts";
 import { rows } from "./db.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
-import { creditName, mb, NotFound, type MbArtist, type MbRelease } from "./mb.ts";
+import { creditName, mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
 const app = new Hono();
 
@@ -192,11 +193,12 @@ app.get("/api/players/:id/with/:other", async (c) => {
     recording_id: string; title: string; first_release_date: string | null;
     a_instruments: string[]; a_date: string | null; b_instruments: string[]; b_date: string | null;
     album: string | null; release_id: string | null; album_artist: string | null;
+    length_ms: number | null; recording_artist: string | null;
   }>(
     // The album is picked the same way as in playlists: the original official album first.
     `select r.id as recording_id, r.title, r.first_release_date,
             a.instruments as a_instruments, a.date as a_date, b.instruments as b_instruments, b.date as b_date,
-            f.album, f.release_id, f.album_artist
+            f.album, f.release_id, f.album_artist, r.length_ms, r.artist_credit as recording_artist
      from credits a
      join credits b on b.recording_id = a.recording_id
      join recordings r on r.id = a.recording_id
@@ -229,12 +231,13 @@ app.get("/api/players/:id/with/:other", async (c) => {
     byKey.set(key, {
       recordingId: f.recording_id, title: f.title, date, year: /^\d{4}$/.test(y) ? Number(y) : undefined,
       album: f.album ?? undefined, albumArtist: f.album_artist ?? undefined, releaseId: f.release_id ?? undefined,
+      artist: f.recording_artist ?? undefined, length: f.length_ms ?? undefined,
       instruments: { player: f.a_instruments, collaborator: f.b_instruments },
     });
   }
   const list = [...byKey.values()].sort((x, y) =>
     (x.date ?? String(x.year ?? "9999")).localeCompare(y.date ?? String(y.year ?? "9999")) || x.title.localeCompare(y.title));
-  const body: SharedRecording[] = await withAlbumArtists(list);
+  const body: SharedRecording[] = await withDetails(list);
   return c.json(body);
 });
 
@@ -248,33 +251,60 @@ const BEST_ALBUM = `
            coalesce(array_length(rl.rg_secondary, 1), 0) asc, rl.date asc nulls last
   limit 1`;
 
-// Album artists for songs we're about to show. Releases read since this was added carry their
-// artist credit; for older ones, MusicBrainz's search fetches up to 50 at a time (up to 200 per
+// Details for songs we're about to show that older data may lack: the album artist (on the
+// release) and the recording's length and credited artist. Rows read since these were added
+// carry them; for older ones, MusicBrainz's search fetches 50 at a time (up to 200 of each per
 // call), and the answers are stored, so each look fills in more. Nobody waits more than about
-// three seconds for it: whatever isn't back by then carries on in the background, and the songs
-// go out with what's known.
-const ALBUM_ARTIST_WAIT_MS = 3000;
-async function withAlbumArtists<T extends { albumArtist?: string; releaseId?: string }>(items: T[]): Promise<Omit<T, "releaseId">[]> {
-  const missing = [...new Set(items.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))].slice(0, 200);
-  const found = new Map<string, string>();
+// three seconds: whatever isn't back by then carries on in the background, and the songs go out
+// with what's known.
+const DETAILS_WAIT_MS = 3000;
+type Detailed = { recordingId: string; releaseId?: string; albumArtist?: string; artist?: string; length?: number };
+
+async function searchInChunks<R>(ids: string[], field: string, entity: string, onResults: (found: R[], ids: string[]) => Promise<void>) {
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const res = await mb<Record<string, R[]>>(`${entity}?query=${encodeURIComponent(`${field}:(${chunk.join(" OR ")})`)}&limit=100`);
+    await onResults(res[`${entity}s`] ?? [], chunk);
+  }
+}
+
+async function withDetails<T extends Detailed>(items: T[]): Promise<Omit<T, "releaseId">[]> {
+  const releases = [...new Set(items.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))].slice(0, 200);
+  const recordings = [...new Set(items.filter((t) => !t.artist).map((t) => t.recordingId))].slice(0, 200);
+  const albumArtist = new Map<string, string>();
+  const recording = new Map<string, { artist: string; length?: number }>();
+
   const fill = (async () => {
-    for (let i = 0; i < missing.length; i += 50) {
-      const ids = missing.slice(i, i + 50);
-      const res = await mb<{ releases?: MbRelease[] }>(`release?query=${encodeURIComponent(`reid:(${ids.join(" OR ")})`)}&limit=100`);
-      const got = new Map<string, string>();
-      for (const r of res.releases ?? []) {
-        const name = creditName(r["artist-credit"]);
-        if (name && ids.includes(r.id)) got.set(r.id, name);
-      }
-      for (const [k, v] of got) found.set(k, v);
-      if (got.size) {
+    await searchInChunks<MbRelease>(releases, "reid", "release", async (found, ids) => {
+      const got = found.filter((r) => ids.includes(r.id)).map((r) => [r.id, creditName(r["artist-credit"])] as const)
+        .filter((x): x is readonly [string, string] => !!x[1]);
+      for (const [k, v] of got) albumArtist.set(k, v);
+      if (got.length) {
         await rows(`update releases r set artist_credit = v.ac from unnest($1::text[], $2::text[]) as v(id, ac) where r.id = v.id`,
-          [[...got.keys()], [...got.values()]]);
+          [got.map((g) => g[0]), got.map((g) => g[1])]);
       }
-    }
-  })().catch((e: unknown) => console.warn(`album artists: ${e instanceof Error ? e.message : String(e)}`));
-  if (missing.length) await Promise.race([fill, new Promise((r) => setTimeout(r, ALBUM_ARTIST_WAIT_MS))]);
-  return items.map(({ releaseId, ...t }) => ({ ...t, albumArtist: t.albumArtist ?? (releaseId ? found.get(releaseId) : undefined) }));
+    });
+    await searchInChunks<MbRecording>(recordings, "rid", "recording", async (found, ids) => {
+      const got = found.filter((r) => ids.includes(r.id) && creditName(r["artist-credit"]));
+      for (const r of got) recording.set(r.id, { artist: creditName(r["artist-credit"])!, length: r.length ?? undefined });
+      if (got.length) {
+        await rows(`update recordings r set artist_credit = v.ac, length_ms = coalesce(r.length_ms, v.len)
+                    from unnest($1::text[], $2::text[], $3::int[]) as v(id, ac, len) where r.id = v.id`,
+          [got.map((r) => r.id), got.map((r) => creditName(r["artist-credit"])), got.map((r) => r.length ?? null)]);
+      }
+    });
+  })().catch((e: unknown) => console.warn(`song details: ${e instanceof Error ? e.message : String(e)}`));
+  if (releases.length || recordings.length) await Promise.race([fill, new Promise((r) => setTimeout(r, DETAILS_WAIT_MS))]);
+
+  return items.map(({ releaseId, ...t }) => {
+    const rec = recording.get(t.recordingId);
+    return {
+      ...t,
+      albumArtist: t.albumArtist ?? (releaseId ? albumArtist.get(releaseId) : undefined),
+      artist: t.artist ?? rec?.artist,
+      length: t.length ?? rec?.length,
+    };
+  });
 }
 
 // Every seed's credits on the recordings they were all on, for the playlist rules.
@@ -285,7 +315,7 @@ function seedRows(seeds: string[]) {
        group by recording_id having count(distinct artist_id) = $3
      )
      select c.recording_id, r.title, r.first_release_date, f.rg_id, f.album, f.release_id, f.album_artist,
-            c.artist_id, c.instruments, c.date
+            r.length_ms, r.artist_credit as recording_artist, c.artist_id, c.instruments, c.date
      from credits c
      join shared s on s.recording_id = c.recording_id
      join recordings r on r.id = c.recording_id
@@ -304,8 +334,32 @@ app.get("/api/playlist", async (c) => {
   const players = await Promise.all(seeds.map(findPlayer));
   if (players.some((p) => !p)) return c.json({ error: "not found" }, 404);
   const sample = samplePlaylist(await seedRows(seeds), seeds, n, mix);
-  const body: Playlist = { seeds: players as Player[], ...sample, tracks: await withAlbumArtists(sample.tracks) };
+  const body: Playlist = { seeds: players as Player[], ...sample, tracks: await withDetails(sample.tracks) };
   return c.json(body);
+});
+
+// "Swap this song": ?seeds=<a>,<b>&avoid=<recording>,…&mix=1. Another song every seed is on, by
+// the same rules as the sampler, that isn't the same tune as anything in `avoid` (the songs
+// already in the list, including the one being swapped out). Null when there's nothing else.
+app.get("/api/swap", async (c) => {
+  const seeds = [...new Set((c.req.query("seeds") ?? "").split(",").filter((id) => MBID.test(id)))];
+  if (seeds.length < 1 || seeds.length > 4) return c.json({ error: "one to four players, please" }, 400);
+  const avoidIds = (c.req.query("avoid") ?? "").split(",").filter((id) => MBID.test(id)).slice(0, 200);
+  const mix = Math.max(0, Math.floor(Number(c.req.query("mix")) || 0));
+  const titles = await rows<{ title: string }>(`select title from recordings where id = any($1)`, [avoidIds]);
+  const avoid = new Set(titles.map((t) => normalizeTitle(t.title)));
+  const sample = samplePlaylist(await seedRows(seeds), seeds, 1, mix, avoid);
+  const pick = sample.tracks.find((t) => !avoid.has(normalizeTitle(t.title)) && !avoidIds.includes(t.recordingId));
+  const body: Swap = { track: pick ? (await withDetails([pick]))[0] : null };
+  return c.json(body);
+});
+
+// Direct Apple Music links: ?ids=<recording>,<recording> (up to 60). See apple.ts. Answers come
+// back as they're found; the page asks again for the pending ones.
+app.get("/api/apple", async (c) => {
+  const ids = [...new Set((c.req.query("ids") ?? "").split(",").filter((id) => MBID.test(id)))].slice(0, 60);
+  if (!ids.length) return c.json({ error: "no recordings" }, 400);
+  return c.json(await appleMatches(ids));
 });
 
 // A playlist along a path of players (your breadcrumb trail): ?ids=<a>,<b>,<c>&per=2&mix=0.
@@ -327,7 +381,7 @@ app.get("/api/path-playlist", async (c) => {
     for (const t of sample.tracks) used.add(normalizeTitle(t.title));
     steps.push({ from: ids[i], to: ids[i + 1], performances: sample.performances, tracks: sample.tracks });
   }
-  const filled = await withAlbumArtists(steps.flatMap((s) => s.tracks));
+  const filled = await withDetails(steps.flatMap((s) => s.tracks));
   const byRec = new Map(filled.map((t) => [t.recordingId, t]));
   const links: PathPlaylist["links"] = steps.map((s) => ({ ...s, tracks: s.tracks.map((t) => byRec.get(t.recordingId)!) }));
   const body: PathPlaylist = { players: players as Player[], links };

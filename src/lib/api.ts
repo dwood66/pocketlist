@@ -2,7 +2,7 @@
 // the rest of the app sees it.
 
 import {
-  isPath, isPathPlaylist, isPlaylist, type Path, type PathPlaylist, type Playlist,
+  isAppleMatches, isPath, isPathPlaylist, isPlaylist, isSwap, type AppleMatches, type Path, type PathPlaylist, type Playlist, type Swap,
   isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
   type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
@@ -63,6 +63,20 @@ export async function pathPlaylist(ids: string[], per: number, mix: number, sign
   const data = await getJson(`/api/path-playlist?ids=${ids.join(",")}&per=${per}&mix=${mix}`, signal);
   if (!isPathPlaylist(data)) throw new Error("Unexpected playlist response");
   for (const p of data.players) players.set(p.id, p);
+  return data;
+}
+
+/** Direct Apple Music links for recordings; see server/apple.ts. */
+export async function appleMatches(ids: string[], signal?: AbortSignal): Promise<AppleMatches> {
+  const data = await getJson(`/api/apple?ids=${ids.join(",")}`, signal);
+  if (!isAppleMatches(data)) throw new Error("Unexpected response");
+  return data;
+}
+
+/** Another song for these players, avoiding the recordings already in the list. */
+export async function swapTrack(seeds: string[], avoid: string[], mix: number, signal?: AbortSignal): Promise<Swap> {
+  const data = await getJson(`/api/swap?seeds=${seeds.join(",")}&avoid=${avoid.join(",")}&mix=${mix}`, signal);
+  if (!isSwap(data)) throw new Error("Unexpected response");
   return data;
 }
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { listenQuery, SERVICES } from "./listen.ts";
+import { formatLength, listenQuery, SERVICES, textListLine } from "./listen.ts";
 
 test("searches for the title and album, without take notes", () => {
   assert.equal(listenQuery({ title: "So What (alternate take)", album: "Kind of Blue" }, ["Miles Davis"]), "So What Kind of Blue");
@@ -21,4 +21,21 @@ test("keeps a title that is all parentheses", () => {
 
 test("service links encode the query", () => {
   assert.equal(SERVICES[0].url("So What & more"), "https://open.spotify.com/search/So%20What%20%26%20more");
+});
+
+test("the recording's own artist is searched for first", () => {
+  assert.equal(listenQuery({ title: "Joshua", album: "Seven Steps", albumArtist: "Miles Davis", artist: "Miles Davis Quintet" }, []), "Joshua Miles Davis Quintet Seven Steps");
+});
+
+test("lengths read like a track list", () => {
+  assert.equal(formatLength(565_000), "9:25");
+  assert.equal(formatLength(65_400), "1:05");
+  assert.equal(formatLength(3_725_000), "1:02:05");
+  assert.equal(formatLength(undefined), "");
+});
+
+test("text list lines for TuneMyMusic and Soundiiz", () => {
+  assert.equal(textListLine({ title: "So What (alternate take)", artist: "Miles Davis" }, []), "Miles Davis - So What");
+  assert.equal(textListLine({ title: "Blue Day", albumArtist: "The Smoking Section" }, []), "The Smoking Section - Blue Day");
+  assert.equal(textListLine({ title: "Driving" }, ["Damon Wood"]), "Damon Wood - Driving");
 });

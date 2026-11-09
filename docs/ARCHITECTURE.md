@@ -215,6 +215,22 @@ your place, and Back walks back along your trail:
   read before that, MusicBrainz's search fills in up to 50 at a time when a list needs them, and
   nobody waits more than about three seconds: the rest carries on in the background. The shared
   recordings under each collaborator show it too, and pick their album the same way.
+- **Finding the songs on a streaming service.** In jazz the same tune is recorded again and again,
+  and reissues get new names, so a title search is a guess. What tells takes apart is **length**:
+  a re-recording or a live version almost never runs the same length, while a renamed reissue of
+  the same recording does. So each song shows its **credited artist** (as services label it) and
+  **length**, and:
+  - **Apple Music ✓** links go straight to the song (`server/apple.ts`): Apple's free search API
+    for title and artist, keeping only same-title results within 3 seconds (or 1.5%) of the
+    MusicBrainz length. No length, no match. Apple allows ~20 searches a minute, so lookups go
+    through one slow queue and every answer is stored in `apple_matches`; the page asks again
+    while some are pending. Song pages have "Add to Playlist" in the ⋯ menu; search pages don't.
+  - Spotify and YouTube Music get a search for title, artist and album (length tells you which).
+  - **Copy for TuneMyMusic** copies "Artist - Title" lines, which TuneMyMusic or Soundiiz turn into
+    a playlist on any service in one paste.
+  - **Swap** (↻ on each song, `/api/swap`) replaces one song with another by the same players
+    (the same step, on a path), never a tune already in the list. Swaps live on the page only;
+    they aren't in the URL.
 - **Path playlists** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
   twice across the whole list. A player in the middle of a path is in two pairs, so without that
   the same song turns up in neighbouring steps; a repeat is allowed only if a step would

@@ -57,6 +57,8 @@ export type SharedRecording = {
   year?: number;
   album?: string;
   albumArtist?: string;
+  artist?: string;
+  length?: number;
   instruments: { player: string[]; collaborator: string[] };
 };
 
@@ -94,7 +96,7 @@ export function isSnapshot(v: unknown): v is Snapshot {
 
 export function isSharedRecording(v: unknown): v is SharedRecording {
   return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.date) && optNum(v.year) &&
-    optStr(v.album) && optStr(v.albumArtist) && isObj(v.instruments) && isStrArr(v.instruments.player) &&
+    optStr(v.album) && optStr(v.albumArtist) && optStr(v.artist) && optNum(v.length) && isObj(v.instruments) && isStrArr(v.instruments.player) &&
     isStrArr(v.instruments.collaborator);
 }
 
@@ -105,6 +107,10 @@ export type PlaylistTrack = {
   album?: string;
   /** The album's artist as printed, e.g. "Miles Davis Quintet". */
   albumArtist?: string;
+  /** The recording's own credited artist, as streaming services label the song. */
+  artist?: string;
+  /** Length in milliseconds: the surest way to tell one take from another. */
+  length?: number;
   date?: string;
   year?: number;
   /** What each seed played on it, keyed by player id. */
@@ -126,7 +132,7 @@ export type Path = {
 };
 
 export function isPlaylistTrack(v: unknown): v is PlaylistTrack {
-  return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.album) && optStr(v.albumArtist) && optStr(v.date) &&
+  return isObj(v) && isStr(v.recordingId) && isStr(v.title) && optStr(v.album) && optStr(v.albumArtist) && optStr(v.artist) && optNum(v.length) && optStr(v.date) &&
     optNum(v.year) && isObj(v.instruments) && Object.values(v.instruments).every(isStrArr);
 }
 
@@ -150,4 +156,22 @@ export function isPathPlaylist(v: unknown): v is PathPlaylist {
   return isObj(v) && Array.isArray(v.players) && v.players.every(isPlayer) && Array.isArray(v.links) &&
     v.links.every((l) => isObj(l) && isStr(l.from) && isStr(l.to) && typeof l.performances === "number" &&
       Array.isArray(l.tracks) && l.tracks.every(isPlaylistTrack));
+}
+
+/** Direct Apple Music links for recordings, matched by title and length. `url: null` means no
+ *  confident match (use a search); ids in `pending` are still being looked up. */
+export type AppleMatches = {
+  found: Record<string, { url: string | null; length?: number }>;
+  pending: string[];
+};
+
+export function isAppleMatches(v: unknown): v is AppleMatches {
+  return isObj(v) && isObj(v.found) && Array.isArray(v.pending) && v.pending.every(isStr) &&
+    Object.values(v.found).every((m) => isObj(m) && (m.url === null || isStr(m.url)) && optNum(m.length));
+}
+
+/** "Swap this song": another song for the same players, or null when there's nothing else. */
+export type Swap = { track: PlaylistTrack | null };
+export function isSwap(v: unknown): v is Swap {
+  return isObj(v) && (v.track === null || isPlaylistTrack(v.track));
 }

@@ -104,6 +104,19 @@ export const SCHEMA = `
 
   -- The album artist as printed ("Miles Davis Quintet"), for telling albums apart.
   alter table releases add column if not exists artist_credit text;
+  -- A recording's length and credited artist: how you pick the right take out of a streaming
+  -- service's search results (the same tune recorded again almost never runs the same length).
+  alter table recordings add column if not exists length_ms integer;
+  alter table recordings add column if not exists artist_credit text;
+
+  -- Apple Music matches, found by searching Apple's catalogue and comparing lengths. A row with
+  -- no url means we looked and found no confident match (so we don't keep asking).
+  create table if not exists apple_matches (
+    recording_id text primary key,
+    url text,
+    track_ms integer,
+    matched_at timestamptz not null default now()
+  );
 
   create table if not exists recording_releases (
     recording_id text not null,
