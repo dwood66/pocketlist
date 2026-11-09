@@ -96,7 +96,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
                 <span className="w-6 shrink-0 text-right tabular-nums text-muted-foreground" title="Position in the playlist">{i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="font-medium" title="Song title">{t.title}</span>
-                  {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
+                  {t.album && <span className="text-muted-foreground"> · <cite title="Album" className="italic">{t.album}</cite>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
                   <span className="block text-xs text-muted-foreground">
                     <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{why(list, t)}</span>
                   </span>
@@ -219,7 +219,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
                         <li key={t.recordingId} className="flex gap-3 px-4 py-3 text-sm">
                           <span className="min-w-0 flex-1">
                             <span className="font-medium" title="Song title">{t.title}</span>
-                            {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
+                            {t.album && <span className="text-muted-foreground"> · <cite title="Album" className="italic">{t.album}</cite>{t.albumArtist && <> by <span title="Album artist">{t.albumArtist}</span></>}</span>}
                             <span className="block text-xs text-muted-foreground">
                               <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{pairWhy(a, b, t)}</span>
                             </span>

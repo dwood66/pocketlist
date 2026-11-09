@@ -286,7 +286,12 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         {path.slice(1).map((b, i) => (
           <li key={`${path[i]}-${b}`}>
             <span className="font-medium">{name(path[i])} → {name(b)}</span>
-            <span className="text-muted-foreground" title="A recording they're both on">{links[i] ? `: ${linkText(links[i])}` : ""}</span>
+            {links[i] && (
+              <span className="text-muted-foreground" title="A recording they're both on">
+                : “{links[i]!.title}”
+                {(links[i]!.album || links[i]!.year) && <> ({links[i]!.album && <cite className="italic">{links[i]!.album}</cite>}{links[i]!.album && links[i]!.year ? ", " : ""}{links[i]!.year})</>}
+              </span>
+            )}
           </li>
         ))}
       </ol>

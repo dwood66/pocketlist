@@ -274,7 +274,7 @@ function SharedList({ id, a, b, aName, bName }: { id: string; a: string; b: stri
               <span className="w-24 shrink-0 tabular-nums text-muted-foreground" title="Recording date">{r.date ?? r.year ?? ""}</span>
               <span className="min-w-0">
                 <span className="font-medium" title="Song title">{r.title}</span>
-                {r.album && <span className="text-muted-foreground"> · <span title="Album">{r.album}</span>{r.albumArtist && <> by <span title="Album artist">{r.albumArtist}</span></>}</span>}
+                {r.album && <span className="text-muted-foreground"> · <cite title="Album" className="italic">{r.album}</cite>{r.albumArtist && <> by <span title="Album artist">{r.albumArtist}</span></>}</span>}
                 <span className={cn("block text-xs text-muted-foreground")} title="What each of them played on it">
                   {first(aName)}: {r.instruments.player.join(", ") || "?"} · {first(bName)}: {r.instruments.collaborator.join(", ") || "?"}
                 </span>
