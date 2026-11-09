@@ -444,17 +444,27 @@ function useApple(tracks: PlaylistTrack[]): Record<string, AppleMatch> {
 
 /** Copies the list as "Artist - Title" lines, which TuneMyMusic and Soundiiz turn into a playlist on any service. */
 function CopyList({ lines }: { lines: string[] }) {
+  // The button stays put and keeps its name, so you can copy again; a tick flashes on its icon
+  // and the note about where to paste it stays beside it.
   const [copied, setCopied] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const copy = () => navigator.clipboard?.writeText(lines.join("\n") + "\n").then(() => {
+    setCopied(true); setFlash(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setFlash(false), 2000);
+  });
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <Button variant="outline" size="sm" disabled={!lines.length}
-        title="Copy as an Artist - Title list. Paste it into TuneMyMusic or Soundiiz to make the playlist on Spotify, Apple Music and more."
-        onClick={() => navigator.clipboard?.writeText(lines.join("\n") + "\n").then(() => setCopied(true))}>
-        {copied ? <Check className="mr-1.5 h-4 w-4" /> : <ClipboardList className="mr-1.5 h-4 w-4" />} {copied ? "Copied" : "Copy for TuneMyMusic"}
+      <Button variant="outline" size="sm" disabled={!lines.length} onClick={copy}
+        title="Copy as an Artist - Title list. Paste it into TuneMyMusic or Soundiiz to make the playlist on Spotify, Apple Music and more.">
+        {flash ? <Check className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> : <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />} Copy for TuneMyMusic
       </Button>
+      <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {copied && (
-        <span className="text-xs text-muted-foreground" role="status">
-          Paste it into <a className="underline" href="https://www.tunemymusic.com/" target="_blank" rel="noopener noreferrer">TuneMyMusic</a> or{" "}
+        <span className="text-xs text-muted-foreground">
+          {flash ? "Copied. " : ""}Paste it into <a className="underline" href="https://www.tunemymusic.com/" target="_blank" rel="noopener noreferrer">TuneMyMusic</a> or{" "}
           <a className="underline" href="https://soundiiz.com/" target="_blank" rel="noopener noreferrer">Soundiiz</a> to make the playlist on any service.
         </span>
       )}
