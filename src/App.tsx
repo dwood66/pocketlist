@@ -87,12 +87,18 @@ const EXPLORE = [
   { id: "f2d13d28-6f74-4dd5-b596-8bd0b6f67615", name: "Jack DeJohnette", years: "1960s–today" },
   { id: "6035000d-b53b-4b01-b5a0-a7572c34e806", name: "Christian McBride", years: "1990s–today" },
 ];
+// From duos to whole bands: adding players is how you find a band.
 const PAIRS = [
-  { seeds: ["57db3f59-9c58-4f68-a00e-e044666c4828", "27613b78-1b9d-4ec3-9db5-fa0743465fdd"], name: "Ron Carter + Herbie Hancock" },
-  { seeds: ["d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7", "b625448e-bf4a-41c3-a421-72ad46cdb831"], name: "Elvin Jones + John Coltrane" },
+  { seeds: ["57db3f59-9c58-4f68-a00e-e044666c4828", "27613b78-1b9d-4ec3-9db5-fa0743465fdd"], name: "Ron Carter + Herbie Hancock", kind: "duo" },
+  { seeds: ["d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7", "b625448e-bf4a-41c3-a421-72ad46cdb831"], name: "Elvin Jones + John Coltrane", kind: "duo" },
+  { seeds: ["601e7466-eaf5-4a91-9909-ffd770b7e04a", "a1235272-3650-4ed7-9317-5a55a08701ec"], name: "Art Blakey + Lee Morgan", kind: "Jazz Messengers" },
+  { seeds: ["4e525f48-6ebf-45fe-8d57-3fd730970725", "7c726bbf-8ecc-4ebc-8578-d5ddf535ab44"], name: "Milt Hinton + Osie Johnson", kind: "session aces" },
+  { seeds: ["b625448e-bf4a-41c3-a421-72ad46cdb831", "22fe7b6f-af38-458e-87bd-8971e7a2912e", "5af83c93-103f-433b-b759-ea3dca37315e", "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7"], name: "Coltrane's classic quartet", kind: "4 players",
+    who: "John Coltrane, McCoy Tyner, Jimmy Garrison, Elvin Jones" },
+  { seeds: ["27613b78-1b9d-4ec3-9db5-fa0743465fdd", "57db3f59-9c58-4f68-a00e-e044666c4828", "b6a30b58-6b00-47c4-a031-c62a6981461f", ""], name: "Miles's second quintet, minus Miles", kind: "4 players",
+    who: "Herbie Hancock, Ron Carter, Tony Williams, Wayne Shorter" },
 ];
 
-const chip = "rounded-full border border-border px-3 py-1 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function Home({ go }: { go: (r: Route) => void }) {
   return (
@@ -114,9 +120,17 @@ function Home({ go }: { go: (r: Route) => void }) {
       <ConnectIntro go={go} />
       <StartCard icon={<SamplerIcon className="h-5 w-5" />} title="Make a sampler"
         text="Songs two players made together, one per session. Add more players to find a band.">
-        {PAIRS.map((p) => (
-          <Link key={p.name} to={{ view: "playlist", seeds: p.seeds, n: 10, mix: 0 }} go={go} className={chip + " rounded-lg text-left"}>{p.name}</Link>
-        ))}
+        <ul className="flex w-full flex-col" aria-label="Samplers, from duos to bands">
+          {PAIRS.map((p) => (
+            <li key={p.name}>
+              <Link to={{ view: "playlist", seeds: p.seeds, n: 10, mix: 0 }} go={go} title={p.who ?? p.name}
+                className="-mx-1.5 flex items-baseline justify-between gap-2 rounded px-1.5 py-0.5 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="hover:underline">{p.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{p.kind}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </StartCard>
     </div>
   );
@@ -129,7 +143,7 @@ export function StartCard({ icon, title, text, children }: { icon: React.ReactNo
         <span className="text-primary">{icon}</span>{title}
       </h2>
       <p className="text-sm text-muted-foreground">{text}</p>
-      <div className="mt-auto flex flex-wrap gap-2 pt-1">{children}</div>
+      <div className="flex flex-wrap gap-2 pt-1">{children}</div>
     </section>
   );
 }
