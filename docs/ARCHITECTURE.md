@@ -212,7 +212,9 @@ your place, and Back walks back along your trail:
   or 30 songs, "Another mix", and text or CSV downloads that say who played what. Each song
   shows its album and **album artist** ("Seven Steps… by Miles Davis"), so a tune that's on
   several records can be told apart. Album artists are stored as releases are read; for releases
-  read before that, one MusicBrainz search fills in up to 50 at a time when a playlist needs them.
+  read before that, MusicBrainz's search fills in up to 50 at a time when a list needs them, and
+  nobody waits more than about three seconds: the rest carries on in the background. The shared
+  recordings under each collaborator show it too, and pick their album the same way.
 - **Path playlists** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
   twice across the whole list. A player in the middle of a path is in two pairs, so without that
   the same song turns up in neighbouring steps; a repeat is allowed only if a step would

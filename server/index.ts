@@ -249,29 +249,31 @@ const BEST_ALBUM = `
   limit 1`;
 
 // Album artists for songs we're about to show. Releases read since this was added carry their
-// artist credit; for older ones, one MusicBrainz search fetches up to 100 at a time (at most two
-// searches per call, so a long list never waits more than a couple of seconds), and the answers
-// are stored, so each look fills in more. Best effort: if MusicBrainz is slow, songs simply go
-// out without it.
+// artist credit; for older ones, MusicBrainz's search fetches up to 50 at a time (up to 200 per
+// call), and the answers are stored, so each look fills in more. Nobody waits more than about
+// three seconds for it: whatever isn't back by then carries on in the background, and the songs
+// go out with what's known.
+const ALBUM_ARTIST_WAIT_MS = 3000;
 async function withAlbumArtists<T extends { albumArtist?: string; releaseId?: string }>(items: T[]): Promise<Omit<T, "releaseId">[]> {
   const missing = [...new Set(items.filter((t) => !t.albumArtist && t.releaseId).map((t) => t.releaseId!))].slice(0, 200);
   const found = new Map<string, string>();
-  try {
-    for (let i = 0; i < missing.length; i += 100) {
-      const ids = missing.slice(i, i + 100);
+  const fill = (async () => {
+    for (let i = 0; i < missing.length; i += 50) {
+      const ids = missing.slice(i, i + 50);
       const res = await mb<{ releases?: MbRelease[] }>(`release?query=${encodeURIComponent(`reid:(${ids.join(" OR ")})`)}&limit=100`);
+      const got = new Map<string, string>();
       for (const r of res.releases ?? []) {
         const name = creditName(r["artist-credit"]);
-        if (name && ids.includes(r.id)) found.set(r.id, name);
+        if (name && ids.includes(r.id)) got.set(r.id, name);
+      }
+      for (const [k, v] of got) found.set(k, v);
+      if (got.size) {
+        await rows(`update releases r set artist_credit = v.ac from unnest($1::text[], $2::text[]) as v(id, ac) where r.id = v.id`,
+          [[...got.keys()], [...got.values()]]);
       }
     }
-    if (found.size) {
-      await rows(`update releases r set artist_credit = v.ac from unnest($1::text[], $2::text[]) as v(id, ac) where r.id = v.id`,
-        [[...found.keys()], [...found.values()]]);
-    }
-  } catch (e) {
-    console.warn(`album artists: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  })().catch((e: unknown) => console.warn(`album artists: ${e instanceof Error ? e.message : String(e)}`));
+  if (missing.length) await Promise.race([fill, new Promise((r) => setTimeout(r, ALBUM_ARTIST_WAIT_MS))]);
   return items.map(({ releaseId, ...t }) => ({ ...t, albumArtist: t.albumArtist ?? (releaseId ? found.get(releaseId) : undefined) }));
 }
 
