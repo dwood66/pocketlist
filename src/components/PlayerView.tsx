@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Flag, List, ListMusic, Orbit } from "lucide-react";
+import { ChevronDown, ChevronRight, List, ListMusic, Orbit } from "lucide-react";
 import type { Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/Link";
 import { Galaxy, forgetGalaxy, isFullScreen } from "@/components/Galaxy";
-import { ConnectBanner, ConnectFrom, GoalLine } from "@/components/Connect";
+import { ConnectBanner, ConnectFrom, ConnectIcon, GoalLine } from "@/components/Connect";
 import { getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
 import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
@@ -85,7 +85,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
               <ListMusic className="mr-1.5 h-4 w-4" /> Playlist
             </Link>
             <Button variant="outline" size="sm" aria-expanded={connecting} onClick={() => setConnecting((v) => !v)}>
-              <Flag className="h-4 w-4" /> Connect from here
+              <ConnectIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Connect from here
             </Button>
           </div>
         )}

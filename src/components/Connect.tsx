@@ -3,7 +3,7 @@
 // everything read so far.
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, Copy, Flag, Lightbulb, X } from "lucide-react";
+import { Check, Copy, Flag, Lightbulb, Route as RouteIcon, X } from "lucide-react";
 import type { Path, Player, PlayerCandidate, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,20 @@ import { getPlayer, search, sharedRecordings, shortestPath } from "@/lib/api";
 import type { Route } from "@/lib/route";
 
 type Go = (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
+
+// Connect's marks, used everywhere the game appears: the route (two players joined by a path)
+// is the game itself, in its rose colour; the flag is the player you're trying to reach.
+export const ConnectIcon = RouteIcon;
+export const GoalIcon = Flag;
+
+/** The game's badge: route icon and name, white on rose. */
+export function ConnectBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--goal)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[color:var(--card)]">
+      <ConnectIcon className="h-3.5 w-3.5" aria-hidden /> Connect
+    </span>
+  );
+}
 
 // Starts are players whose credits are already read, so the first galaxy is instant.
 const PUZZLES: { from: string; fromName: string; to: string; toName: string }[] = [
@@ -35,14 +49,15 @@ export function ConnectIntro({ go }: { go: Go }) {
   const p = puzzleOfTheDay(offset);
   return (
     <section className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-      <h2 className="flex items-center gap-2 text-lg font-semibold"><Flag className="h-5 w-5 text-primary" />Play Connect</h2>
+      <h2 className="flex items-center gap-2 text-lg font-semibold"><ConnectIcon className="h-5 w-5 text-[color:var(--goal)]" aria-hidden />Play Connect</h2>
       <p className="text-sm text-muted-foreground">
         Six degrees, jazz style: get from one player to another through people who recorded together.
       </p>
       <div className="mt-auto flex flex-col items-start gap-1.5 pt-1">
         <Link to={{ view: "player", id: p.from, trail: [], goal: p.to }} go={go}
-          className="rounded-lg bg-primary px-3 py-1.5 text-left text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          {offset ? "" : "Today: "}{p.fromName} → {p.toName}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[color:var(--goal)] px-3 py-1.5 text-left text-sm font-medium text-[color:var(--card)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <ConnectIcon className="h-4 w-4 shrink-0" aria-hidden />
+          <span>{offset ? "" : "Today: "}{p.fromName} → {p.toName}</span>
         </Link>
         <button type="button" onClick={() => setOffset((o) => o + 1)} className="text-sm text-muted-foreground underline hover:text-foreground">
           Another puzzle
@@ -56,36 +71,58 @@ export function ConnectIntro({ go }: { go: Go }) {
 export function ConnectFrom({ id, name, go, onClose }: { id: string; name: string; go: Go; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [found, setFound] = useState<PlayerCandidate[] | null>(null);
+  const [searched, setSearched] = useState(""); // the name `found` is for
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const play = (goal: string) => go({ view: "player", id, trail: [], goal });
 
+  // Enter searches; Enter again (name unchanged) starts the game with the first match.
   async function find(e: FormEvent) {
     e.preventDefault();
-    if (!q.trim()) return;
-    setFound(null); setError(null);
-    try { setFound((await search(q, "")).filter((c) => c.id !== id && c.type !== "Group").slice(0, 6)); }
-    catch (err) { setError(err instanceof Error ? err.message : "Search failed"); }
+    const name = q.trim();
+    if (!name || busy) return;
+    if (found?.length && name === searched) return play(found[0].id);
+    setFound(null); setError(null); setBusy(true);
+    try {
+      const results = (await search(name, "")).filter((c) => c.id !== id && c.type !== "Group").slice(0, 6);
+      setFound(results); setSearched(name);
+    } catch (err) { setError(err instanceof Error ? err.message : "Search failed"); }
+    finally { setBusy(false); }
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3">
-      <form onSubmit={find} className="flex flex-wrap items-center gap-2">
-        <label htmlFor="goal" className="text-sm">Connect {name} to</label>
-        <Input id="goal" value={q} onChange={(e) => setQ(e.target.value)} placeholder="another player" autoComplete="off" className="max-w-xs flex-1" autoFocus />
-        <Button type="submit" size="sm">Find</Button>
+    <div className="flex flex-col gap-3 rounded-xl border-2 border-[color:var(--goal)] bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <ConnectBadge />
         <Button type="button" variant="ghost" size="sm" aria-label="Cancel" onClick={onClose}><X className="h-4 w-4" /></Button>
+      </div>
+      <form onSubmit={find} className="flex flex-wrap items-center gap-2">
+        <label htmlFor="goal" className="text-sm">Connect <strong>{name}</strong> to</label>
+        <div className="relative max-w-xs flex-1">
+          <GoalIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--goal)]" aria-hidden />
+          <Input id="goal" value={q} onChange={(e) => setQ(e.target.value)} placeholder="another player" autoComplete="off" className="pl-8" autoFocus />
+        </div>
+        <Button type="submit" size="sm" disabled={busy}>{busy ? "Finding…" : "Find"}</Button>
       </form>
+      <p className="text-xs text-muted-foreground">
+        Get from {name} to them through people who recorded together, in as few hops as you can.
+      </p>
       {error && <p className="text-sm">{error}</p>}
       {found && (found.length ? (
-        <ul className="flex flex-wrap gap-2">
-          {found.map((c) => (
-            <li key={c.id}>
-              <Button variant="outline" size="sm" onClick={() => go({ view: "player", id, trail: [], goal: c.id })}>
-                {c.name}{c.disambiguation ? <span className="text-muted-foreground">({c.disambiguation})</span> : null}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : <p className="text-sm text-muted-foreground">No one by that name.</p>)}
+        <div className="flex flex-col gap-1.5">
+          <ul className="flex flex-wrap gap-2" aria-label="Pick who to connect to">
+            {found.map((c, i) => (
+              <li key={c.id}>
+                <Button variant={i === 0 ? "default" : "outline"} size="sm" onClick={() => play(c.id)}>
+                  <GoalIcon className="h-3.5 w-3.5" aria-hidden />
+                  {c.name}{c.disambiguation ? <span className={i === 0 ? "opacity-80" : "text-muted-foreground"}>({c.disambiguation})</span> : null}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground" role="status">Press Enter to play with {found[0].name}, or pick another.</p>
+        </div>
+      ) : <p className="text-sm text-muted-foreground" role="status">No one by that name.</p>)}
     </div>
   );
 }
@@ -99,8 +136,9 @@ export function GoalLine({ id, trail, goal }: { id: string; trail: string[]; goa
   if (id === goal) return <p className="text-sm text-[color:var(--goal)]">You made it. Exit full screen to see your result.</p>;
   return (
     <p className="text-sm">
+      <ConnectIcon className="mr-1 inline h-4 w-4 align-[-3px] text-[color:var(--goal)]" aria-hidden />
       <span className="text-muted-foreground">Connect to </span>
-      <span className="font-medium text-[color:var(--goal)]">{goalName ?? "…"}</span>
+      <span className="font-medium text-[color:var(--goal)]"><GoalIcon className="mr-0.5 inline h-3.5 w-3.5 align-[-2px]" aria-hidden />{goalName ?? "…"}</span>
       <span className="tabular-nums text-muted-foreground"> · <span title="Steps you've taken so far">{trail.length} {trail.length === 1 ? "hop" : "hops"}</span>{par !== null && <> · <span title="The fewest steps it can be done in, as far as Pocketlist knows">par {par}</span></>}</span>
     </p>
   );
@@ -148,7 +186,7 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
   return (
     <section aria-label="Connect" className="flex flex-col gap-3 rounded-xl border-2 border-[color:var(--goal)] bg-card p-4">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="rounded-full bg-[color:var(--goal)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-[color:var(--card)]">Connect</span>
+        <ConnectBadge />
         <h2 className="text-lg font-semibold">
           {name(start)} <span className="text-muted-foreground">→</span> <span className="text-[color:var(--goal)]">{goalName}</span>
         </h2>
@@ -164,7 +202,9 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
         ))}
         <li className="flex items-center gap-1.5">
           <span className="text-muted-foreground" aria-hidden>{inGalaxy ? "→" : "⋯"}</span>
-          <span className="rounded-full border border-dashed border-[color:var(--goal)] px-2 py-0.5 text-[color:var(--goal)]">{goalName}</span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-[color:var(--goal)] px-2 py-0.5 text-[color:var(--goal)]" title="Who you're trying to reach">
+            <GoalIcon className="h-3.5 w-3.5" aria-hidden />{goalName}
+          </span>
         </li>
         <li className="ml-auto tabular-nums text-muted-foreground">
           <span title="Steps you've taken so far">{hops} {hops === 1 ? "hop" : "hops"}</span> · <span title="The fewest steps it can be done in, as far as Pocketlist knows">par {parHops ?? (par === "unknown" ? "?" : "…")}</span>
@@ -237,7 +277,8 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
   ].join("\n");
 
   return (
-    <section aria-label="You made it" className="flex flex-col gap-3 rounded-xl border border-[color:var(--goal)] bg-card p-4">
+    <section aria-label="You made it" className="flex flex-col gap-3 rounded-xl border-2 border-[color:var(--goal)] bg-card p-4">
+      <ConnectBadge />
       <p className="text-lg font-semibold" role="status">
         You connected {name(path[0])} to {name(path[hops])} in {hops} {hops === 1 ? "hop" : "hops"}.{verdict}
       </p>

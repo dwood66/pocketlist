@@ -3,7 +3,7 @@
 // list downloads as plain text or CSV.
 
 import { useEffect, useState } from "react";
-import { Download, Shuffle, X } from "lucide-react";
+import { Download, ListMusic, Route as RouteIcon, Shuffle, X } from "lucide-react";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
@@ -36,6 +36,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><ListMusic className="h-4 w-4" aria-hidden /> Playlist</p>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {names.length > 1 ? "Songs they all played on" : "Songs with them on"}, one per session, spread across the years.
@@ -171,6 +172,9 @@ export function PathPlaylistView({ ids, per, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
+          <ListMusic className="h-4 w-4" aria-hidden /> Playlist <span className="text-muted-foreground">of a path</span> <RouteIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+        </p>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           A playlist along your path: for each step, songs both players are on, so every song hands off to the next.
