@@ -101,7 +101,7 @@ export function GoalLine({ id, trail, goal }: { id: string; trail: string[]; goa
     <p className="text-sm">
       <span className="text-muted-foreground">Connect to </span>
       <span className="font-medium text-[color:var(--goal)]">{goalName ?? "…"}</span>
-      <span className="tabular-nums text-muted-foreground"> · {trail.length} {trail.length === 1 ? "hop" : "hops"}{par !== null ? ` · par ${par}` : ""}</span>
+      <span className="tabular-nums text-muted-foreground"> · <span title="Steps you've taken so far">{trail.length} {trail.length === 1 ? "hop" : "hops"}</span>{par !== null && <> · <span title="The fewest steps it can be done in, as far as Pocketlist knows">par {par}</span></>}</span>
     </p>
   );
 }
@@ -167,7 +167,7 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
           <span className="rounded-full border border-dashed border-[color:var(--goal)] px-2 py-0.5 text-[color:var(--goal)]">{goalName}</span>
         </li>
         <li className="ml-auto tabular-nums text-muted-foreground">
-          {hops} {hops === 1 ? "hop" : "hops"} · par {parHops ?? (par === "unknown" ? "?" : "…")}
+          <span title="Steps you've taken so far">{hops} {hops === 1 ? "hop" : "hops"}</span> · <span title="The fewest steps it can be done in, as far as Pocketlist knows">par {parHops ?? (par === "unknown" ? "?" : "…")}</span>
         </li>
       </ol>
 
@@ -245,7 +245,7 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         {path.slice(1).map((b, i) => (
           <li key={`${path[i]}-${b}`}>
             <span className="font-medium">{name(path[i])} → {name(b)}</span>
-            <span className="text-muted-foreground">{links[i] ? `: ${linkText(links[i])}` : ""}</span>
+            <span className="text-muted-foreground" title="A recording they're both on">{links[i] ? `: ${linkText(links[i])}` : ""}</span>
           </li>
         ))}
       </ol>

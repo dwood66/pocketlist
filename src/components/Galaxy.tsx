@@ -15,6 +15,7 @@ import type { Collaborator, SharedRecording, Snapshot } from "../../contract/ind
 import { Button } from "@/components/ui/button";
 import { sharedRecordings } from "@/lib/api";
 import { layout, type Star } from "@/lib/galaxy";
+import { Meta } from "@/components/Meta";
 
 type Shown = { x: number; y: number; a: number };
 
@@ -593,13 +594,17 @@ function StarCard({ star, playerId, onOpen, onPlaylist, compact, tooltip }: {
     <div className={"flex flex-col gap-1 text-sm " + (compact ? "" : "rounded-xl border border-border bg-card p-3")} aria-live="polite">
       <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-semibold">{c.name}</span>
-        <span className="text-muted-foreground">{c.instruments.slice(0, 3).join(", ")}</span>
+        <span className="text-muted-foreground" title={`What ${c.name} played on their recordings together`}>{c.instruments.slice(0, 3).join(", ")}</span>
       </div>
       <p className="tabular-nums text-muted-foreground">
-        {c.sharedSessions} {c.sharedSessions === 1 ? "session" : "sessions"} · {c.sharedRecordings} {c.sharedRecordings === 1 ? "track" : "tracks"}
-        {span && ` · ${span}`}{words && ` · ${words}`}
+        <Meta parts={[
+          [`${c.sharedSessions} ${c.sharedSessions === 1 ? "session" : "sessions"}`, "Recording sessions together (different dates or albums)"],
+          [`${c.sharedRecordings} ${c.sharedRecordings === 1 ? "track" : "tracks"}`, "Tracks they're both credited on"],
+          span && [span, "First and last year they recorded together"],
+          words && [words, "How the sessions spread over the years: a burst, or long and steady"],
+        ]} />
       </p>
-      <p className="truncate text-muted-foreground">
+      <p className="truncate text-muted-foreground" title="Some of the songs they're both on">
         {recs ? recs.slice(0, 3).map((r) => r.title).join(" · ") + (recs.length > 3 ? " …" : "") : "\u00a0"}
       </p>
       {tooltip ? <p className="text-xs text-primary">{tooltip}</p> : (

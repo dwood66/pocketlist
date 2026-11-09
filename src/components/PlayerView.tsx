@@ -9,6 +9,7 @@ import { ConnectBanner, ConnectFrom, GoalLine } from "@/components/Connect";
 import { getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
 import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
+import { Meta } from "@/components/Meta";
 
 const PAGE = 100;
 let heldHeight = 0; // set when a star is clicked; see the comment on the outer div
@@ -70,7 +71,10 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
           </h1>
           {snap && (
             <p className="text-sm text-muted-foreground">
-              {[snap.player.disambiguation, snap.instruments.slice(0, 4).join(", ")].filter(Boolean).join(" · ")}
+              <Meta parts={[
+                snap.player.disambiguation && [snap.player.disambiguation, "MusicBrainz's description, to tell them from others with the same name"],
+                snap.instruments.length > 0 && [snap.instruments.slice(0, 4).join(", "), "What they're credited with playing, most often first"],
+              ]} />
             </p>
           )}
         </div>
@@ -174,7 +178,10 @@ function ProgressLine({ snap, onRefresh }: { snap: Snapshot; onRefresh: () => vo
       <p className="text-sm text-muted-foreground">
         {done
           ? <>
-              {`${people.toLocaleString()} ${people === 1 ? "person" : "people"}, from ${total.toLocaleString()} recordings. `}
+              <span title="Everyone credited as playing on a recording with them">{`${people.toLocaleString()} ${people === 1 ? "person" : "people"}`}</span>
+              {", from "}
+              <span title="Recordings they're credited as playing on, in MusicBrainz">{`${total.toLocaleString()} recordings`}</span>
+              {". "}
               <button type="button" onClick={onRefresh} className="underline hover:text-foreground"
                 title="Pick up credits added to MusicBrainz since this player was read">
                 Re-read from MusicBrainz
@@ -221,18 +228,23 @@ function Row({ c, max, playerId, playerName, open, onToggle, to, go }: {
             <Link to={to} go={go} className="font-medium hover:underline focus-visible:underline focus-visible:outline-none">
               {c.name}
             </Link>
-            <span className="block truncate text-sm text-muted-foreground">
+            <span className="block truncate text-sm text-muted-foreground"
+              title={c.instruments.length ? `What ${c.name} played on their recordings together` : c.disambiguation ? "MusicBrainz's description" : undefined}>
               {c.instruments.slice(0, 3).join(", ") || c.disambiguation || " "}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-3 whitespace-nowrap text-sm tabular-nums text-muted-foreground sm:justify-end">
-            <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:block" aria-hidden>
+            <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:block" aria-hidden
+              title="Sessions together, against the most frequent partner">
               <span className="block h-full bg-primary" style={{ width: `${(c.sharedSessions / max) * 100}%` }} />
             </span>
             <span>
-              {c.sharedSessions} {c.sharedSessions === 1 ? "session" : "sessions"} · {c.sharedRecordings} {c.sharedRecordings === 1 ? "track" : "tracks"}
+              <Meta parts={[
+                [`${c.sharedSessions} ${c.sharedSessions === 1 ? "session" : "sessions"}`, "Recording sessions together (different dates or albums)"],
+                [`${c.sharedRecordings} ${c.sharedRecordings === 1 ? "track" : "tracks"}`, "Tracks they're both credited on"],
+              ]} />
             </span>
-            <span className="w-[4.5rem] text-right">{years(c)}</span>
+            <span className="w-[4.5rem] text-right" title="First and last year they recorded together">{years(c)}</span>
           </div>
         </div>
       </div>
@@ -259,11 +271,11 @@ function SharedList({ id, a, b, aName, bName }: { id: string; a: string; b: stri
         <ul className="flex flex-col gap-1.5 text-sm">
           {list.map((r) => (
             <li key={r.recordingId} className="flex flex-col sm:flex-row sm:gap-3">
-              <span className="w-24 shrink-0 tabular-nums text-muted-foreground">{r.date ?? r.year ?? ""}</span>
+              <span className="w-24 shrink-0 tabular-nums text-muted-foreground" title="Recording date">{r.date ?? r.year ?? ""}</span>
               <span className="min-w-0">
-                <span className="font-medium">{r.title}</span>
-                {r.album && <span className="text-muted-foreground"> · {r.album}</span>}
-                <span className={cn("block text-xs text-muted-foreground")}>
+                <span className="font-medium" title="Song title">{r.title}</span>
+                {r.album && <span className="text-muted-foreground"> · <span title="Album">{r.album}</span></span>}
+                <span className={cn("block text-xs text-muted-foreground")} title="What each of them played on it">
                   {first(aName)}: {r.instruments.player.join(", ") || "?"} · {first(bName)}: {r.instruments.collaborator.join(", ") || "?"}
                 </span>
               </span>

@@ -63,7 +63,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
       {list && (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <div role="group" aria-label="How many songs" className="flex rounded-lg border border-border p-0.5">
+            <div role="group" aria-label="How many songs" title="Number of songs" className="flex rounded-lg border border-border p-0.5">
               {SIZES.map((size) => (
                 <button key={size} type="button" aria-pressed={n === size} onClick={() => set({ n: size })}
                   className={"rounded-md px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
@@ -72,18 +72,18 @@ export function PlaylistView({ seeds, n, mix, go }: {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
+            <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
               <Shuffle className="mr-1.5 h-4 w-4" /> Another mix
             </Button>
-            <Button variant="outline" size="sm" disabled={!list.tracks.length} onClick={() => save(list, "txt")}>
+            <Button variant="outline" size="sm" disabled={!list.tracks.length} title="Download as plain text" onClick={() => save(list, "txt")}>
               <Download className="mr-1.5 h-4 w-4" /> Text
             </Button>
-            <Button variant="outline" size="sm" disabled={!list.tracks.length} onClick={() => save(list, "csv")}>
+            <Button variant="outline" size="sm" disabled={!list.tracks.length} title="Download as a spreadsheet (CSV)" onClick={() => save(list, "csv")}>
               <Download className="mr-1.5 h-4 w-4" /> CSV
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" title="Songs picked, out of every performance they're all credited on, and the sessions those come from">
             {list.tracks.length
               ? `${list.tracks.length} of ${list.performances.toLocaleString()} performances, from ${list.sessions.toLocaleString()} ${list.sessions === 1 ? "session" : "sessions"}.`
               : "Nothing with all of them on, in what's been read so far."}
@@ -92,16 +92,16 @@ export function PlaylistView({ seeds, n, mix, go }: {
           <ol className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
             {list.tracks.map((t, i) => (
               <li key={t.recordingId} className="flex gap-3 px-4 py-3 text-sm">
-                <span className="w-6 shrink-0 text-right tabular-nums text-muted-foreground">{i + 1}</span>
+                <span className="w-6 shrink-0 text-right tabular-nums text-muted-foreground" title="Position in the playlist">{i + 1}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="font-medium">{t.title}</span>
-                  {t.album && <span className="text-muted-foreground"> · {t.album}</span>}
+                  <span className="font-medium" title="Song title">{t.title}</span>
+                  {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span></span>}
                   <span className="block text-xs text-muted-foreground">
-                    <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{why(list, t)}
+                    <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{why(list, t)}</span>
                   </span>
                   <Listen track={t} who={list.seeds.map((p) => p.name)} />
                 </span>
-                <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
+                <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block" title="Recording date">{t.date ?? t.year ?? ""}</span>
               </li>
             ))}
           </ol>
@@ -183,7 +183,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
       {list && (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <div role="group" aria-label="Songs per step" className="flex items-center rounded-lg border border-border p-0.5">
+            <div role="group" aria-label="Songs per step" title="Number of songs per step" className="flex items-center rounded-lg border border-border p-0.5">
               {[1, 2, 3].map((n) => (
                 <button key={n} type="button" aria-pressed={per === n} onClick={() => set({ per: n })}
                   className={"rounded-md px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
@@ -193,9 +193,9 @@ export function PathPlaylistView({ ids, per, mix, go }: {
               ))}
               <span className="px-2 text-sm text-muted-foreground">per step</span>
             </div>
-            <Button variant="outline" size="sm" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
-            <Button variant="outline" size="sm" disabled={!count} onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>
-            <Button variant="outline" size="sm" disabled={!count} onClick={() => savePath(list, "csv")}><Download className="mr-1.5 h-4 w-4" /> CSV</Button>
+            <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
+            <Button variant="outline" size="sm" disabled={!count} title="Download as plain text" onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>
+            <Button variant="outline" size="sm" disabled={!count} title="Download as a spreadsheet (CSV)" onClick={() => savePath(list, "csv")}><Download className="mr-1.5 h-4 w-4" /> CSV</Button>
           </div>
 
           <ol className="flex flex-col gap-4">
@@ -204,7 +204,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
               return (
                 <li key={`${l.from}-${l.to}-${i}`} className="flex flex-col gap-2">
                   <h2 className="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-                    <span className="text-sm tabular-nums text-muted-foreground">Step {i + 1}</span>
+                    <span className="text-sm tabular-nums text-muted-foreground" title="Step along your path: songs both of these players are on">Step {i + 1}</span>
                     {a && <Link to={{ view: "player", id: a.id, trail: [] }} go={go} className="hover:underline">{a.name}</Link>}
                     <span className="text-muted-foreground">→</span>
                     {b && <Link to={{ view: "player", id: b.id, trail: [] }} go={go} className="hover:underline">{b.name}</Link>}
@@ -214,14 +214,14 @@ export function PathPlaylistView({ ids, per, mix, go }: {
                       {l.tracks.map((t) => (
                         <li key={t.recordingId} className="flex gap-3 px-4 py-3 text-sm">
                           <span className="min-w-0 flex-1">
-                            <span className="font-medium">{t.title}</span>
-                            {t.album && <span className="text-muted-foreground"> · {t.album}</span>}
+                            <span className="font-medium" title="Song title">{t.title}</span>
+                            {t.album && <span className="text-muted-foreground"> · <span title="Album">{t.album}</span></span>}
                             <span className="block text-xs text-muted-foreground">
-                              <span className="tabular-nums sm:hidden">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span>{pairWhy(a, b, t)}
+                              <span className="tabular-nums sm:hidden" title="Recording date">{t.date ?? t.year ?? ""}{(t.date ?? t.year) ? " · " : ""}</span><span title="What each of them played on it">{pairWhy(a, b, t)}</span>
                             </span>
                             <Listen track={t} who={[a?.name, b?.name].filter((n): n is string => !!n)} />
                           </span>
-                          <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block">{t.date ?? t.year ?? ""}</span>
+                          <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:block" title="Recording date">{t.date ?? t.year ?? ""}</span>
                         </li>
                       ))}
                     </ul>
@@ -282,6 +282,7 @@ function Listen({ track, who }: { track: PlaylistTrack; who: string[] }) {
       {SERVICES.map((svc) => (
         <a key={svc.name} href={svc.url(q)} target="_blank" rel="noopener noreferrer"
           aria-label={`Find ${track.title} on ${svc.name} (opens in a new tab)`}
+          title={`Search ${svc.name} for this song (opens in a new tab)`}
           className="text-muted-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-current">
           {svc.name}
         </a>

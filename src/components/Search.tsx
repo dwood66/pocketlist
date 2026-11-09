@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Meta } from "@/components/Meta";
 import { Search as SearchIcon } from "lucide-react";
 import type { PlayerCandidate } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
@@ -72,10 +73,17 @@ export function SearchResults({ q, instrument, go }: { q: string; instrument: st
               className="flex flex-col gap-0.5 px-4 py-3 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
               <span className="font-medium">
                 {c.name}
-                {c.instrumentMatch && <span className="ml-2 rounded bg-primary/15 px-1.5 py-0.5 text-xs text-primary">plays {instrument}</span>}
+                {c.instrumentMatch && <span className="ml-2 rounded bg-primary/15 px-1.5 py-0.5 text-xs text-primary" title="Credited with this instrument in MusicBrainz">plays {instrument}</span>}
               </span>
               <span className="text-sm text-muted-foreground">
-                {[c.disambiguation, c.years, c.type !== "Person" ? c.type : undefined, c.country].filter(Boolean).join(" · ") || "No description in MusicBrainz"}
+                {(c.disambiguation || c.years || c.type !== "Person" || c.country) ? (
+                  <Meta parts={[
+                    c.disambiguation && [c.disambiguation, "MusicBrainz's description, to tell them from others with the same name"],
+                    c.years && [c.years, "Years active, from MusicBrainz"],
+                    c.type !== "Person" && c.type && [c.type, "Kind of artist"],
+                    c.country && [c.country, "Country"],
+                  ]} />
+                ) : "No description in MusicBrainz"}
               </span>
               {c.matchedAlias && <span className="text-xs text-muted-foreground">Matched “{c.matchedAlias}”, a name they’re also credited as</span>}
             </Link>
