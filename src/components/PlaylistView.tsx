@@ -389,7 +389,9 @@ function Notes() {
     <details className="group text-sm">
       <summary className="cursor-pointer select-none text-muted-foreground hover:text-foreground">Notes about this feature</summary>
       <div className="mt-2 flex max-w-prose flex-col gap-2 rounded-lg border border-border bg-card p-4 text-muted-foreground">
-        {/* Damon's own lines about why he built this go here, first. */}
+        <p className="text-foreground">
+          Playlisting is really <em>the</em> thing I've wanted to get out of this for 25+ years. <span className="text-muted-foreground">— Damon</span>
+        </p>
         <p className="font-medium text-foreground">Why finding these songs is harder than it looks</p>
         <p>
           In jazz, a tune is rarely recorded once. Standards were played again and again: by different bands, by the
