@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
 import { appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
 import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
-import type { Route } from "@/lib/route";
+import { href, type Route } from "@/lib/route";
 
 const SIZES = [10, 20, 30];
 
@@ -304,6 +304,9 @@ function pairWhy(a: Player | undefined, b: Player | undefined, t: PlaylistTrack)
   return [a, b].filter((p): p is Player => !!p).map((p) => `${p.name}: ${t.instruments[p.id]?.join(", ") || "?"}`).join(" · ");
 }
 
+/** A full link to a sampler of two players, for the downloads. */
+const samplerUrl = (a: string, b: string) => `${location.origin}${href({ view: "playlist", seeds: [a, b], n: 10, mix: 0 })}`;
+
 function savePath(list: PathPlaylist, kind: "txt" | "csv") {
   const byId = new Map(list.players.map((p) => [p.id, p]));
   const name = list.players.map((p) => p.name).join(" to ");
@@ -312,7 +315,7 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
     const lines = [`${list.players.map((p) => p.name).join(" → ")}: a Pocketlist journey`, ""];
     list.links.forEach((l, i) => {
       const a = byId.get(l.from), b = byId.get(l.to);
-      lines.push(`Step ${i + 1}: ${a?.name} → ${b?.name}`);
+      lines.push(`Step ${i + 1}: ${a?.name} → ${b?.name}`, `   Sampler of these two: ${samplerUrl(l.from, l.to)}`);
       for (const t of l.tracks) {
         lines.push(`${++n}. ${t.title}${t.artist ? ` – ${t.artist}` : ""}${t.album ? ` (${t.album}${t.albumArtist ? `, ${t.albumArtist}` : ""})` : ""}${t.date ?? t.year ? `, ${t.date ?? t.year}` : ""}${t.length ? ` [${formatLength(t.length)}]` : ""}`);
         lines.push(`   ${pairWhy(a, b, t)}`);
@@ -322,10 +325,10 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
     lines.push("Credits from MusicBrainz. https://pocketlist.music", "");
     download(name, kind, lines.join("\n"));
   } else {
-    const rows = [["#", "step", "title", "artist", "length", "album", "album artist", "date", "players"].join(",")];
+    const rows = [["#", "step", "title", "artist", "length", "album", "album artist", "date", "players", "sampler of these two"].join(",")];
     list.links.forEach((l) => {
       const a = byId.get(l.from), b = byId.get(l.to);
-      for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.artist, formatLength(t.length), t.album, t.albumArtist, t.date ?? t.year, pairWhy(a, b, t)].map(cell).join(","));
+      for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.artist, formatLength(t.length), t.album, t.albumArtist, t.date ?? t.year, pairWhy(a, b, t), samplerUrl(l.from, l.to)].map(cell).join(","));
     });
     download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
   }
