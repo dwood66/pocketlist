@@ -52,17 +52,24 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
     return list.filter((c) => c.name.toLowerCase().includes(f) || c.instruments.some((i) => i.toLowerCase().includes(f)));
   }, [snap, filter]);
 
-  // A finished page with (almost) nobody on it is usually a band: MusicBrainz credits the
-  // people on each track, not the band. Ask for members then, and only then.
+  // Bands lead with their members: MusicBrainz credits the people on each track, not the band,
+  // so a band's own galaxy is empty or a stray handful (one guest spot's worth of strangers).
+  // MusicBrainz says which artists are bands; for the few we don't know the kind of yet, a
+  // finished page with (almost) nobody on it is worth asking about.
   const sparse = !!snap?.progress.done && snap.collaborators.length < 3;
+  const askMembers = !!snap?.player.band || sparse;
   const [members, setMembers] = useState<{ id: string; band: boolean; list: BandMember[] } | null>(null);
+  const [ownCredits, setOwnCredits] = useState(false); // a band's own galaxy, folded away at first
+  useEffect(() => { setOwnCredits(false); }, [id]);
   useEffect(() => {
-    if (!sparse) return;
+    if (!askMembers) return;
     let live = true;
     bandMembers(id).then((m) => { if (live) setMembers({ id, band: m.band, list: m.members }); }).catch(() => undefined);
     return () => { live = false; };
-  }, [id, sparse]);
+  }, [id, askMembers]);
   const here = members?.id === id ? members : null;
+  const isBand = !!snap?.player.band || !!here?.band;
+  const showGalaxy = !!snap && snap.collaborators.length > 0 && (!isBand || ownCredits);
 
   const max = snap?.collaborators[0]?.sharedSessions ?? 1;
   const childTrail = [...trail, id];
@@ -91,7 +98,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
             </p>
           )}
         </div>
-        {snap && !goal && !here?.band && (
+        {snap && !goal && !isBand && (
           <div className="flex flex-wrap gap-2">
             <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
               className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -104,7 +111,8 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         )}
       </header>
 
-      {snap && <ProgressLine snap={snap} onRefresh={() => setRefreshes((n) => n + 1)} />}
+      {/* On a finished band page the fold below says the same thing. */}
+      {snap && !(isBand && snap.progress.done) && <ProgressLine snap={snap} onRefresh={() => setRefreshes((n) => n + 1)} />}
       {!snap && galaxy && isFullScreen() && (
         // Travelling in full screen: cover the page until the next galaxy arrives.
         <div className="fixed inset-0 z-50 grid place-items-center bg-card text-muted-foreground" aria-hidden>Opening…</div>
@@ -118,12 +126,20 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         : snap && connecting && <ConnectFrom id={id} name={snap.player.name} go={go} onClose={() => setConnecting(false)} />}
       {problem && <p role="alert" className="text-sm">{problem}</p>}
       {/* A member starts the journey afresh: a band shares no tracks with anyone, so it can't be a step on one. */}
-      {snap && sparse && here?.band && (
-        <BandMembers name={snap.player.name} members={here.list} to={(m) => ({ view: "player", id: m.id, trail, galaxy, goal })} go={go} />
+      {snap && isBand && (here
+        ? <BandMembers name={snap.player.name} members={here.band ? here.list : []} to={(m) => ({ view: "player", id: m.id, trail, galaxy, goal })} go={go} />
+        : <p className="text-sm text-muted-foreground" role="status">Finding the band’s members…</p>)}
+      {snap && isBand && snap.progress.done && snap.collaborators.length > 0 && (
+        <button type="button" onClick={() => setOwnCredits((v) => !v)} aria-expanded={ownCredits}
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground">
+          {ownCredits ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
+          {`Also credited as a band on ${snap.progress.recordingsTotal.toLocaleString()} ${snap.progress.recordingsTotal === 1 ? "recording" : "recordings"}`}
+          {` · ${snap.collaborators.length.toLocaleString()} ${snap.collaborators.length === 1 ? "person" : "people"}`}
+        </button>
       )}
       {snap && sparse && here && !here.band && snap.collaborators.length === 0 && <NobodyYet name={snap.player.name} />}
 
-      {snap && snap.collaborators.length > 0 && (
+      {snap && showGalaxy && (
         <>
           <div className="flex flex-wrap items-center gap-3">
             <div role="group" aria-label="View" className="flex rounded-lg border border-border p-0.5">

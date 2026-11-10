@@ -92,16 +92,19 @@ app.get("/api/search", async (c) => {
 // Players
 // ---------------------------------------------------------------------------
 
+const bandFlag = (type?: string | null) => (type && BAND_TYPES.has(type) ? { band: true as const } : {});
+
 async function findPlayer(id: string): Promise<Player | undefined> {
-  const [a] = await rows<{ name: string; disambiguation: string | null }>(`select name, disambiguation from artists where id = $1`, [id]);
-  if (a) return { id, name: a.name, disambiguation: a.disambiguation ?? undefined };
+  const [a] = await rows<{ name: string; disambiguation: string | null; type: string | null }>(
+    `select name, disambiguation, type from artists where id = $1`, [id]);
+  if (a) return { id, name: a.name, disambiguation: a.disambiguation ?? undefined, ...bandFlag(a.type) };
   const [credit] = await rows<{ artist_name: string; artist_disambiguation: string | null }>(
     `select artist_name, artist_disambiguation from credits where artist_id = $1 limit 1`, [id]);
   if (credit) return { id, name: credit.artist_name, disambiguation: credit.artist_disambiguation ?? undefined };
   try {
     const m = await mb<MbArtist>(`artist/${id}`);
     await rememberArtist(m);
-    return { id, name: m.name, disambiguation: m.disambiguation || undefined };
+    return { id, name: m.name, disambiguation: m.disambiguation || undefined, ...bandFlag(m.type) };
   } catch (e) {
     if (e instanceof NotFound) return undefined;
     throw e;

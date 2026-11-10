@@ -15,7 +15,11 @@ export type PlayerCandidate = {
   instrumentMatch: boolean;
 };
 
-export type Player = { id: string; name: string; disambiguation?: string };
+export type Player = {
+  id: string; name: string; disambiguation?: string;
+  /** Set when MusicBrainz says this is a band (or orchestra, choir): its page leads with the members. */
+  band?: true;
+};
 
 export type Collaborator = {
   id: string;
@@ -86,7 +90,7 @@ const optNum = (v: unknown) => v === undefined || isNum(v);
 const isStrArr = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
 
 export function isPlayer(v: unknown): v is Player {
-  return isObj(v) && isStr(v.id) && isStr(v.name) && optStr(v.disambiguation);
+  return isObj(v) && isStr(v.id) && isStr(v.name) && optStr(v.disambiguation) && (v.band === undefined || v.band === true);
 }
 
 export function isPlayerCandidate(v: unknown): v is PlayerCandidate {
