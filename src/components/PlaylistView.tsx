@@ -14,6 +14,8 @@ import { Link } from "@/components/Link";
 import { alsoOn, appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
 import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
 import { href, type Route } from "@/lib/route";
+import { ShareButton, shareUrl } from "@/components/Share";
+import { ConnectResult } from "@/components/Connect";
 
 const SIZES = [10, 20, 30];
 
@@ -52,7 +54,10 @@ export function PlaylistView({ seeds, n, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
+          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix })} title={`${title} · Pocketlist`} text={`A Sampler on Pocketlist: ${title}`} /></span>}
+        </div>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
           {names.length > 1 ? "Songs they all played on" : "Songs with them on"}, one per session, spread across the years.
@@ -171,8 +176,8 @@ function download(name: string, kind: "txt" | "csv", text: string) {
 // the bridge playlist in DESIGN.md: every song shares a player with the next link.
 // ---------------------------------------------------------------------------
 
-export function PathPlaylistView({ ids, per, mix, go }: {
-  ids: string[]; per: number; mix: number; go: (r: Route, opts?: { replace?: boolean }) => void;
+export function PathPlaylistView({ ids, per, mix, connect, go }: {
+  ids: string[]; per: number; mix: number; connect?: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
 }) {
   const [list, setList] = useState<PathPlaylist | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -195,7 +200,7 @@ export function PathPlaylistView({ ids, per, mix, go }: {
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [ids.join(","), per, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, ...next }, { replace: true });
+  const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, connect, ...next }, { replace: true });
   const byId = new Map((list?.players ?? []).map((p) => [p.id, p]));
   const ends = list ? [list.players[0], list.players[list.players.length - 1]] : [];
   const title = list ? `${ends[0].name} → ${ends[1].name}` : "Journey";
@@ -209,9 +214,18 @@ export function PathPlaylistView({ ids, per, mix, go }: {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--goal)]">
-          <JourneyIcon className="h-4 w-4" aria-hidden /> Journey
-        </p>
+        {connect && list && <ConnectResult path={ids} names={byId} go={go} />}
+        <div className="flex items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--goal)]">
+            <JourneyIcon className="h-4 w-4" aria-hidden /> Journey
+          </p>
+          {list && (
+            <span className="flex items-center gap-2">
+              <ShareButton url={shareUrl({ view: "pathlist", ids, per, mix, connect })} title={`${title} · Pocketlist`}
+                text={`${connect ? "A Connect route" : "A Journey"} on Pocketlist: ${list.players.map((p) => p.name).join(" → ")}`} />
+            </span>
+          )}
+        </div>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         {list && (
           <ol className="flex flex-wrap items-center gap-1.5 text-sm" aria-label="The route">

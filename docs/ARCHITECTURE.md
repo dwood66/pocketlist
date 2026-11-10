@@ -192,6 +192,13 @@ your place, and Back walks back along your trail:
 | `&v=list` | …as a list instead |
 | `&goal=<id>` | …while playing Connect |
 | `/?pl=<id>,<id>&n=10&mix=0` | A playlist |
+| `/?pp=<a>,<b>,<c>&per=2&mix=0` | A Journey: songs along a route |
+| `&c=1` | …shared as a solved Connect puzzle (with par, and "Try it yourself") |
+
+**Sharing:** every playlist page and Connect's result card has a Share button (`Share.tsx`): the
+system share sheet on touch screens, otherwise the link and a one-line summary are copied. A
+solved Connect shares as its Journey with `c=1`, so the link shows the route and its songs, not
+just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same picks.
 
 ### The screens
 

@@ -7,6 +7,7 @@
 //   /?p=<id>&goal=<id>              playing Connect: get from here to the goal
 //   /?pl=<id>,<id>&n=10&mix=0       a sampler playlist of songs all of them played on
 //   /?pp=<a>,<b>,<c>&per=2&mix=0    a playlist along a path: a few songs for each link
+//   /?pp=<a>,<b>,<c>&c=1            the same, shared as a solved Connect puzzle
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -15,7 +16,7 @@ export type Route =
   | { view: "search"; q: string; instrument: string }
   | { view: "player"; id: string; trail: string[]; galaxy?: boolean; goal?: string } // galaxy unless false
   | { view: "playlist"; seeds: string[]; n: number; mix: number }
-  | { view: "pathlist"; ids: string[]; per: number; mix: number };
+  | { view: "pathlist"; ids: string[]; per: number; mix: number; connect?: boolean }; // connect: a solved puzzle
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -24,7 +25,7 @@ export function parse(search: string): Route {
   const pp = (params.get("pp") ?? "").split(",").filter((id) => MBID.test(id));
   if (pp.length >= 2) {
     return { view: "pathlist", ids: pp.slice(0, 12), per: Math.min(5, Math.max(1, Number(params.get("per")) || 2)),
-      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)) };
+      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)), ...(params.get("c") === "1" ? { connect: true } : {}) };
   }
   const pl = (params.get("pl") ?? "").split(",").filter((id) => MBID.test(id));
   if (pl.length) {
@@ -53,6 +54,7 @@ export function href(route: Route): string {
     params.set("pp", route.ids.join(","));
     if (route.per !== 2) params.set("per", String(route.per));
     if (route.mix) params.set("mix", String(route.mix));
+    if (route.connect) params.set("c", "1");
   } else if (route.view === "playlist") {
     params.set("pl", route.seeds.join(","));
     if (route.n !== 10) params.set("n", String(route.n));
@@ -61,7 +63,7 @@ export function href(route: Route): string {
     params.set("q", route.q);
     if (route.instrument) params.set("i", route.instrument);
   }
-  const s = params.toString();
+  const s = params.toString().replace(/%2C/gi, ","); // commas are safe in a query, and readable in a shared link
   return s ? `/?${s}` : "/";
 }
 

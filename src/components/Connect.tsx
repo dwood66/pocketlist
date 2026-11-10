@@ -3,7 +3,7 @@
 // everything read so far.
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, Copy, Flag, Lightbulb, Route as RouteIcon, X } from "lucide-react";
+import { Flag, Lightbulb, Route as RouteIcon, X } from "lucide-react";
 import type { Path, Player, PlayerCandidate, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Link } from "@/components/Link";
 import { getPlayer, search, sharedRecordings, shortestPath } from "@/lib/api";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { Route } from "@/lib/route";
+import { ShareButton, shareUrl } from "@/components/Share";
 
 type Go = (r: Route, opts?: { replace?: boolean; keepScroll?: boolean }) => void;
 
@@ -271,7 +272,6 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
 function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go: Go }) {
   const [names, setNames] = useState<Record<string, string>>({});
   const [links, setLinks] = useState<(SharedRecording | null)[]>([]);
-  const [copied, setCopied] = useState(false);
   const hops = path.length - 1;
 
   useEffect(() => {
@@ -289,7 +289,6 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
   const share = [
     `Pocketlist Connect: ${name(path[0])} → ${name(path[hops])} in ${hops} ${hops === 1 ? "hop" : "hops"}${par !== null ? ` (par ${par})` : ""}`,
     ...path.slice(1).map((b, i) => `${name(path[i])} → ${name(b)}: ${linkText(links[i])}`),
-    `${location.origin}/?p=${path[0]}&goal=${path[hops]}`,
   ].join("\n");
 
   return (
@@ -317,9 +316,9 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         ))}
       </ol>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => navigator.clipboard?.writeText(share).then(() => setCopied(true))}>
-          {copied ? <Check className="mr-1.5 h-4 w-4" /> : <Copy className="mr-1.5 h-4 w-4" />} {copied ? "Copied" : "Copy result"}
-        </Button>
+        <ShareButton variant="default" label="Share result" text={share}
+          url={shareUrl({ view: "pathlist", ids: path, per: 2, mix: 0, connect: true })}
+          title={`${name(path[0])} → ${name(path[hops])} · Pocketlist Connect`} />
         <Link to={{ view: "pathlist", ids: path, per: 2, mix: 0 }} go={go}
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[color:var(--goal)] px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <JourneyIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Listen to this journey
@@ -327,5 +326,27 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
         <Button variant="outline" size="sm" onClick={() => go({ view: "home" })}>Play another</Button>
       </div>
     </section>
+  );
+}
+
+/** On a shared Connect result (a Journey with ?c=1): whose puzzle it was, how it went, and the
+ *  same puzzle to try yourself. */
+export function ConnectResult({ path, names, go }: { path: string[]; names: Map<string, Player>; go: Go }) {
+  const [par, setPar] = useState<number | null>(null);
+  const from = path[0], to = path[path.length - 1], hops = path.length - 1;
+  useEffect(() => { shortestPath(from, to).then((p) => setPar(p.players.length - 1)).catch(() => {}); }, [from, to]);
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border-2 border-[color:var(--goal)] bg-card px-3 py-2 text-sm">
+      <ConnectBadge />
+      <span className="tabular-nums">
+        Solved in {hops} {hops === 1 ? "hop" : "hops"}
+        {par !== null && <span className="text-muted-foreground" title="The fewest steps it can be done in, as far as Pocketlist knows"> · par {par}</span>}
+      </span>
+      <Link to={{ view: "player", id: from, trail: [], goal: to }} go={go}
+        className="inline-flex items-center gap-1 font-medium text-[color:var(--goal)] underline-offset-2 hover:underline">
+        <GoalIcon className="h-3.5 w-3.5" aria-hidden />
+        Try it yourself: {names.get(from)?.name ?? "…"} → {names.get(to)?.name ?? "…"}
+      </Link>
+    </div>
   );
 }
