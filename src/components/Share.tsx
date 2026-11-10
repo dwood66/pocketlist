@@ -1,5 +1,5 @@
-// Share: a link to what's on screen. On a phone, the system share sheet (Messages, Mail, …);
-// elsewhere, the link (and a line about it) is copied, and a tick flashes. The button keeps its
+// Share: a link to what's on screen. On a phone, the system share sheet (Messages, Mail, …),
+// with a line about it as the message; elsewhere, just the link is copied, and a tick flashes. The button keeps its
 // name, so it never jumps around.
 
 import { useEffect, useRef, useState } from "react";
@@ -23,7 +23,7 @@ export function ShareButton({ url, title, text, label = "Share", variant = "outl
       try { await navigator.share({ title, text, url }); } catch { /* closed the sheet */ }
       return;
     }
-    await navigator.clipboard?.writeText(text ? `${text}\n${url}` : url);
+    await navigator.clipboard?.writeText(url);
     setFlash(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setFlash(false), 2000);

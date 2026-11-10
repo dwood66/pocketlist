@@ -196,7 +196,8 @@ your place, and Back walks back along your trail:
 | `&c=1` | …shared as a solved Connect puzzle (with par, and "Try it yourself") |
 
 **Sharing:** every playlist page and Connect's result card has a Share button (`Share.tsx`): the
-system share sheet on touch screens, otherwise the link and a one-line summary are copied. A
+system share sheet on touch screens (with a one-line summary as the message), otherwise just the
+link is copied. A
 solved Connect shares as its Journey with `c=1`, so the link shows the route and its songs, not
 just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same picks.
 
