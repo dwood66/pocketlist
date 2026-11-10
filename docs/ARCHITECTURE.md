@@ -170,6 +170,7 @@ These decide every number on screen, so they're pure functions with tests.
 | `GET /api/players/:id` | Name and description. |
 | `GET /api/players/:id/stream` | A **live stream** (Server-Sent Events): a snapshot of the collaborator list at most every 1.5 seconds while reading, then a final one. Also starts or resumes the crawl. |
 | `GET /api/players/:id/with/:other` | The recordings two players share, deduplicated, earliest first. |
+| `GET /api/players/:id/members` | A band's members, from MusicBrainz's "member of band" links. MusicBrainz credits the people on each track, not the band, so a band's own galaxy is nearly empty; its page lists the members instead. Asked only for finished pages with fewer than 3 people, skipped for known people, kept for a day. |
 | `GET /api/path?from=&to=` | The **shortest known chain** between two players (for Connect's par): breadth-first search over "credited on the same recording", from both ends at once, up to 6 hops, with one shared recording per link. |
 | `GET /api/playlist?seeds=&n=&mix=` | A **sampler playlist**: songs every seed is on (one to four seeds). |
 

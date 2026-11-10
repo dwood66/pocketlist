@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, List, Orbit } from "lucide-react";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
-import type { Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
+import type { BandMember, Collaborator, Player, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/components/Link";
 import { Galaxy, forgetGalaxy, isFullScreen } from "@/components/Galaxy";
 import { ConnectBanner, ConnectFrom, ConnectIcon, GoalLine } from "@/components/Connect";
-import { getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
+import { bandMembers, getPlayer, sharedRecordings, streamPlayer } from "@/lib/api";
 import type { Route } from "@/lib/route";
 import { cn } from "@/lib/utils";
 import { Meta } from "@/components/Meta";
@@ -52,6 +52,18 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
     return list.filter((c) => c.name.toLowerCase().includes(f) || c.instruments.some((i) => i.toLowerCase().includes(f)));
   }, [snap, filter]);
 
+  // A finished page with (almost) nobody on it is usually a band: MusicBrainz credits the
+  // people on each track, not the band. Ask for members then, and only then.
+  const sparse = !!snap?.progress.done && snap.collaborators.length < 3;
+  const [members, setMembers] = useState<{ id: string; band: boolean; list: BandMember[] } | null>(null);
+  useEffect(() => {
+    if (!sparse) return;
+    let live = true;
+    bandMembers(id).then((m) => { if (live) setMembers({ id, band: m.band, list: m.members }); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [id, sparse]);
+  const here = members?.id === id ? members : null;
+
   const max = snap?.collaborators[0]?.sharedSessions ?? 1;
   const childTrail = [...trail, id];
   const matches = useMemo(() => (filter.trim() ? new Set(visible.map((c) => c.id)) : null), [visible, filter]);
@@ -79,7 +91,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
             </p>
           )}
         </div>
-        {snap && !goal && (
+        {snap && !goal && !here?.band && (
           <div className="flex flex-wrap gap-2">
             <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
               className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -105,6 +117,11 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         ? <ConnectBanner id={id} trail={trail} goal={goal} snap={snap} galaxy={galaxy} go={go} onHint={(n) => { setFilter(n); setShown(PAGE); }} />
         : snap && connecting && <ConnectFrom id={id} name={snap.player.name} go={go} onClose={() => setConnecting(false)} />}
       {problem && <p role="alert" className="text-sm">{problem}</p>}
+      {/* A member starts the journey afresh: a band shares no tracks with anyone, so it can't be a step on one. */}
+      {snap && sparse && here?.band && (
+        <BandMembers name={snap.player.name} members={here.list} to={(m) => ({ view: "player", id: m.id, trail, galaxy, goal })} go={go} />
+      )}
+      {snap && sparse && here && !here.band && snap.collaborators.length === 0 && <NobodyYet name={snap.player.name} />}
 
       {snap && snap.collaborators.length > 0 && (
         <>
@@ -157,6 +174,57 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
   );
 }
 
+function BandMembers({ name, members, to, go }: {
+  name: string; members: BandMember[]; to: (m: BandMember) => Route; go: (r: Route) => void;
+}) {
+  return (
+    <section aria-labelledby="members" className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-1">
+        <h2 id="members" className="font-medium">{name} is a band. Start from one of its members.</h2>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          MusicBrainz credits the people who played on each track, not the band, so a band has almost
+          nobody in its own galaxy. Its members have plenty.
+        </p>
+      </div>
+      {members.length ? (
+        <ul className="flex flex-col divide-y divide-border">
+          {members.map((m) => (
+            <li key={m.id}>
+              <Link to={to(m)} go={go}
+                className="-mx-2 flex flex-wrap items-baseline justify-between gap-x-3 rounded px-2 py-2 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+                <span className="font-medium">{m.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  <Meta parts={[
+                    m.instruments.length > 0 && [m.instruments.join(", "), "What MusicBrainz says they played in the band"],
+                    m.years && [m.years, "Years in the band"],
+                    m.original && ["founder", "A founding member"],
+                  ]} />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          MusicBrainz doesn’t list its members yet. Search for a player you know was in it instead.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function NobodyYet({ name }: { name: string }) {
+  return (
+    <p className="max-w-prose text-sm text-muted-foreground">
+      Nobody is credited as playing alongside {name} in MusicBrainz yet. Credits there are added by
+      people, and anyone can add them.{" "}
+      <a href="https://www.damonwood.com/blog/?p=1271" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+        Here’s how
+      </a>.
+    </p>
+  );
+}
+
 function ViewButton({ on, onClick, icon, children }: { on: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
@@ -181,7 +249,7 @@ function ProgressLine({ snap, onRefresh }: { snap: Snapshot; onRefresh: () => vo
           ? <>
               <span title="Everyone credited as playing on a recording with them">{`${people.toLocaleString()} ${people === 1 ? "person" : "people"}`}</span>
               {", from "}
-              <span title="Recordings they're credited as playing on, in MusicBrainz">{`${total.toLocaleString()} recordings`}</span>
+              <span title="Recordings they're credited as playing on, in MusicBrainz">{`${total.toLocaleString()} ${total === 1 ? "recording" : "recordings"}`}</span>
               {". "}
               <button type="button" onClick={onRefresh} className="underline hover:text-foreground"
                 title="Pick up credits added to MusicBrainz since this player was read">

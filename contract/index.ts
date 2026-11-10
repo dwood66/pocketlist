@@ -50,6 +50,18 @@ export type Snapshot = {
   collaborators: Collaborator[];
 };
 
+/** Someone who was in a band, for a band's page: bands aren't credited on tracks, their members are. */
+export type BandMember = {
+  id: string;
+  name: string;
+  instruments: string[]; // what MusicBrainz says they played in the band, often nothing
+  years?: string; // "1975–1982", "1971–", or missing
+  original: boolean; // a founding member
+};
+
+/** `band` is false for a person (or anything that isn't a group), and then `members` is empty. */
+export type Members = { band: boolean; members: BandMember[] };
+
 export type SharedRecording = {
   recordingId: string;
   title: string;
@@ -92,6 +104,11 @@ export function isSnapshot(v: unknown): v is Snapshot {
   const p = v.progress;
   return isNum(p.recordingsTotal) && isNum(p.recordingsLoaded) && typeof p.done === "boolean" && optNum(p.refreshing) &&
     Array.isArray(v.collaborators) && v.collaborators.every(isCollaborator);
+}
+
+export function isMembers(v: unknown): v is Members {
+  return isObj(v) && typeof v.band === "boolean" && Array.isArray(v.members) && v.members.every((m) =>
+    isObj(m) && isStr(m.id) && isStr(m.name) && isStrArr(m.instruments) && optStr(m.years) && typeof m.original === "boolean");
 }
 
 export function isSharedRecording(v: unknown): v is SharedRecording {

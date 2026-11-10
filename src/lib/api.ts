@@ -3,8 +3,8 @@
 
 import {
   isAlsoOn, isAppleMatches, isPath, isPathPlaylist, isPlaylist, isSwap, type AlsoOn, type AppleMatches, type Path, type PathPlaylist, type Playlist, type Swap,
-  isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
-  type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
+  isMembers, isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
+  type Members, type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
 
 // Locally the API sits behind Vite's /api proxy. Deployed, it's on its own host, set at
@@ -98,6 +98,22 @@ export function shortestPath(from: string, to: string): Promise<Path> {
     }).catch((e: unknown) => { paths.delete(key); throw e; }));
   }
   return paths.get(key)!;
+}
+
+const memberLists = new Map<string, Promise<Members>>();
+
+/** A band's members (`band: false` for a person). Asked once per page load per player. */
+export function bandMembers(id: string): Promise<Members> {
+  let p = memberLists.get(id);
+  if (!p) {
+    p = getJson(`/api/players/${id}/members`).then((data) => {
+      if (!isMembers(data)) throw new Error("Unexpected members response");
+      return data;
+    });
+    p.catch(() => memberLists.delete(id)); // let a later visit try again
+    memberLists.set(id, p);
+  }
+  return p;
 }
 
 export async function sharedRecordings(a: string, b: string, signal?: AbortSignal): Promise<SharedRecording[]> {

@@ -3,21 +3,23 @@
 //   GET /api/players/:id                              → Player
 //   GET /api/players/:id/stream                       → server-sent Snapshot events
 //   GET /api/players/:id/with/:otherId                → SharedRecording[]
+//   GET /api/players/:id/members                      → Members (a band's members)
 
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Swap } from "../contract/index.ts";
+import type { Members, Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Swap } from "../contract/index.ts";
 import { normalizeTitle } from "./aggregate.ts";
 import { jobError, refresh, watch } from "./crawler.ts";
 import { alsoOn, performanceKeys, samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
 import { appleMatches } from "./apple.ts";
-import { rows } from "./db.ts";
+import { db, rows } from "./db.ts";
 import { forgetGalaxy, galaxy } from "./galaxy.ts";
 import { Forgetful } from "./cache.ts";
 import { track } from "./usage.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
+import { BAND_TYPES, bandMembers } from "./members.ts";
 import { creditName, mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
 const app = new Hono();
@@ -146,6 +148,31 @@ app.get("/api/players/:id/stream", async (c) => {
     }
     unwatch();
   });
+});
+
+// A band's page is nearly empty (see members.ts), so the app asks for its members instead.
+// One MusicBrainz request per band per day; none for anyone we already know is a person.
+const memberLists = new Forgetful<Members>(2_000, 24 * 60 * 60_000);
+const NOT_A_BAND: Members = { band: false, members: [] };
+
+app.get("/api/players/:id/members", async (c) => {
+  const id = c.req.param("id");
+  if (!MBID.test(id)) return c.json({ error: "not a MusicBrainz ID" }, 400);
+  const kept = memberLists.get(id);
+  if (kept) return c.json(kept);
+  const [known] = await rows<{ type: string | null }>(`select type from artists where id = $1`, [id]);
+  if (known?.type && !BAND_TYPES.has(known.type)) return c.json(NOT_A_BAND);
+  let a: MbArtist;
+  try {
+    a = await mb<MbArtist>(`artist/${id}?inc=artist-rels`);
+  } catch (e) {
+    if (e instanceof NotFound) return c.json({ error: "not found" }, 404);
+    throw e;
+  }
+  if (a.type) await db.query(`update artists set type = $2 where id = $1 and type is null`, [id, a.type]);
+  const result: Members = a.type && BAND_TYPES.has(a.type) ? { band: true, members: bandMembers(a) } : NOT_A_BAND;
+  memberLists.set(id, result);
+  return c.json(result);
 });
 
 app.get("/api/players/:id/with/:other", async (c) => {

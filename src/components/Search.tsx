@@ -80,11 +80,14 @@ export function SearchResults({ q, instrument, go }: { q: string; instrument: st
                   <Meta parts={[
                     c.disambiguation && [c.disambiguation, "MusicBrainz's description, to tell them from others with the same name"],
                     c.years && [c.years, "Years active, from MusicBrainz"],
-                    c.type !== "Person" && c.type && [c.type, "Kind of artist"],
+                    c.type !== "Person" && c.type && [c.type === "Group" ? "band" : c.type.toLowerCase(), "Kind of artist"],
                     c.country && [c.country, "Country"],
                   ]} />
                 ) : "No description in MusicBrainz"}
               </span>
+              {c.type && c.type !== "Person" && c.type !== "Other" && c.type !== "Character" && (
+                <span className="text-xs text-muted-foreground">Opens a list of its members, since the credits are theirs</span>
+              )}
               {c.matchedAlias && <span className="text-xs text-muted-foreground">Matched “{c.matchedAlias}”, a name they’re also credited as</span>}
             </Link>
           </li>
