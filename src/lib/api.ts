@@ -106,38 +106,60 @@ export async function sharedRecordings(a: string, b: string, signal?: AbortSigna
   return data.filter(isSharedRecording);
 }
 
-/** Opens the live feed for a player. Returns a function that closes it. */
+/** Opens the live feed for a player. Returns a function that closes it.
+ *  While the tab is hidden the feed is closed, and it reopens (with the latest) when the tab
+ *  comes back: a background tab left on a player being read in shouldn't keep the server busy. */
 export function streamPlayer(
   id: string,
   on: { snapshot: (s: Snapshot) => void; problem: (message: string) => void },
   opts?: { refresh?: boolean },
 ): () => void {
-  const es = new EventSource(`${API}/api/players/${id}/stream${opts?.refresh ? "?refresh=1" : ""}`);
+  let es: EventSource | null = null;
   let finished = false;
-  es.addEventListener("snapshot", (e) => {
-    try {
-      const data: unknown = JSON.parse((e as MessageEvent<string>).data);
-      if (!isSnapshot(data)) return;
-      rememberPlayer(data.player);
-      on.snapshot(data);
-      if (data.progress.done) {
-        finished = true;
-        es.close();
+  let refresh = !!opts?.refresh; // only the first connection asks for a re-read
+
+  function open() {
+    if (es || finished) return;
+    const source = new EventSource(`${API}/api/players/${id}/stream${refresh ? "?refresh=1" : ""}`);
+    refresh = false;
+    es = source;
+    source.addEventListener("snapshot", (e) => {
+      try {
+        const data: unknown = JSON.parse((e as MessageEvent<string>).data);
+        if (!isSnapshot(data)) return;
+        rememberPlayer(data.player);
+        on.snapshot(data);
+        if (data.progress.done) {
+          finished = true;
+          close();
+        }
+      } catch (_) {
+        // A malformed event is skipped; the next one replaces it anyway.
       }
-    } catch (_) {
-      // A malformed event is skipped; the next one replaces it anyway.
-    }
-  });
-  es.addEventListener("problem", (e) => {
-    try {
-      const data: unknown = JSON.parse((e as MessageEvent<string>).data);
-      if (typeof data === "object" && data && "message" in data && typeof data.message === "string") on.problem(data.message);
-    } catch (_) {}
-  });
-  // EventSource reconnects by itself after a dropped connection. Only report a problem
-  // when it has given up.
-  es.onerror = () => {
-    if (!finished && es.readyState === EventSource.CLOSED) on.problem("Lost the connection to the server.");
+    });
+    source.addEventListener("problem", (e) => {
+      try {
+        const data: unknown = JSON.parse((e as MessageEvent<string>).data);
+        if (typeof data === "object" && data && "message" in data && typeof data.message === "string") on.problem(data.message);
+      } catch (_) {}
+    });
+    // EventSource reconnects by itself after a dropped connection. Only report a problem
+    // when it has given up.
+    source.onerror = () => {
+      if (!finished && source.readyState === EventSource.CLOSED) on.problem("Lost the connection to the server.");
+    };
+  }
+  function close() {
+    es?.close();
+    es = null;
+  }
+  const onVisibility = () => (document.hidden ? close() : open());
+
+  document.addEventListener("visibilitychange", onVisibility);
+  if (!document.hidden) open();
+  return () => {
+    document.removeEventListener("visibilitychange", onVisibility);
+    finished = true;
+    close();
   };
-  return () => es.close();
 }

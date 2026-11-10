@@ -173,6 +173,21 @@ These decide every number on screen, so they're pure functions with tests.
 | `GET /api/path?from=&to=` | The **shortest known chain** between two players (for Connect's par): breadth-first search over "credited on the same recording", from both ends at once, up to 6 hops, with one shared recording per link. |
 | `GET /api/playlist?seeds=&n=&mix=` | A **sampler playlist**: songs every seed is on (one to four seeds). |
 
+**Keeping database traffic down** (`server/galaxy.ts`, `server/cache.ts`). Neon bills for the
+data it sends out, and a galaxy is expensive to build: about 5 MB of credit rows for Louis
+Armstrong, summarised into about 130 KB. A November 2026 billing alert traced most of the traffic
+to the live stream, which rebuilt the whole galaxy every 1.5 seconds while a player was being read
+in. Now:
+
+- A finished galaxy is built once and kept in the API's memory for up to six hours (24 MB of
+  galaxies at most, least recently used out first). Re-reading a player clears it.
+- A galaxy still being read in keeps its rows in memory, and each update reads only the
+  recordings that arrived since the last one. When reading-in finishes it's rebuilt once in full,
+  so details that arrived along the way are exact. Pages watching the same player share builds.
+- The app closes the live stream while its tab is hidden, and reopens it when the tab comes back.
+- Connect's path search keeps each player's neighbours for 30 minutes, since every hop of a game
+  asks for a fresh route to the same goal.
+
 **Shared types** (`contract/index.ts`): every response shape is defined once and imported by both
 the server and the app, with guards that check anything arriving over the network. A wrong shape
 fails loudly at the edge instead of quietly inside a component.

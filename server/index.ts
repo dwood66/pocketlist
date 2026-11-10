@@ -8,12 +8,14 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Snapshot, Swap } from "../contract/index.ts";
-import { aggregate, normalizeTitle, ownInstruments, type CreditRow } from "./aggregate.ts";
-import { jobError, refresh, refreshing, watch } from "./crawler.ts";
+import type { Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Swap } from "../contract/index.ts";
+import { normalizeTitle } from "./aggregate.ts";
+import { jobError, refresh, watch } from "./crawler.ts";
 import { alsoOn, performanceKeys, samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
 import { appleMatches } from "./apple.ts";
 import { rows } from "./db.ts";
+import { forgetGalaxy, galaxy } from "./galaxy.ts";
+import { Forgetful } from "./cache.ts";
 import { track } from "./usage.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
 import { creditName, mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
@@ -111,51 +113,6 @@ app.get("/api/players/:id", async (c) => {
   return p ? c.json(p) : c.json({ error: "not found" }, 404);
 });
 
-async function snapshot(player: Player): Promise<Snapshot> {
-  const credits = await rows<CreditRow>(
-    `with mine as (
-       select distinct recording_id from credits where artist_id = $1 and rel_type = any($2)
-     ), first_rg as (
-       select distinct on (rr.recording_id) rr.recording_id, rl.rg_id
-       from recording_releases rr join releases rl on rl.id = rr.release_id
-       where rr.recording_id in (select recording_id from mine)
-       order by rr.recording_id, rl.date asc nulls last
-     )
-     select c.recording_id, r.title, r.first_release_date, f.rg_id, c.artist_id, c.artist_name,
-            c.artist_disambiguation, c.instruments, c.date
-     from credits c
-     join mine m on m.recording_id = c.recording_id
-     join recordings r on r.id = c.recording_id
-     left join first_rg f on f.recording_id = c.recording_id
-     where c.rel_type = any($2) and r.credits_loaded`,
-    [player.id, PERFORMER_TYPES],
-  );
-  const own = await rows<Pick<CreditRow, "artist_id" | "recording_id" | "instruments">>(
-    `select c.recording_id, c.instruments, c.artist_id from credits c where c.artist_id = $1 and c.rel_type = any($2)`,
-    [player.id, PERFORMER_TYPES],
-  );
-  const [counts] = await rows<{ total: number; loaded: number; indexed: boolean }>(
-    `select count(distinct c.recording_id)::int as total,
-            count(distinct c.recording_id) filter (where r.credits_loaded)::int as loaded,
-            (select indexed_at is not null from artists where id = $1) as indexed
-     from credits c join recordings r on r.id = c.recording_id
-     where c.artist_id = $1 and c.rel_type = any($2)`,
-    [player.id, PERFORMER_TYPES],
-  );
-  const again = refreshing(player.id);
-  return {
-    player,
-    instruments: ownInstruments(player.id, own),
-    progress: {
-      recordingsTotal: counts.total,
-      recordingsLoaded: counts.loaded,
-      done: !!counts.indexed && counts.loaded >= counts.total && again === null,
-      ...(again !== null && { refreshing: again }),
-    },
-    collaborators: aggregate(player.id, credits),
-  };
-}
-
 app.get("/api/players/:id/stream", async (c) => {
   const id = c.req.param("id");
   if (!MBID.test(id)) return c.json({ error: "not a MusicBrainz ID" }, 400);
@@ -164,7 +121,9 @@ app.get("/api/players/:id/stream", async (c) => {
   track(c, "player", id);
 
   // ?refresh=1 re-reads the player from MusicBrainz (see crawler.ts), at most every few minutes.
-  const tooSoon = c.req.query("refresh") === "1" && !refresh(id);
+  const asked = c.req.query("refresh") === "1";
+  const tooSoon = asked && !refresh(id);
+  if (asked && !tooSoon) forgetGalaxy(id);
 
   return streamSSE(c, async (stream) => {
     let dirty = true;
@@ -177,7 +136,7 @@ app.get("/api/players/:id/stream", async (c) => {
     while (!closed) {
       if (dirty) {
         dirty = false;
-        const snap = await snapshot(player);
+        const snap = await galaxy(player);
         await stream.writeSSE({ event: "snapshot", data: JSON.stringify(snap) });
         const err = jobError(id) ?? (tooSoon ? "Re-read from MusicBrainz a few minutes ago. Give it ten minutes before trying again." : undefined);
         if (err) await stream.writeSSE({ event: "problem", data: JSON.stringify({ message: err }) });
@@ -412,17 +371,31 @@ app.get("/api/path-playlist", async (c) => {
 const MAX_HOPS = 6;
 const MAX_FRONTIER = 4000;
 
+// Who each player has played with, kept for a while: every hop of a Connect game asks for a
+// fresh route to the same goal, so the same neighbourhoods come up again and again, and one
+// step out from a big name can be 7 MB from the database. Kept by the number of ids held.
+const near = new Forgetful<string[]>(600_000, 30 * 60_000, (ids) => ids.length + 1);
+
 async function neighbours(ids: string[]) {
-  return rows<{ src: string; dst: string }>(
-    `select distinct a.artist_id as src, b.artist_id as dst
-     from credits a
-     join credits b on b.recording_id = a.recording_id
-     join recordings r on r.id = a.recording_id
-     where a.artist_id = any($1) and a.rel_type = any($2) and b.rel_type = any($2)
-       and b.artist_id <> a.artist_id and r.credits_loaded
-       and b.artist_name !~ '^\\[.*\\]$'`, // MusicBrainz placeholders like [unknown] aren't people
-    [ids, PERFORMER_TYPES],
-  );
+  const unknown = ids.filter((id) => !near.get(id));
+  if (unknown.length) {
+    const found = await rows<{ src: string; dst: string }>(
+      `select distinct a.artist_id as src, b.artist_id as dst
+       from credits a
+       join credits b on b.recording_id = a.recording_id
+       join recordings r on r.id = a.recording_id
+       where a.artist_id = any($1) and a.rel_type = any($2) and b.rel_type = any($2)
+         and b.artist_id <> a.artist_id and r.credits_loaded
+         and b.artist_name !~ '^\\[.*\\]$'`, // MusicBrainz placeholders like [unknown] aren't people
+      [unknown, PERFORMER_TYPES],
+    );
+    const bySrc = new Map<string, string[]>(unknown.map((id) => [id, []]));
+    for (const { src, dst } of found) bySrc.get(src)?.push(dst);
+    for (const [id, list] of bySrc) near.set(id, list);
+  }
+  const pairs: { src: string; dst: string }[] = [];
+  for (const src of ids) for (const dst of near.get(src) ?? []) pairs.push({ src, dst });
+  return pairs;
 }
 
 app.get("/api/path", async (c) => {
