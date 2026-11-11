@@ -63,7 +63,7 @@ export default function App() {
           {route.view === "search" && <SearchResults q={route.q} instrument={route.instrument} go={go} />}
           {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} goal={route.goal} go={go} />}
           {route.view === "playlist" && <PlaylistView seeds={route.seeds} n={route.n} mix={route.mix} newest={!!route.newest} go={go} />}
-          {route.view === "pathlist" && <PathPlaylistView ids={route.ids} per={route.per} mix={route.mix} connect={route.connect} go={go} />}
+          {route.view === "pathlist" && <PathPlaylistView ids={route.ids} mix={route.mix} connect={route.connect} go={go} />}
         </main>
 
         <footer className="mt-8 text-center text-xs text-muted-foreground">

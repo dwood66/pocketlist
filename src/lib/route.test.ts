@@ -5,7 +5,7 @@ import { href, parse, type Route } from "./route.ts";
 const A = "57db3f59-9c58-4f68-a00e-e044666c4828", B = "1e15c55f-e661-4910-9c0c-49a7b77b4d55", C = "b625448e-bf4a-41c3-a421-72ad46cdb831";
 
 test("a shared Connect result round-trips", () => {
-  const route: Route = { view: "pathlist", ids: [A, B, C], per: 2, mix: 0, connect: true };
+  const route: Route = { view: "pathlist", ids: [A, B, C], mix: 0, connect: true };
   assert.equal(href(route), `/?pp=${A},${B},${C}&c=1`);
   assert.deepEqual(parse(href(route).slice(1)), route);
 });
@@ -22,4 +22,9 @@ test("a newest-first Sampler round-trips, and oldest first stays the plain link"
   assert.deepEqual(parse(href(route).slice(1)), route);
   assert.equal(href({ view: "playlist", seeds: [A], n: 10, mix: 0 }), `/?pl=${A}`);
   assert.ok(!("newest" in parse(`?pl=${A}`)));
+});
+
+test("songs per step isn't in Journey links; old links that had it still open", () => {
+  assert.equal(href({ view: "pathlist", ids: [A, B], mix: 0 }), `/?pp=${A},${B}`);
+  assert.deepEqual(parse(`?pp=${A},${B}&per=3`), { view: "pathlist", ids: [A, B], mix: 0 });
 });

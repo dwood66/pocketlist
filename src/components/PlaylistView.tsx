@@ -16,6 +16,7 @@ import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen"
 import { href, type Route } from "@/lib/route";
 import { ShareButton, shareUrl } from "@/components/Share";
 import { ConnectResult } from "@/components/Connect";
+import { journeyPer, rememberJourneyPer } from "@/lib/prefs";
 
 const SIZES = [10, 20, 30];
 
@@ -187,9 +188,11 @@ function download(name: string, kind: "txt" | "csv", text: string) {
 // the bridge playlist in DESIGN.md: every song shares a player with the next link.
 // ---------------------------------------------------------------------------
 
-export function PathPlaylistView({ ids, per, mix, connect, go }: {
-  ids: string[]; per: number; mix: number; connect?: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
+export function PathPlaylistView({ ids, mix, connect, go }: {
+  ids: string[]; mix: number; connect?: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
 }) {
+  // Songs per step is yours, not the link's: 2 until you pick another, then whatever you picked.
+  const [per, setPer] = useState(journeyPer);
   const [list, setList] = useState<PathPlaylist | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -211,7 +214,7 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [ids.join(","), per, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (next: Partial<{ per: number; mix: number }>) => go({ view: "pathlist", ids, per, mix, connect, ...next }, { replace: true });
+  const set = (next: Partial<{ mix: number }>) => go({ view: "pathlist", ids, mix, connect, ...next }, { replace: true });
   const byId = new Map((list?.players ?? []).map((p) => [p.id, p]));
   const ends = list ? [list.players[0], list.players[list.players.length - 1]] : [];
   const title = list ? `${ends[0].name} → ${ends[1].name}` : "Journey";
@@ -232,7 +235,7 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
           </p>
           {list && (
             <span className="flex items-center gap-2">
-              <ShareButton url={shareUrl({ view: "pathlist", ids, per, mix, connect })} title={`${title} · Pocketlist`} />
+              <ShareButton url={shareUrl({ view: "pathlist", ids, mix, connect })} title={`${title} · Pocketlist`} />
             </span>
           )}
         </div>
@@ -265,7 +268,7 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
           <div className="flex flex-wrap items-center gap-2">
             <div role="group" aria-label="Songs per step" title="Number of songs per step" className="flex items-center rounded-lg border border-border p-0.5">
               {[1, 2, 3].map((n) => (
-                <button key={n} type="button" aria-pressed={per === n} onClick={() => set({ per: n })}
+                <button key={n} type="button" aria-pressed={per === n} onClick={() => { rememberJourneyPer(n); setPer(n); }}
                   className={"rounded-md px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
                     (per === n ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
                   {n}
@@ -275,7 +278,7 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
             </div>
             <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
             <Button variant="outline" size="sm" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
-              onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), per, mix, connect }, { replace: true })}>
+              onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), mix, connect }, { replace: true })}>
               <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> Reverse
             </Button>
             <Button variant="outline" size="sm" disabled={!count} title="Download as plain text" onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>

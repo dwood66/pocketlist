@@ -66,7 +66,7 @@ export function ConnectIntro({ go }: { go: Go }) {
         <span className="whitespace-nowrap font-medium text-foreground"><JourneyIcon className="mr-0.5 inline h-3.5 w-3.5 align-[-2px] text-[color:var(--goal)]" aria-hidden />Journey</span>{" "}
         playlist, and any link along it a{" "}
         <span className="whitespace-nowrap font-medium text-foreground"><SamplerIcon className="mr-0.5 inline h-3.5 w-3.5 align-[-2px] text-primary" aria-hidden />Sampler</span>.{" "}
-        <Link to={{ view: "pathlist", ids: [EXAMPLE.from, EXAMPLE.via, EXAMPLE.to], per: 2, mix: 0 }} go={go} className="underline hover:text-foreground">
+        <Link to={{ view: "pathlist", ids: [EXAMPLE.from, EXAMPLE.via, EXAMPLE.to], mix: 0 }} go={go} className="underline hover:text-foreground">
           Hear one: {EXAMPLE.label}
         </Link>
       </p>
@@ -345,9 +345,9 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
       </ol>
       <div className="flex flex-wrap gap-2">
         <ShareButton variant="default" label="Share result" text={share}
-          url={shareUrl({ view: "pathlist", ids: path, per: 2, mix: 0, connect: true })}
+          url={shareUrl({ view: "pathlist", ids: path, mix: 0, connect: true })}
           title={`${name(path[0])} → ${name(path[hops])} · Pocketlist Connect`} />
-        <Link to={{ view: "pathlist", ids: path, per: 2, mix: 0 }} go={go}
+        <Link to={{ view: "pathlist", ids: path, mix: 0 }} go={go}
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[color:var(--goal)] px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <JourneyIcon className="h-4 w-4 text-[color:var(--goal)]" aria-hidden /> Listen to this journey
         </Link>

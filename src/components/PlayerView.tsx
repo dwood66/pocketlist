@@ -397,7 +397,7 @@ function Breadcrumbs({ trail, go, current, galaxy, goal }: { trail: string[]; go
         <li aria-current="page" className="text-foreground">{current?.name ?? "…"}</li>
         {current && (
           <li className="ml-1">
-            <Link to={{ view: "pathlist", ids: [...trail, current.id], per: 2, mix: 0 }} go={go}
+            <Link to={{ view: "pathlist", ids: [...trail, current.id], mix: 0 }} go={go}
               title="Songs that carry you along this path, step by step"
               className="inline-flex items-center gap-1 rounded-full border border-[color:var(--goal)] px-2 py-0.5 text-xs text-foreground hover:bg-muted">
               <JourneyIcon className="h-3.5 w-3.5 text-[color:var(--goal)]" aria-hidden /> Journey playlist
