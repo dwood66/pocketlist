@@ -62,7 +62,7 @@ export default function App() {
           {home && <Home go={go} />}
           {route.view === "search" && <SearchResults q={route.q} instrument={route.instrument} go={go} />}
           {route.view === "player" && <PlayerView key={route.id} id={route.id} trail={route.trail} galaxy={route.galaxy !== false} goal={route.goal} go={go} />}
-          {route.view === "playlist" && <PlaylistView seeds={route.seeds} n={route.n} mix={route.mix} newest={!!route.newest} go={go} />}
+          {route.view === "playlist" && <PlaylistView seeds={route.seeds} mix={route.mix} newest={!!route.newest} go={go} />}
           {route.view === "pathlist" && <PathPlaylistView ids={route.ids} mix={route.mix} connect={route.connect} go={go} />}
         </main>
 
@@ -123,7 +123,7 @@ function Home({ go }: { go: (r: Route) => void }) {
         <ul className="flex w-full flex-col" aria-label="Samplers, from duos to bands">
           {PAIRS.map((p) => (
             <li key={p.name}>
-              <Link to={{ view: "playlist", seeds: p.seeds, n: 10, mix: 0 }} go={go} title={p.who ?? p.name}
+              <Link to={{ view: "playlist", seeds: p.seeds, mix: 0 }} go={go} title={p.who ?? p.name}
                 className="-mx-1.5 flex items-baseline justify-between gap-2 rounded px-1.5 py-0.5 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <span className="hover:underline">{p.name}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">{p.kind}</span>

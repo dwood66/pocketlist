@@ -335,7 +335,7 @@ function ConnectWin({ path, par, go }: { path: string[]; par: number | null; go:
                 {(links[i]!.album || links[i]!.year) && <> ({links[i]!.album && <cite className="italic">{links[i]!.album}</cite>}{links[i]!.album && links[i]!.year ? ", " : ""}{links[i]!.year})</>}
               </span>
             )}
-            <Link to={{ view: "playlist", seeds: [path[i], b], n: 10, mix: 0 }} go={go}
+            <Link to={{ view: "playlist", seeds: [path[i], b], mix: 0 }} go={go}
               title={`A sampler of everything ${name(path[i])} and ${name(b)} recorded together`}
               className="ml-1 inline-flex items-center gap-1 self-center rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted">
               <SamplerIcon className="h-3 w-3 text-primary" aria-hidden /> Sampler

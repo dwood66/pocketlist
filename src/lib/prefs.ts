@@ -14,3 +14,18 @@ export function journeyPer(): number {
 export function rememberJourneyPer(n: number) {
   try { localStorage.setItem(PER_KEY, String(n)); } catch { /* not remembered, no harm */ }
 }
+
+const SIZE_KEY = "sampler-size";
+const SIZES = [10, 20, 30];
+
+/** Songs in a new Sampler: the last size you picked, or 10. */
+export function samplerSize(): number {
+  try {
+    const n = Number(localStorage.getItem(SIZE_KEY));
+    return SIZES.includes(n) ? n : 10;
+  } catch { return 10; }
+}
+
+export function rememberSamplerSize(n: number) {
+  try { localStorage.setItem(SIZE_KEY, String(n)); } catch { /* not remembered, no harm */ }
+}

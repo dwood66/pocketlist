@@ -16,13 +16,15 @@ import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen"
 import { href, type Route } from "@/lib/route";
 import { ShareButton, shareUrl } from "@/components/Share";
 import { ConnectResult } from "@/components/Connect";
-import { journeyPer, rememberJourneyPer } from "@/lib/prefs";
+import { journeyPer, rememberJourneyPer, rememberSamplerSize, samplerSize } from "@/lib/prefs";
 
 const SIZES = [10, 20, 30];
 
-export function PlaylistView({ seeds, n, mix, newest, go }: {
-  seeds: string[]; n: number; mix: number; newest: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
+export function PlaylistView({ seeds, mix, newest, go }: {
+  seeds: string[]; mix: number; newest: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
 }) {
+  // How many songs is yours, not the link's: 10 until you pick another, then whatever you picked.
+  const [n, setN] = useState(samplerSize);
   const [list, setList] = useState<Playlist | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +48,12 @@ export function PlaylistView({ seeds, n, mix, newest, go }: {
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [seeds.join(","), n, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (next: Partial<{ seeds: string[]; n: number; mix: number }>) =>
-    go({ view: "playlist", seeds, n, mix, newest, ...next }, { replace: true });
+  const set = (next: Partial<{ seeds: string[]; mix: number }>) =>
+    go({ view: "playlist", seeds, mix, newest, ...next }, { replace: true });
   // Flipping the order doesn't need the server: turn the list round where it is.
   const flip = () => {
     setList((l) => l && { ...l, tracks: [...l.tracks].reverse() });
-    go({ view: "playlist", seeds, n, mix, newest: !newest }, { replace: true });
+    go({ view: "playlist", seeds, mix, newest: !newest }, { replace: true });
   };
   const names = list?.seeds.map((s) => s.name) ?? [];
   const tracks = list?.tracks ?? [];
@@ -64,7 +66,7 @@ export function PlaylistView({ seeds, n, mix, newest, go }: {
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
-          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix, newest })} title={`${title} · Pocketlist`} /></span>}
+          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, mix, newest })} title={`${title} · Pocketlist`} /></span>}
         </div>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
@@ -99,7 +101,7 @@ export function PlaylistView({ seeds, n, mix, newest, go }: {
           <div className="flex flex-wrap items-center gap-2">
             <div role="group" aria-label="How many songs" title="Number of songs" className="flex rounded-lg border border-border p-0.5">
               {SIZES.map((size) => (
-                <button key={size} type="button" aria-pressed={n === size} onClick={() => set({ n: size })}
+                <button key={size} type="button" aria-pressed={n === size} onClick={() => { rememberSamplerSize(size); setN(size); }}
                   className={"rounded-md px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
                     (n === size ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
                   {size}
@@ -297,7 +299,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
                   <Stop player={a} edge={i === 0} go={go} />
                   <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span title="Songs both of these players are on">Step {i + 1} · {a?.name} and {b?.name} together</span>
-                    <Link to={{ view: "playlist", seeds: [l.from, l.to], n: 10, mix: 0 }} go={go}
+                    <Link to={{ view: "playlist", seeds: [l.from, l.to], mix: 0 }} go={go}
                       title={`A sampler of everything ${a?.name ?? "they"} and ${b?.name ?? "the next player"} recorded together`}
                       className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-foreground hover:bg-muted">
                       <SamplerIcon className="h-3 w-3 text-primary" aria-hidden /> Sampler of these two
@@ -341,7 +343,7 @@ function pairWhy(a: Player | undefined, b: Player | undefined, t: PlaylistTrack)
 }
 
 /** A full link to a sampler of two players, for the downloads. */
-const samplerUrl = (a: string, b: string) => `${location.origin}${href({ view: "playlist", seeds: [a, b], n: 10, mix: 0 })}`;
+const samplerUrl = (a: string, b: string) => `${location.origin}${href({ view: "playlist", seeds: [a, b], mix: 0 })}`;
 
 function savePath(list: PathPlaylist, kind: "txt" | "csv") {
   const byId = new Map(list.players.map((p) => [p.id, p]));

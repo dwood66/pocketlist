@@ -17,14 +17,18 @@ test("a plain Journey isn't marked as Connect", () => {
 });
 
 test("a newest-first Sampler round-trips, and oldest first stays the plain link", () => {
-  const route: Route = { view: "playlist", seeds: [A], n: 10, mix: 0, newest: true };
+  const route: Route = { view: "playlist", seeds: [A], mix: 0, newest: true };
   assert.equal(href(route), `/?pl=${A}&o=new`);
   assert.deepEqual(parse(href(route).slice(1)), route);
-  assert.equal(href({ view: "playlist", seeds: [A], n: 10, mix: 0 }), `/?pl=${A}`);
+  assert.equal(href({ view: "playlist", seeds: [A], mix: 0 }), `/?pl=${A}`);
   assert.ok(!("newest" in parse(`?pl=${A}`)));
 });
 
 test("songs per step isn't in Journey links; old links that had it still open", () => {
   assert.equal(href({ view: "pathlist", ids: [A, B], mix: 0 }), `/?pp=${A},${B}`);
   assert.deepEqual(parse(`?pp=${A},${B}&per=3`), { view: "pathlist", ids: [A, B], mix: 0 });
+});
+
+test("the Sampler's song count isn't in links; old links that had it still open", () => {
+  assert.deepEqual(parse(`?pl=${A}&n=30`), { view: "playlist", seeds: [A], mix: 0 });
 });

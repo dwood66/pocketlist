@@ -100,7 +100,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         </div>
         {snap && !goal && !isBand && (
           <div className="flex flex-wrap gap-2">
-            <Link to={{ view: "playlist", seeds: [id], n: 10, mix: 0 }} go={go}
+            <Link to={{ view: "playlist", seeds: [id], mix: 0 }} go={go}
               className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <SamplerIcon className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> Sampler
             </Link>
@@ -162,7 +162,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
                 <p className="font-display text-lg font-semibold leading-tight">{snap.player.name}</p>
                 {goal && <GoalLine id={id} trail={trail} goal={goal} />}
               </>}
-              onPlaylist={(c) => go({ view: "playlist", seeds: [id, c.id], n: 10, mix: 0 })}
+              onPlaylist={(c) => go({ view: "playlist", seeds: [id, c.id], mix: 0 })}
               onOpen={(c) => {
                 // Measure now: the next player renders before this one is gone.
                 heldHeight = box.current?.offsetHeight ?? 0;
