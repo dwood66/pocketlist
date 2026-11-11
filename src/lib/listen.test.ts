@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatLength, listenQuery, SERVICES, textListLine } from "./listen.ts";
+import { bandcampUrl, formatLength, listenQuery, SERVICES, textListLine } from "./listen.ts";
 
 test("searches for the title and album, without take notes", () => {
   assert.equal(listenQuery({ title: "So What (alternate take)", album: "Kind of Blue" }, ["Miles Davis"]), "So What Kind of Blue");
@@ -38,4 +38,13 @@ test("text list lines for TuneMyMusic and Soundiiz", () => {
   assert.equal(textListLine({ title: "So What (alternate take)", artist: "Miles Davis" }, []), "Miles Davis - So What");
   assert.equal(textListLine({ title: "Blue Day", albumArtist: "The Smoking Section" }, []), "The Smoking Section - Blue Day");
   assert.equal(textListLine({ title: "Driving" }, ["Damon Wood"]), "Damon Wood - Driving");
+});
+
+test("Bandcamp looks for the album by its artist, or the song when there's no album", () => {
+  assert.equal(bandcampUrl({ title: "Hanging Out", album: "Live in New York", albumArtist: "Bob Reynolds", artist: "Bob Reynolds" }, []),
+    "https://bandcamp.com/search?q=Live%20in%20New%20York%20Bob%20Reynolds&item_type=a");
+  assert.equal(bandcampUrl({ title: "So What (alternate take)", artist: "Miles Davis" }, []),
+    "https://bandcamp.com/search?q=So%20What%20Miles%20Davis&item_type=t");
+  assert.equal(bandcampUrl({ title: "Teen Town", album: "Smooth Sailing", albumArtist: "Various Artists" }, []),
+    "https://bandcamp.com/search?q=Smooth%20Sailing&item_type=a");
 });

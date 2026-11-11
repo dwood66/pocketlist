@@ -13,7 +13,7 @@ import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contra
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
 import { alsoOn, appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
-import { formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
+import { bandcampUrl, formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
 import { href, type Route } from "@/lib/route";
 import { ShareButton, shareUrl } from "@/components/Share";
 import { ConnectResult } from "@/components/Connect";
@@ -510,7 +510,7 @@ function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap
 
 // Listen links. Spotify and YouTube Music: a search (the song's title, artist and album). Apple
 // Music: straight to the song when one within a few seconds of its length was found (✓), where "Add to
-// Playlist" is in the ⋯ menu; otherwise a search too.
+// Playlist" is in the ⋯ menu; otherwise a search too. Bandcamp, last: a search for the album, to buy it.
 function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; apple: AppleMatch }) {
   const q = listenQuery(track, who);
   const link = "text-muted-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-current";
@@ -530,6 +530,11 @@ function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; ap
           </a>
         );
       })}
+      <a href={bandcampUrl(track, who)} target="_blank" rel="noopener noreferrer" className={link}
+        aria-label={`Find ${track.album ?? track.title} on Bandcamp (opens in a new tab)`}
+        title={track.album ? `Search Bandcamp for the album, ${track.album}: the place to buy it, if it's there` : "Search Bandcamp for this song"}>
+        Bandcamp
+      </a>
     </span>
   );
 }
