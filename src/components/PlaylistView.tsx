@@ -6,7 +6,8 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownUp, Check, ClipboardList, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
+import { ArrowDownUp, Check, ChevronDown, Download, ListMusic, Plus, RefreshCw, Shuffle, X } from "lucide-react";
+import { journeyFileName, samplerFileName } from "@/lib/filenames";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
@@ -115,13 +116,11 @@ export function PlaylistView({ seeds, mix, newest, go }: {
               title={newest ? "Newest first. Click for oldest first." : "Oldest first. Click for newest first."}>
               <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> {newest ? "Newest first" : "Oldest first"}
             </Button>
-            <Button variant="outline" size="sm" disabled={!list.tracks.length} title="Download as plain text" onClick={() => save(list, "txt")}>
-              <Download className="mr-1.5 h-4 w-4" /> Text
-            </Button>
-            <Button variant="outline" size="sm" disabled={!list.tracks.length} title="Download as a spreadsheet (CSV)" onClick={() => save(list, "csv")}>
-              <Download className="mr-1.5 h-4 w-4" /> CSV
-            </Button>
+          </div>
+          {/* Saving: making it a real playlist comes first; the files are for everything else. */}
+          <div className="flex flex-wrap items-center gap-2">
             <CopyList lines={list.tracks.map((t) => textListLine(t, names))} />
+            <DownloadMenu disabled={!list.tracks.length} onPick={(kind) => save(list, kind)} />
           </div>
 
           <p className="text-sm text-muted-foreground" title="Songs picked, out of every performance they're all credited on, and the sessions those come from">
@@ -171,16 +170,17 @@ function save(list: Playlist, kind: "txt" | "csv") {
     text = "\uFEFF" + [["#", "title", "artist", "length", "album", "album artist", "date", "players"].join(","),
       ...list.tracks.map((t, i) => [i + 1, t.title, t.artist, formatLength(t.length), t.album, t.albumArtist, t.date ?? t.year, why(list, t)].map(cell).join(","))].join("\n") + "\n";
   }
-  download(name, kind, text);
+  download(samplerFileName(list.seeds.map((s) => s.name)), kind, text);
 }
 
 const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-function download(name: string, kind: "txt" | "csv", text: string) {
+/** `file` is already a file name without its extension (see lib/filenames.ts). */
+function download(file: string, kind: "txt" | "csv", text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: kind === "csv" ? "text/csv" : "text/plain" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${name.replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase()}.${kind}`;
+  a.download = `${file}.${kind}`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -283,9 +283,10 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
               onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), mix, connect }, { replace: true })}>
               <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> Reverse
             </Button>
-            <Button variant="outline" size="sm" disabled={!count} title="Download as plain text" onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>
-            <Button variant="outline" size="sm" disabled={!count} title="Download as a spreadsheet (CSV)" onClick={() => savePath(list, "csv")}><Download className="mr-1.5 h-4 w-4" /> CSV</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <CopyList lines={list.links.flatMap((l) => l.tracks.map((t) => textListLine(t, [byId.get(l.from)?.name ?? ""])))} />
+            <DownloadMenu disabled={!count} onPick={(kind) => savePath(list, kind)} />
           </div>
 
           {/* A route map: a line down the left with a stop at each player, and the songs that
@@ -347,7 +348,6 @@ const samplerUrl = (a: string, b: string) => `${location.origin}${href({ view: "
 
 function savePath(list: PathPlaylist, kind: "txt" | "csv") {
   const byId = new Map(list.players.map((p) => [p.id, p]));
-  const name = list.players.map((p) => p.name).join(" to ");
   let n = 0;
   if (kind === "txt") {
     const lines = [`${list.players.map((p) => p.name).join(" → ")}: a Pocketlist journey`, ""];
@@ -361,14 +361,14 @@ function savePath(list: PathPlaylist, kind: "txt" | "csv") {
       lines.push("");
     });
     lines.push("Credits from MusicBrainz. https://pocketlist.music", "");
-    download(name, kind, lines.join("\n"));
+    download(journeyFileName(list.players.map((p) => p.name)), kind, lines.join("\n"));
   } else {
     const rows = [["#", "step", "title", "artist", "length", "album", "album artist", "date", "players", "sampler of these two"].join(",")];
     list.links.forEach((l) => {
       const a = byId.get(l.from), b = byId.get(l.to);
       for (const t of l.tracks) rows.push([++n, `${a?.name} → ${b?.name}`, t.title, t.artist, formatLength(t.length), t.album, t.albumArtist, t.date ?? t.year, pairWhy(a, b, t), samplerUrl(l.from, l.to)].map(cell).join(","));
     });
-    download(name, kind, "\uFEFF" + rows.join("\n") + "\n");
+    download(journeyFileName(list.players.map((p) => p.name)), kind, "\uFEFF" + rows.join("\n") + "\n");
   }
 }
 
@@ -556,6 +556,24 @@ function useApple(tracks: PlaylistTrack[]): Record<string, AppleMatch> {
   return found;
 }
 
+/** Text and CSV in one menu: a native select, so it works the same with a mouse, a keyboard and
+ *  a phone. It always shows "Download"; picking a format downloads it and puts it back. */
+function DownloadMenu({ onPick, disabled }: { onPick: (kind: "txt" | "csv") => void; disabled?: boolean }) {
+  return (
+    <span className="relative inline-flex">
+      <Download className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden />
+      <select aria-label="Download the list" disabled={disabled} value=""
+        onChange={(e) => { const kind = e.target.value; if (kind === "txt" || kind === "csv") onPick(kind); }}
+        className="h-9 cursor-pointer appearance-none rounded-md border border-border bg-background pl-9 pr-8 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+        <option value="" disabled>Download</option>
+        <option value="txt">Text file (.txt)</option>
+        <option value="csv">Spreadsheet (.csv)</option>
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+    </span>
+  );
+}
+
 /** Copies the list as "Artist - Title" lines and opens TuneMyMusic, whose "Free text" source
  *  turns them into a playlist on any service. TuneMyMusic has no link straight to that step, so
  *  the note says where it is: at the bottom of its list of sources, easy to miss. */
@@ -585,9 +603,9 @@ function CopyList({ lines }: { lines: string[] }) {
   // of its own (basis-full), so nothing in the toolbar moves when it appears.
   return (
     <span className="contents">
-      <Button variant="outline" size="sm" disabled={!lines.length} onClick={copy}
+      <Button size="sm" disabled={!lines.length} onClick={copy}
         title="Copies the list and opens TuneMyMusic, which makes it a playlist on Spotify, Apple Music and more">
-        {flash ? <Check className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> : <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />} Copy for TuneMyMusic
+        {flash ? <Check className="mr-1.5 h-4 w-4" aria-hidden /> : <ListMusic className="mr-1.5 h-4 w-4" aria-hidden />} Save as a playlist
       </Button>
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {failed && !copied && (
