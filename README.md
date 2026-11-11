@@ -35,7 +35,15 @@ and a Bandcamp link looks for the album, to buy it. Swap any song, flip the orde
 or a Journey run backwards), and **Save as a playlist** on Spotify, Apple Music and the rest through
 TuneMyMusic, or download it as text or CSV.
 
-![The Ron Carter and Herbie Hancock sampler, each song with its artist, album, length and listen links; adding Tony Williams, then Miles Davis, narrows 562 performances to 253; one song is swapped for another; then a journey from Ron Carter to John Coltrane by way of Louis Hayes, drawn as a route map](docs/playlists.gif)
+![The Ron Carter and Herbie Hancock sampler: adding Tony Williams, then Miles Davis, narrows 562 performances to 253; the list flips to newest first; each song has its artist, album, length, and Spotify, Apple Music (✓ for an exact match), YouTube Music and Bandcamp links; Save as a playlist copies it for TuneMyMusic beside a Download menu; then a journey from Ron Carter to John Coltrane by way of Louis Hayes, drawn as a route map, reversed to run from Coltrane to Carter](docs/playlists.gif)
+
+## Bands
+
+MusicBrainz credits the people who played on each track, not the band, so a band on its own has
+almost nobody in its galaxy. Look one up and Pocketlist offers its members instead, founders
+first, and each one opens a full galaxy.
+
+![Typing Weather Report on the home page: the one match is labelled as a band that opens a list of its members; its page lists Joe Zawinul and Wayne Shorter as founders, then Jaco Pastorius, Victor Bailey and the rest with their years; clicking Jaco opens his galaxy of 183 people, with Zawinul and Shorter close in](docs/bands.gif)
 
 ## Why
 
