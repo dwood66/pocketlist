@@ -6,7 +6,7 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ClipboardList, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
+import { ArrowDownUp, Check, ClipboardList, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,8 @@ import { ConnectResult } from "@/components/Connect";
 
 const SIZES = [10, 20, 30];
 
-export function PlaylistView({ seeds, n, mix, go }: {
-  seeds: string[]; n: number; mix: number; go: (r: Route, opts?: { replace?: boolean }) => void;
+export function PlaylistView({ seeds, n, mix, newest, go }: {
+  seeds: string[]; n: number; mix: number; newest: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
 }) {
   const [list, setList] = useState<Playlist | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,9 @@ export function PlaylistView({ seeds, n, mix, go }: {
     setError(null);
     let timer: ReturnType<typeof setTimeout>;
     playlist(seeds, n, mix, ctrl.signal).then((l) => {
-      setList(l);
+      // The server sends oldest first. The list is kept in the order shown, so swapping a song
+      // and the downloads follow it.
+      setList(newest ? { ...l, tracks: [...l.tracks].reverse() } : l);
       // The first look at older data can come back before every song's details are in; they
       // keep filling in on the server, so ask once more and add them to the songs on screen.
       if (l.tracks.some(lacksDetails)) {
@@ -44,7 +46,12 @@ export function PlaylistView({ seeds, n, mix, go }: {
   }, [seeds.join(","), n, mix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (next: Partial<{ seeds: string[]; n: number; mix: number }>) =>
-    go({ view: "playlist", seeds, n, mix, ...next }, { replace: true });
+    go({ view: "playlist", seeds, n, mix, newest, ...next }, { replace: true });
+  // Flipping the order doesn't need the server: turn the list round where it is.
+  const flip = () => {
+    setList((l) => l && { ...l, tracks: [...l.tracks].reverse() });
+    go({ view: "playlist", seeds, n, mix, newest: !newest }, { replace: true });
+  };
   const names = list?.seeds.map((s) => s.name) ?? [];
   const tracks = list?.tracks ?? [];
   const apple = useApple(tracks);
@@ -56,7 +63,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
-          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix })} title={`${title} · Pocketlist`} /></span>}
+          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix, newest })} title={`${title} · Pocketlist`} /></span>}
         </div>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
@@ -100,6 +107,10 @@ export function PlaylistView({ seeds, n, mix, go }: {
             </div>
             <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
               <Shuffle className="mr-1.5 h-4 w-4" /> Another mix
+            </Button>
+            <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip}
+              title={newest ? "Newest first. Click for oldest first." : "Oldest first. Click for newest first."}>
+              <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> {newest ? "Newest first" : "Oldest first"}
             </Button>
             <Button variant="outline" size="sm" disabled={!list.tracks.length} title="Download as plain text" onClick={() => save(list, "txt")}>
               <Download className="mr-1.5 h-4 w-4" /> Text
@@ -263,6 +274,10 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
               <span className="px-2 text-sm text-muted-foreground">per step</span>
             </div>
             <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
+            <Button variant="outline" size="sm" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
+              onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), per, mix, connect }, { replace: true })}>
+              <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> Reverse
+            </Button>
             <Button variant="outline" size="sm" disabled={!count} title="Download as plain text" onClick={() => savePath(list, "txt")}><Download className="mr-1.5 h-4 w-4" /> Text</Button>
             <Button variant="outline" size="sm" disabled={!count} title="Download as a spreadsheet (CSV)" onClick={() => savePath(list, "csv")}><Download className="mr-1.5 h-4 w-4" /> CSV</Button>
             <CopyList lines={list.links.flatMap((l) => l.tracks.map((t) => textListLine(t, [byId.get(l.from)?.name ?? ""])))} />

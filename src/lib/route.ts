@@ -6,6 +6,7 @@
 //   /?p=<id>&v=list                 the same player, as a list (the galaxy is the default)
 //   /?p=<id>&goal=<id>              playing Connect: get from here to the goal
 //   /?pl=<id>,<id>&n=10&mix=0       a sampler playlist of songs all of them played on
+//   /?pl=<id>&o=new                 the same, newest first (oldest first is the default)
 //   /?pp=<a>,<b>,<c>&per=2&mix=0    a playlist along a path: a few songs for each link
 //   /?pp=<a>,<b>,<c>&c=1            the same, shared as a solved Connect puzzle
 
@@ -15,7 +16,7 @@ export type Route =
   | { view: "home" }
   | { view: "search"; q: string; instrument: string }
   | { view: "player"; id: string; trail: string[]; galaxy?: boolean; goal?: string } // galaxy unless false
-  | { view: "playlist"; seeds: string[]; n: number; mix: number }
+  | { view: "playlist"; seeds: string[]; n: number; mix: number; newest?: boolean }
   | { view: "pathlist"; ids: string[]; per: number; mix: number; connect?: boolean }; // connect: a solved puzzle
 
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -30,7 +31,7 @@ export function parse(search: string): Route {
   const pl = (params.get("pl") ?? "").split(",").filter((id) => MBID.test(id));
   if (pl.length) {
     return { view: "playlist", seeds: [...new Set(pl)].slice(0, 4), n: Math.min(50, Math.max(1, Number(params.get("n")) || 10)),
-      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)) };
+      mix: Math.max(0, Math.floor(Number(params.get("mix")) || 0)), ...(params.get("o") === "new" ? { newest: true } : {}) };
   }
   const p = params.get("p");
   if (p && MBID.test(p)) {
@@ -59,6 +60,7 @@ export function href(route: Route): string {
     params.set("pl", route.seeds.join(","));
     if (route.n !== 10) params.set("n", String(route.n));
     if (route.mix) params.set("mix", String(route.mix));
+    if (route.newest) params.set("o", "new");
   } else if (route.view === "search") {
     params.set("q", route.q);
     if (route.instrument) params.set("i", route.instrument);

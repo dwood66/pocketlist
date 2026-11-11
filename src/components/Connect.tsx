@@ -173,13 +173,16 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
   const [par, setPar] = useState<Path | null | "unknown">(null);
   const [hint, setHint] = useState<Player | "none" | null>(null);
   const [answer, setAnswer] = useState(false);
+  // The answer is a shortest route from where you are now, not from the start: once you've
+  // wandered off the best route, the one from the start is no help.
+  const [route, setRoute] = useState<Path | null | "unknown">(null);
 
   const ids = [...trail, id, goal];
   useEffect(() => {
     for (const p of ids) if (!names[p]) getPlayer(p).then((pl) => setNames((n) => ({ ...n, [p]: pl.name }))).catch(() => {});
   }, [ids.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setPar(null); shortestPath(start, goal).then(setPar).catch(() => setPar("unknown")); }, [start, goal]);
-  useEffect(() => { setHint(null); setAnswer(false); }, [id]);
+  useEffect(() => { setHint(null); setAnswer(false); setRoute(null); }, [id]);
 
   const name = (p: string) => names[p] ?? "…";
   const goalName = names[goal] ?? "the goal";
@@ -191,6 +194,12 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
   const inGalaxy = snap?.collaborators.some((c) => c.id === goal);
   const here = new Set(snap?.collaborators.map((c) => c.id));
   const where = galaxy ? "the star marked" : "their name in the list";
+
+  function showAnswer() {
+    setAnswer(true);
+    if (id === start) { setRoute(par); return; }
+    shortestPath(id, goal).then(setRoute).catch(() => setRoute("unknown"));
+  }
 
   async function askHint() {
     try {
@@ -253,10 +262,11 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
             : <>Try <strong>{hint.name}</strong>: they’re one step closer to {goalName}. {onHint && "Highlighted below."}</>}
         </p>
       )}
-      {answer && par && par !== "unknown" && (
+      {answer && route === "unknown" && <p className="text-sm">No known route from here.</p>}
+      {answer && route && route !== "unknown" && (
         <p className="text-sm">
-          One shortest route:{" "}
-          {par.players.map((p, i) => (
+          {id === start ? "One shortest route" : "From here, one shortest route"}:{" "}
+          {route.players.map((p, i) => (
             <Fragment key={p.id}>
               {i > 0 && " → "}
               {/* Anyone on the route who's in this galaxy is a link that highlights their star. */}
@@ -268,7 +278,7 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
                 : p.name}
             </Fragment>
           ))}
-          {onHint && par.players.some((p) => here.has(p.id)) && (
+          {onHint && route.players.some((p) => here.has(p.id)) && (
             <span className="text-muted-foreground"> · Underlined names are {galaxy ? "in this galaxy" : "in the list below"}: click one to highlight it.</span>
           )}
         </p>
@@ -279,7 +289,7 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
           <Button variant="outline" size="sm" onClick={askHint}><Lightbulb className="h-4 w-4" /> Hint</Button>
         )}
         {!answer && parHops !== null && (
-          <button type="button" onClick={() => setAnswer(true)} className="text-sm text-muted-foreground underline hover:text-foreground">Show the answer</button>
+          <button type="button" onClick={showAnswer} className="text-sm text-muted-foreground underline hover:text-foreground">Show the answer</button>
         )}
         <button type="button" onClick={stop} className="text-sm text-muted-foreground underline hover:text-foreground">Stop playing</button>
       </div>

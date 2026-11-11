@@ -15,3 +15,11 @@ test("a plain Journey isn't marked as Connect", () => {
   assert.equal(parsed.view, "pathlist");
   assert.ok(!("connect" in parsed));
 });
+
+test("a newest-first Sampler round-trips, and oldest first stays the plain link", () => {
+  const route: Route = { view: "playlist", seeds: [A], n: 10, mix: 0, newest: true };
+  assert.equal(href(route), `/?pl=${A}&o=new`);
+  assert.deepEqual(parse(href(route).slice(1)), route);
+  assert.equal(href({ view: "playlist", seeds: [A], n: 10, mix: 0 }), `/?pl=${A}`);
+  assert.ok(!("newest" in parse(`?pl=${A}`)));
+});
