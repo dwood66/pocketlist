@@ -605,8 +605,8 @@ function CopyList({ lines }: { lines: string[] }) {
       timer.current = setTimeout(() => setFlash(false), 2000);
     }, () => setFailed(true));
   };
-  // `contents`: the button sits in the toolbar with the others, and the note below gets a line
-  // of its own (basis-full), so nothing in the toolbar moves when it appears.
+  // `contents`: the button sits in the row with the others, and the note gets a line of its own
+  // (basis-full) at the end of the row (order-last), under Download, so nothing moves when it appears.
   return (
     <span className="contents">
       <Button size="sm" disabled={!lines.length} onClick={copy}
@@ -616,7 +616,7 @@ function CopyList({ lines }: { lines: string[] }) {
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {failed && !copied && (
         // Copy by hand: the lines, already selected, in the format TuneMyMusic's Free text reads.
-        <span className="flex basis-full flex-col gap-1">
+        <span className="order-last flex basis-full flex-col gap-1">
           <span className="text-xs text-muted-foreground" role="alert">
             This browser wouldn’t let Pocketlist copy. Copy these lines yourself, then in TuneMyMusic choose <strong className="font-medium text-foreground">Free text</strong> (at the bottom of the sources) and paste.
           </span>
@@ -626,7 +626,7 @@ function CopyList({ lines }: { lines: string[] }) {
         </span>
       )}
       {copied && (
-        <span className="basis-full text-xs text-muted-foreground">
+        <span className="order-last basis-full text-xs text-muted-foreground">
           Copied. In <a className="underline" href={TUNEMYMUSIC} target="_blank" rel="noopener noreferrer">TuneMyMusic</a>,
           scroll to the bottom of the sources, choose <strong className="font-medium text-foreground">Free text</strong>, and paste.
           (<a className="underline" href="https://soundiiz.com/" target="_blank" rel="noopener noreferrer">Soundiiz</a> takes it too.)
