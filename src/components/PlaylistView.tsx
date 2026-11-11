@@ -537,30 +537,54 @@ function useApple(tracks: PlaylistTrack[]): Record<string, AppleMatch> {
   return found;
 }
 
-/** Copies the list as "Artist - Title" lines, which TuneMyMusic and Soundiiz turn into a playlist on any service. */
+/** Copies the list as "Artist - Title" lines and opens TuneMyMusic, whose "Free text" source
+ *  turns them into a playlist on any service. TuneMyMusic has no link straight to that step, so
+ *  the note says where it is: at the bottom of its list of sources, easy to miss. */
+const TUNEMYMUSIC = "https://www.tunemymusic.com/transfer";
+
 function CopyList({ lines }: { lines: string[] }) {
   // The button stays put and keeps its name, so you can copy again; a tick flashes on its icon
   // and the note about where to paste it stays beside it.
   const [copied, setCopied] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [failed, setFailed] = useState(false); // the browser wouldn't let us copy
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
-  const copy = () => navigator.clipboard?.writeText(lines.join("\n") + "\n").then(() => {
-    setCopied(true); setFlash(true);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setFlash(false), 2000);
-  });
+  const copy = () => {
+    // Start the copy while this page still has focus, then open the tab inside the same click,
+    // so pop-up blockers let it through.
+    const done = navigator.clipboard?.writeText(lines.join("\n") + "\n");
+    window.open(TUNEMYMUSIC, "_blank", "noopener");
+    if (!done) { setFailed(true); return; }
+    done.then(() => {
+      setCopied(true); setFlash(true); setFailed(false);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setFlash(false), 2000);
+    }, () => setFailed(true));
+  };
   return (
     <span className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" disabled={!lines.length} onClick={copy}
-        title="Copy as an Artist - Title list. Paste it into TuneMyMusic or Soundiiz to make the playlist on Spotify, Apple Music and more.">
+        title="Copies the list and opens TuneMyMusic, which makes it a playlist on Spotify, Apple Music and more">
         {flash ? <Check className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> : <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />} Copy for TuneMyMusic
       </Button>
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
+      {failed && !copied && (
+        // Copy by hand: the lines, already selected, in the format TuneMyMusic's Free text reads.
+        <span className="flex w-full flex-col gap-1">
+          <span className="text-xs text-muted-foreground" role="alert">
+            This browser wouldn’t let Pocketlist copy. Copy these lines yourself, then in TuneMyMusic choose <strong className="font-medium text-foreground">Free text</strong> (at the bottom of the sources) and paste.
+          </span>
+          <textarea readOnly rows={Math.min(lines.length, 8)} value={lines.join("\n")} aria-label="The playlist, one Artist - Title per line"
+            ref={(el) => { el?.focus(); el?.select(); }}
+            className="w-full max-w-xl rounded-md border border-border bg-card p-2 font-mono text-xs" />
+        </span>
+      )}
       {copied && (
         <span className="text-xs text-muted-foreground">
-          {flash ? "Copied. " : ""}Paste it into <a className="underline" href="https://www.tunemymusic.com/" target="_blank" rel="noopener noreferrer">TuneMyMusic</a> or{" "}
-          <a className="underline" href="https://soundiiz.com/" target="_blank" rel="noopener noreferrer">Soundiiz</a> to make the playlist on any service.
+          {flash ? "Copied. " : ""}In <a className="underline" href={TUNEMYMUSIC} target="_blank" rel="noopener noreferrer">TuneMyMusic</a>,
+          scroll to the bottom of the sources, choose <strong className="font-medium text-foreground">Free text</strong>, and paste.
+          (<a className="underline" href="https://soundiiz.com/" target="_blank" rel="noopener noreferrer">Soundiiz</a> takes it too.)
         </span>
       )}
     </span>
