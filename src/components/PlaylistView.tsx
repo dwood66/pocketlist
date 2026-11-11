@@ -561,8 +561,10 @@ function CopyList({ lines }: { lines: string[] }) {
       timer.current = setTimeout(() => setFlash(false), 2000);
     }, () => setFailed(true));
   };
+  // `contents`: the button sits in the toolbar with the others, and the note below gets a line
+  // of its own (basis-full), so nothing in the toolbar moves when it appears.
   return (
-    <span className="flex flex-wrap items-center gap-2">
+    <span className="contents">
       <Button variant="outline" size="sm" disabled={!lines.length} onClick={copy}
         title="Copies the list and opens TuneMyMusic, which makes it a playlist on Spotify, Apple Music and more">
         {flash ? <Check className="mr-1.5 h-4 w-4 text-primary" aria-hidden /> : <ClipboardList className="mr-1.5 h-4 w-4" aria-hidden />} Copy for TuneMyMusic
@@ -570,7 +572,7 @@ function CopyList({ lines }: { lines: string[] }) {
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {failed && !copied && (
         // Copy by hand: the lines, already selected, in the format TuneMyMusic's Free text reads.
-        <span className="flex w-full flex-col gap-1">
+        <span className="flex basis-full flex-col gap-1">
           <span className="text-xs text-muted-foreground" role="alert">
             This browser wouldn’t let Pocketlist copy. Copy these lines yourself, then in TuneMyMusic choose <strong className="font-medium text-foreground">Free text</strong> (at the bottom of the sources) and paste.
           </span>
@@ -580,8 +582,8 @@ function CopyList({ lines }: { lines: string[] }) {
         </span>
       )}
       {copied && (
-        <span className="text-xs text-muted-foreground">
-          {flash ? "Copied. " : ""}In <a className="underline" href={TUNEMYMUSIC} target="_blank" rel="noopener noreferrer">TuneMyMusic</a>,
+        <span className="basis-full text-xs text-muted-foreground">
+          Copied. In <a className="underline" href={TUNEMYMUSIC} target="_blank" rel="noopener noreferrer">TuneMyMusic</a>,
           scroll to the bottom of the sources, choose <strong className="font-medium text-foreground">Free text</strong>, and paste.
           (<a className="underline" href="https://soundiiz.com/" target="_blank" rel="noopener noreferrer">Soundiiz</a> takes it too.)
         </span>

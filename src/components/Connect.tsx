@@ -2,7 +2,7 @@
 // who recorded together. The trail is your path; par is the shortest route through
 // everything read so far.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { Flag, Lightbulb, Route as RouteIcon, X } from "lucide-react";
 import type { Path, Player, PlayerCandidate, SharedRecording, Snapshot } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
@@ -189,6 +189,7 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
   if (id === goal) return <ConnectWin path={[...trail, id]} par={parHops} go={go} />;
 
   const inGalaxy = snap?.collaborators.some((c) => c.id === goal);
+  const here = new Set(snap?.collaborators.map((c) => c.id));
   const where = galaxy ? "the star marked" : "their name in the list";
 
   async function askHint() {
@@ -253,7 +254,24 @@ export function ConnectBanner({ id, trail, goal, snap, galaxy, go, onHint }: {
         </p>
       )}
       {answer && par && par !== "unknown" && (
-        <p className="text-sm">One shortest route: {par.players.map((p) => p.name).join(" → ")}</p>
+        <p className="text-sm">
+          One shortest route:{" "}
+          {par.players.map((p, i) => (
+            <Fragment key={p.id}>
+              {i > 0 && " → "}
+              {/* Anyone on the route who's in this galaxy is a link that highlights their star. */}
+              {onHint && here.has(p.id)
+                ? <button type="button" onClick={() => onHint(p.name)} title={`Highlight ${p.name} ${galaxy ? "in the galaxy" : "in the list"}`}
+                    className="font-medium underline decoration-[color:var(--goal)] decoration-2 underline-offset-4 hover:text-[color:var(--goal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    {p.name}
+                  </button>
+                : p.name}
+            </Fragment>
+          ))}
+          {onHint && par.players.some((p) => here.has(p.id)) && (
+            <span className="text-muted-foreground"> · Underlined names are {galaxy ? "in this galaxy" : "in the list below"}: click one to highlight it.</span>
+          )}
+        </p>
       )}
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
