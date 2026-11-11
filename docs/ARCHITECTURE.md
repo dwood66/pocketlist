@@ -207,13 +207,21 @@ your place, and Back walks back along your trail:
 | `/?p=<id>&trail=<id>,<id>` | A player's galaxy, with the players you came through |
 | `&v=list` | …as a list instead |
 | `&goal=<id>` | …while playing Connect |
-| `/?pl=<id>,<id>&n=10&mix=0` | A playlist |
-| `/?pp=<a>,<b>,<c>&per=2&mix=0` | A Journey: songs along a route |
+| `/?pl=<id>,<id>&mix=0` | A Sampler |
+| `&o=new` | …newest first (oldest first is the default) |
+| `/?pp=<a>,<b>,<c>&mix=0` | A Journey: songs along a route |
 | `&c=1` | …shared as a solved Connect puzzle (with par, and "Try it yourself") |
 
+**Your settings stay out of links.** How many songs a Sampler has (10, 20, 30) and how many a
+Journey has per step (1–3) are yours, kept in this browser (`src/lib/prefs.ts`, like the theme):
+click a number and it's the default from then on. A shared link opens with the other person's own
+setting. Old links with `n=` or `per=` still open; those are ignored.
+
 **Sharing:** every playlist page and Connect's result card has a Share button (`Share.tsx`): the
-system share sheet on touch screens (with a one-line summary as the message), otherwise just the
-link is copied. A
+system share sheet on touch screens, otherwise the link is copied. Only Connect's result sends a
+message with it (the hops and par are the point); everything else sends the link alone, because the
+share sheet's Copy puts message and link on the clipboard together, and that pasted into a browser
+is a search. A
 solved Connect shares as its Journey with `c=1`, so the link shows the route and its songs, not
 just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same picks.
 
@@ -223,6 +231,12 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
   open players already read, so the first click is instant.
 - **Player** (`PlayerView.tsx`): name, description, actions (Playlist, Connect from here), a
   one-line summary, then the galaxy or list. The list rows expand to the shared recordings.
+- **Band pages** (`server/members.ts`, `/api/players/:id/members`): MusicBrainz credits the people
+  on each track, not the band, so a band's own galaxy is empty or a stray handful. When
+  MusicBrainz's artist type says it's a band, the page leads with its members (founders first,
+  then by when they joined), each starting a fresh trail, and folds the band's own credits behind
+  a toggle. Search results say "band" and what opening one does. A person with nobody credited
+  alongside them gets a pointer to adding credits to MusicBrainz.
 - **The galaxy** (`Galaxy.tsx`, layout in `src/lib/galaxy.ts`):
   - **Distance** = sessions together (log scale; closer is more).
   - **Angle** = the year they first recorded together, clockwise from the top. Busy years get more
@@ -242,7 +256,10 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
     the list view is the screen-reader view of the same data.
 - **Connect** (`Connect.tsx`): a puzzle of the day, or "Connect from here" to pick any goal. The
   goal glows wherever it appears; the banner shows hops against **par** (the shortest known
-  chain). Arriving shows the chain, the record behind each link, and a **Copy result** for sharing.
+  chain). A **hint** names and highlights someone one step closer; **Show the answer** gives a
+  shortest route from where you are now (not from the start), and any name on it that's in the
+  galaxy on screen is a link that highlights their star. Arriving shows the chain, the record
+  behind each link, and **Share result**.
 - **Two kinds of playlist**, each with its own mark (`src/components/marks.ts`) on every way in:
   a **Sampler** (record icon, amber) is songs a player or players made together: exploring. A
   **Journey** (Connect's route icon, rose) travels from one player to another, hand to hand: a
@@ -251,7 +268,10 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
   trail (Journey playlist) and the Connect result (Listen to this journey).
 - **Samplers** (`PlaylistView.tsx`, rules in `server/playlist.ts`): songs every seed played on,
   one per session, spread across the years, no tune twice, finished versions before takes. 10, 20
-  or 30 songs, "Another mix", and text or CSV downloads that say who played what. Each song
+  or 30 songs (your last choice is kept), "Another mix", **Oldest/Newest first** (in the link as
+  `o=new`; flipped on the page, without asking the server again), and a **Download** menu for text
+  or CSV that says who played what. File names keep the ends and count the rest
+  (`src/lib/filenames.ts`): `louis-armstrong-to-damon-wood-via-4`, `miles-davis-and-3-others-sampler`. Each song
   shows its album and **album artist** ("Seven Steps… by Miles Davis"), so a tune that's on
   several records can be told apart. Album artists are stored as releases are read; for releases
   read before that, MusicBrainz's search fills in up to 50 at a time when a list needs them, and
@@ -269,8 +289,13 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
     through one slow queue and every answer is stored in `apple_matches`; the page asks again
     while some are pending. Song pages have "Add to Playlist" in the ⋯ menu; search pages don't.
   - Spotify and YouTube Music get a search for title, artist and album (length tells you which).
-  - **Copy for TuneMyMusic** copies "Artist - Title" lines, which TuneMyMusic or Soundiiz turn into
-    a playlist on any service in one paste.
+  - **Bandcamp** gets a search for the *album* by its artist (`bandcampUrl` in `src/lib/listen.ts`),
+    since that's where people buy records. Its search is strict: "album artist" finds the record,
+    and adding the song title finds nothing. No album: the song and artist, as a track search.
+  - **Save as a playlist**, the main button, copies "Artist - Title" lines and opens TuneMyMusic in
+    the same click; its **Free text** source (at the bottom of its list, easy to miss, hence the
+    note) turns them into a playlist on any service. If the browser refuses the copy, the lines
+    appear selected in a box instead. Soundiiz reads the same lines.
   - **Swap** (↻ on each song, `/api/swap`) replaces one song with another by the same players
     (the same step, on a path), never a tune already in the list. Swaps live on the page only;
     they aren't in the URL.
@@ -281,7 +306,8 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
   then Miles Davis and Wayne Shorter.
 - **Notes about this feature**, a closed-by-default note on both playlist pages: why finding these
   songs on a streaming service is hard (standards, reissues, renamed compilations) and how length helps.
-- **Journeys** (`?pp=`): the same rules for each step of a breadcrumb trail, and no tune
+- **Journeys** (`?pp=`): the same rules for each step of a breadcrumb trail, 1–3 songs per step
+  (your last choice is kept), **Reverse** to run the route the other way, and no tune
   twice across the whole list. A player in the middle of a path is in two pairs, so without that
   the same song turns up in neighbouring steps; a repeat is allowed only if a step would
   otherwise be empty.

@@ -7,10 +7,12 @@ can fly through. Click any name to keep going.
 
 ![From the home page, searching for Ron Carter, whose 1,344 collaborators form a galaxy around him; pointing at Herbie Hancock and Wayne Shorter shows who they are, clicking Shorter makes him the centre of his own galaxy, and zooming in on Shorter's galaxy brings out dozens more names, from Art Blakey to Milton Nascimento](docs/pocketlist.gif)
 
-**Status:** the galaxy, the collaborator list, **Connect** (six degrees, played in the galaxy) and a first **playlist sampler** (with text/CSV download) work: search (alias-aware, with a "which one?" step),
-a list that streams in as credits are read, click-through with a breadcrumb trail, and the shared
-recordings behind each connection. The app is on Vercel; the API and crawler run on Railway;
-the cache is Postgres on Neon. The plan and the decisions behind it are in
+**Status:** live and in use. The galaxy and the collaborator list, **Connect** (six degrees,
+played in the galaxy) and two kinds of **playlist** all work: search (alias-aware, with a "which
+one?" step), a list that streams in as credits are read, click-through with a breadcrumb trail,
+and the shared recordings behind each connection. Look up a **band** and you get its members
+(MusicBrainz credits the people on each track, not the band). The app is on Vercel; the API and
+crawler run on Railway; the cache is Postgres on Neon. The plan and the decisions behind it are in
 [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Connect
@@ -28,7 +30,10 @@ add players one at a time, from who else is on the songs, and watch a band come 
 **Journey** travels from one player to another, hand to hand, drawn as a route map. Each song shows
 its credited artist and **length**, since in jazz the same tune is recorded again and again and
 length is the best clue to which take is which (not exact: a reissue of the same recording can
-differ by a second or so); Apple Music links marked ✓ go straight to a song within a few seconds. Swap any song, download the list, or copy it for TuneMyMusic to build it on any service.
+differ by a second or so); Apple Music links marked ✓ go straight to a song within a few seconds,
+and a Bandcamp link looks for the album, to buy it. Swap any song, flip the order (newest first,
+or a Journey run backwards), and **Save as a playlist** on Spotify, Apple Music and the rest through
+TuneMyMusic, or download it as text or CSV.
 
 ![The Ron Carter and Herbie Hancock sampler, each song with its artist, album, length and listen links; adding Tony Williams, then Miles Davis, narrows 562 performances to 253; one song is swapped for another; then a journey from Ron Carter to John Coltrane by way of Louis Hayes, drawn as a route map](docs/playlists.gif)
 
