@@ -1,6 +1,11 @@
-// Share: a link to what's on screen. On a phone, the system share sheet (Messages, Mail, …),
-// with a line about it as the message; elsewhere, just the link is copied, and a tick flashes. The button keeps its
-// name, so it never jumps around.
+// Share: a link to what's on screen. On a phone, the system share sheet (Messages, Mail, …);
+// elsewhere, just the link is copied, and a tick flashes. The button keeps its name, so it never
+// jumps around.
+//
+// Pass `text` only when the words are the point (a Connect result). The share sheet's Copy puts
+// text and link on the clipboard together, and pasted into a browser's address bar that becomes
+// a search, not the page. Without it, Copy gives just the link, and Messages still shows a
+// preview card from the page's og: tags.
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Share2 } from "lucide-react";

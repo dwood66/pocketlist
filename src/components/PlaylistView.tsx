@@ -56,7 +56,7 @@ export function PlaylistView({ seeds, n, mix, go }: {
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm font-medium text-primary"><SamplerIcon className="h-4 w-4" aria-hidden /> Sampler</p>
-          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix })} title={`${title} · Pocketlist`} text={`A Sampler on Pocketlist: ${title}`} /></span>}
+          {list && <span className="flex items-center gap-2"><ShareButton url={shareUrl({ view: "playlist", seeds, n, mix })} title={`${title} · Pocketlist`} /></span>}
         </div>
         <h1 className="text-3xl font-semibold leading-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">
@@ -221,8 +221,7 @@ export function PathPlaylistView({ ids, per, mix, connect, go }: {
           </p>
           {list && (
             <span className="flex items-center gap-2">
-              <ShareButton url={shareUrl({ view: "pathlist", ids, per, mix, connect })} title={`${title} · Pocketlist`}
-                text={`${connect ? "A Connect route" : "A Journey"} on Pocketlist: ${list.players.map((p) => p.name).join(" → ")}`} />
+              <ShareButton url={shareUrl({ view: "pathlist", ids, per, mix, connect })} title={`${title} · Pocketlist`} />
             </span>
           )}
         </div>
