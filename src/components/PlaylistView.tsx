@@ -557,19 +557,20 @@ function useApple(tracks: PlaylistTrack[]): Record<string, AppleMatch> {
 }
 
 /** Text and CSV in one menu: a native select, so it works the same with a mouse, a keyboard and
- *  a phone. It always shows "Download"; picking a format downloads it and puts it back. */
+ *  a phone. It always shows "Download"; picking a format downloads it and puts it back. A select
+ *  is as wide as its longest option, so the options stay short: on a phone it shares a line. */
 function DownloadMenu({ onPick, disabled }: { onPick: (kind: "txt" | "csv") => void; disabled?: boolean }) {
   return (
     <span className="relative inline-flex">
-      <Download className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden />
+      <Download className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden />
       <select aria-label="Download the list" disabled={disabled} value=""
         onChange={(e) => { const kind = e.target.value; if (kind === "txt" || kind === "csv") onPick(kind); }}
-        className="h-9 cursor-pointer appearance-none rounded-md border border-border bg-background pl-9 pr-8 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+        className="h-9 cursor-pointer appearance-none rounded-md border border-border bg-background pl-8 pr-7 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
         <option value="" disabled>Download</option>
-        <option value="txt">Text file (.txt)</option>
-        <option value="csv">Spreadsheet (.csv)</option>
+        <option value="txt">Text (.txt)</option>
+        <option value="csv">CSV (.csv)</option>
       </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
     </span>
   );
 }
