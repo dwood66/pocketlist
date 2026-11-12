@@ -110,12 +110,12 @@ export function PlaylistView({ seeds, mix, newest, go }: {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
-              <Shuffle className="mr-1.5 h-4 w-4" /> Another mix
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
+              <Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Another mix</Label>
             </Button>
-            <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip}
+            <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip} aria-label={newest ? "Newest first" : "Oldest first"}
               title={newest ? "Newest first. Click for oldest first." : "Oldest first. Click for newest first."}>
-              <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> {newest ? "Newest first" : "Oldest first"}
+              <ArrowDownUp className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>{newest ? "Newest first" : "Oldest first"}</Label>
             </Button>
           </div>
           {/* Saving: making it a real playlist comes first; the files are for everything else. */}
@@ -279,10 +279,10 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
               ))}
               <span className="px-2 text-sm text-muted-foreground">per step</span>
             </div>
-            <Button variant="outline" size="sm" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="mr-1.5 h-4 w-4" /> Another mix</Button>
-            <Button variant="outline" size="sm" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Another mix</Label></Button>
+            <Button variant="outline" size="sm" aria-label="Reverse" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
               onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), mix, connect }, { replace: true })}>
-              <ArrowDownUp className="mr-1.5 h-4 w-4" aria-hidden /> Reverse
+              <ArrowDownUp className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Reverse</Label>
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -584,6 +584,12 @@ function DownloadMenu({ onPick, disabled }: { onPick: (kind: "txt" | "csv") => v
 /** Copies the list as "Artist - Title" lines and opens TuneMyMusic, whose "Free text" source
  *  turns them into a playlist on any service. TuneMyMusic has no link straight to that step, so
  *  the note says where it is: at the bottom of its list of sources, easy to miss. */
+// A settings button's words: icon-only on a phone, where the row would otherwise wrap; the
+// button's aria-label and title still say what it does.
+function Label({ children }: { children: React.ReactNode }) {
+  return <span className="hidden sm:inline">{children}</span>;
+}
+
 const TUNEMYMUSIC = "https://www.tunemymusic.com/transfer";
 
 function CopyList({ lines }: { lines: string[] }) {
