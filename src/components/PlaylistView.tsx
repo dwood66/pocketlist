@@ -6,9 +6,10 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownUp, Check, ChevronDown, Download, ListMusic, Plus, RefreshCw, Shuffle, X } from "lucide-react";
+import { ArrowDownUp, Check, ChevronDown, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
 import { journeyFileName, samplerFileName } from "@/lib/filenames";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
+import { TuneMyMusicMark } from "@/components/TuneMyMusicMark";
 import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
@@ -611,7 +612,7 @@ function CopyList({ lines }: { lines: string[] }) {
     <span className="contents">
       <Button size="sm" disabled={!lines.length} onClick={copy}
         title="Copies the list and opens TuneMyMusic, which makes it a playlist on Spotify, Apple Music and more">
-        {flash ? <Check className="mr-1.5 h-4 w-4" aria-hidden /> : <ListMusic className="mr-1.5 h-4 w-4" aria-hidden />} Save as a playlist
+        {flash ? <Check className="mr-1.5 h-4 w-[27px]" aria-hidden /> : <TuneMyMusicMark className="mr-1.5 h-4 w-[27px]" aria-hidden />} Save as a playlist
       </Button>
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {failed && !copied && (
