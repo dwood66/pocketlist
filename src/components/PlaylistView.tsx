@@ -114,6 +114,8 @@ export function PlaylistView({ seeds, mix, newest, go }: {
               <Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Another mix</Label>
             </Button>
             <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip} aria-label={newest ? "Newest first" : "Oldest first"}
+              // Tinted while newest first, so the state shows even when the button is only its icon.
+              className={newest ? "border-primary/60 bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary" : undefined}
               title={newest ? "Newest first. Click for oldest first." : "Oldest first. Click for newest first."}>
               <ArrowDownUp className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>{newest ? "Newest first" : "Oldest first"}</Label>
             </Button>
