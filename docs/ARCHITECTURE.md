@@ -292,7 +292,7 @@ just the puzzle. Swapped songs aren't in the link; the same `mix` gives the same
   - **Bandcamp** gets a search for the *album* by its artist (`bandcampUrl` in `src/lib/listen.ts`),
     since that's where people buy records. Its search is strict: "album artist" finds the record,
     and adding the song title finds nothing. No album: the song and artist, as a track search.
-  - **Save as a playlist**, the main button, copies "Artist - Title" lines and opens TuneMyMusic in
+  - **Transfer to playlist** (with TuneMyMusic's mark, and their wording), the main button, copies "Artist - Title" lines and opens TuneMyMusic in
     the same click; its **Free text** source (at the bottom of its list, easy to miss, hence the
     note) turns them into a playlist on any service. If the browser refuses the copy, the lines
     appear selected in a box instead. Soundiiz reads the same lines.

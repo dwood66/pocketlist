@@ -612,7 +612,7 @@ function CopyList({ lines }: { lines: string[] }) {
     <span className="contents">
       <Button size="sm" disabled={!lines.length} onClick={copy}
         title="Copies the list and opens TuneMyMusic, which makes it a playlist on Spotify, Apple Music and more">
-        {flash ? <Check className="mr-1.5 h-4 w-[27px]" aria-hidden /> : <TuneMyMusicMark className="mr-1.5 h-4 w-[27px]" aria-hidden />} Save as a playlist
+        {flash ? <Check className="mr-1.5 h-4 w-[27px]" aria-hidden /> : <TuneMyMusicMark className="mr-1.5 h-4 w-[27px]" aria-hidden />} Transfer to playlist
       </Button>
       <span className="sr-only" role="status">{flash ? "Copied" : ""}</span>
       {failed && !copied && (

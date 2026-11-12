@@ -32,7 +32,7 @@ its credited artist and **length**, since in jazz the same tune is recorded agai
 length is the best clue to which take is which (not exact: a reissue of the same recording can
 differ by a second or so); Apple Music links marked ✓ go straight to a song within a few seconds,
 and a Bandcamp link looks for the album, to buy it. Swap any song, flip the order (newest first,
-or a Journey run backwards), and **Save as a playlist** on Spotify, Apple Music and the rest through
+or a Journey run backwards), and **Transfer to playlist** on Spotify, Apple Music and the rest through
 TuneMyMusic, or download it as text or CSV.
 
 ![The Ron Carter and Herbie Hancock sampler: adding Tony Williams, then Miles Davis, narrows 562 performances to 253; the list flips to newest first; each song has its artist, album, length, and Spotify, Apple Music (✓ for an exact match), YouTube Music and Bandcamp links; Save as a playlist copies it for TuneMyMusic beside a Download menu; then a journey from Ron Carter to John Coltrane by way of Louis Hayes, drawn as a route map, reversed to run from Coltrane to Carter](docs/playlists.gif)
