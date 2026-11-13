@@ -83,8 +83,8 @@ const EXPLORE = [
   { id: "b6ff4fd0-03ae-41a6-942e-7de13124b970", name: "Paul Chambers", years: "1950s–60s" },
   { id: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", name: "Bill Evans", years: "1950s–70s" },
   { id: "d5ac66e4-ea5d-4ebb-9e0d-bed4063208e7", name: "Elvin Jones", years: "1950s–90s" },
+  { id: "f2d13d28-6f74-4dd5-b596-8bd0b6f67615", name: "Jack DeJohnette", years: "1960s–2020s" },
   { id: "57db3f59-9c58-4f68-a00e-e044666c4828", name: "Ron Carter", years: "1960s–today" },
-  { id: "f2d13d28-6f74-4dd5-b596-8bd0b6f67615", name: "Jack DeJohnette", years: "1960s–today" },
   { id: "6035000d-b53b-4b01-b5a0-a7572c34e806", name: "Christian McBride", years: "1990s–today" },
 ];
 // From duos to whole bands: adding players is how you find a band.

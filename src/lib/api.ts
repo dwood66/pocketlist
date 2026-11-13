@@ -11,6 +11,15 @@ import {
 // build time (VITE_API_URL in Vercel's environment variables).
 const API = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+function withQuery(path: string, query: Record<string, string | number | boolean | undefined>) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== false) params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
 async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
   let res: Response;
   try {
@@ -32,7 +41,7 @@ async function getJson(path: string, signal?: AbortSignal): Promise<unknown> {
 }
 
 export async function search(q: string, instrument: string, signal?: AbortSignal): Promise<PlayerCandidate[]> {
-  const data = await getJson(`/api/search?q=${encodeURIComponent(q)}&instrument=${encodeURIComponent(instrument)}`, signal);
+  const data = await getJson(withQuery("/api/search", { q, instrument }), signal);
   if (!Array.isArray(data)) throw new Error("Unexpected search response");
   return data.filter(isPlayerCandidate);
 }
@@ -53,14 +62,14 @@ export async function getPlayer(id: string, signal?: AbortSignal): Promise<Playe
 }
 
 export async function playlist(seeds: string[], n: number, mix: number, signal?: AbortSignal): Promise<Playlist> {
-  const data = await getJson(`/api/playlist?seeds=${seeds.join(",")}&n=${n}&mix=${mix}`, signal);
+  const data = await getJson(withQuery("/api/playlist", { seeds: seeds.join(","), n, mix }), signal);
   if (!isPlaylist(data)) throw new Error("Unexpected playlist response");
   for (const p of data.seeds) players.set(p.id, p);
   return data;
 }
 
 export async function pathPlaylist(ids: string[], per: number, mix: number, signal?: AbortSignal): Promise<PathPlaylist> {
-  const data = await getJson(`/api/path-playlist?ids=${ids.join(",")}&per=${per}&mix=${mix}`, signal);
+  const data = await getJson(withQuery("/api/path-playlist", { ids: ids.join(","), per, mix }), signal);
   if (!isPathPlaylist(data)) throw new Error("Unexpected playlist response");
   for (const p of data.players) players.set(p.id, p);
   return data;
@@ -68,21 +77,21 @@ export async function pathPlaylist(ids: string[], per: number, mix: number, sign
 
 /** Direct Apple Music links for recordings; see server/apple.ts. */
 export async function appleMatches(ids: string[], signal?: AbortSignal): Promise<AppleMatches> {
-  const data = await getJson(`/api/apple?ids=${ids.join(",")}`, signal);
+  const data = await getJson(withQuery("/api/apple", { ids: ids.join(",") }), signal);
   if (!isAppleMatches(data)) throw new Error("Unexpected response");
   return data;
 }
 
 /** Who else is on the most of a sampler's songs. */
 export async function alsoOn(seeds: string[], signal?: AbortSignal): Promise<AlsoOn> {
-  const data = await getJson(`/api/also-on?seeds=${seeds.join(",")}`, signal);
+  const data = await getJson(withQuery("/api/also-on", { seeds: seeds.join(",") }), signal);
   if (!isAlsoOn(data)) throw new Error("Unexpected response");
   return data;
 }
 
 /** Another song for these players, avoiding the recordings already in the list. */
 export async function swapTrack(seeds: string[], avoid: string[], mix: number, signal?: AbortSignal): Promise<Swap> {
-  const data = await getJson(`/api/swap?seeds=${seeds.join(",")}&avoid=${avoid.join(",")}&mix=${mix}`, signal);
+  const data = await getJson(withQuery("/api/swap", { seeds: seeds.join(","), avoid: avoid.join(","), mix }), signal);
   if (!isSwap(data)) throw new Error("Unexpected response");
   return data;
 }
@@ -92,7 +101,7 @@ const paths = new Map<string, Promise<Path>>();
 export function shortestPath(from: string, to: string): Promise<Path> {
   const key = `${from}>${to}`;
   if (!paths.has(key)) {
-    paths.set(key, getJson(`/api/path?from=${from}&to=${to}`).then((d) => {
+    paths.set(key, getJson(withQuery("/api/path", { from, to })).then((d) => {
       if (!isPath(d)) throw new Error("Unexpected path response");
       return d;
     }).catch((e: unknown) => { paths.delete(key); throw e; }));
@@ -136,7 +145,7 @@ export function streamPlayer(
 
   function open() {
     if (es || finished) return;
-    const source = new EventSource(`${API}/api/players/${id}/stream${refresh ? "?refresh=1" : ""}`);
+    const source = new EventSource(API + withQuery(`/api/players/${id}/stream`, { refresh: refresh ? 1 : undefined }));
     refresh = false;
     es = source;
     source.addEventListener("snapshot", (e) => {
