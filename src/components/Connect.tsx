@@ -38,6 +38,24 @@ const PUZZLES: { from: string; fromName: string; to: string; toName: string }[] 
   { from: "57db3f59-9c58-4f68-a00e-e044666c4828", fromName: "Ron Carter", to: "b625448e-bf4a-41c3-a421-72ad46cdb831", toName: "John Coltrane" },
   { from: "c25346e6-1ec6-41a9-bfd0-4efef8f93799", fromName: "Wally Kane", to: "561d854a-6a28-4aa7-8c99-323e6ce46c2a", toName: "Miles Davis" },
   { from: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", fromName: "Bill Evans", to: "601e7466-eaf5-4a91-9909-ffd770b7e04a", toName: "Art Blakey" },
+  // Added 2026-11-13, once the cache reached past jazz: each has a known route of 2–3 hops,
+  // most of them across genres or eras, the surprises Connect is for.
+  { from: "1ecff755-607d-4130-9a8a-8873f27e5de5", fromName: "Jerry Garcia", to: "561d854a-6a28-4aa7-8c99-323e6ce46c2a", toName: "Miles Davis" },
+  { from: "c7356af9-9ea6-4a78-a55b-c73775716312", fromName: "Charlie Parker", to: "b00a17c3-72b2-4e39-96f9-770ba6cf4573", toName: "Joshua Redman" },
+  { from: "ba550d0e-adac-4864-b88b-407cab5e76af", fromName: "Paul McCartney", to: "eea8a864-fcda-4602-9569-38ab446decd6", toName: "Louis Armstrong" },
+  { from: "b2f3f8d8-9152-47a7-955b-e89701bc192a", fromName: "Mike Moreno", to: "3b47247e-5b57-49b6-a0ed-bad80243802a", toName: "Sonny Rollins" },
+  { from: "a6de8ef9-b1a1-4756-97aa-481bbb8a4069", fromName: "Joni Mitchell", to: "b625448e-bf4a-41c3-a421-72ad46cdb831", toName: "John Coltrane" },
+  { from: "32286190-da0f-4a85-b3d6-09a84d7e2bbc", fromName: "Bix Beiderbecke", to: "27613b78-1b9d-4ec3-9db5-fa0743465fdd", toName: "Herbie Hancock" },
+  { from: "4d5f891d-9bce-45ae-ad86-912dd27252fa", fromName: "Dave Grohl", to: "27613b78-1b9d-4ec3-9db5-fa0743465fdd", toName: "Herbie Hancock" },
+  { from: "915e673d-eff5-479a-a917-2fecfc26dc2e", fromName: "Mickey Hart", to: "0b6aea55-d855-4a33-ae08-b0280dd28684", toName: "Max Roach" },
+  { from: "2f9ecbed-27be-40e6-abca-6de49d50299e", fromName: "Aretha Franklin", to: "e9ba8ccb-505f-4e5c-b909-65998d0d35b5", toName: "Dizzy Gillespie" },
+  { from: "a89487ab-c852-4459-ab65-95be7492b8be", fromName: "Charlie Hunter", to: "f3b8e107-abe8-4743-b6a3-4a4ee995e71f", toName: "Charles Mingus" },
+  { from: "7944ed53-2a58-4035-9b93-140a71e41c34", fromName: "Sting", to: "8e8c7417-c905-46b1-b42a-5260b4274ed4", toName: "Thelonious Monk" },
+  { from: "351d8bdf-33a1-45e2-8c04-c85fad20da55", fromName: "Sarah Vaughan", to: "3c9b356d-d1db-4f4e-a7a3-2d00c1d70255", toName: "Kurt Cobain" },
+  { from: "6b064ead-91a4-4ac8-8076-b1febe4f4aac", fromName: "Alison Krauss", to: "2379937f-6e0d-46a2-b8ff-633fafd72002", toName: "Wayne Shorter" },
+  { from: "42a8f507-8412-4611-854f-926571049fa0", fromName: "George Harrison", to: "8247a3f2-3a8e-4256-b322-6c57b03a4e36", toName: "Bill Evans" },
+  { from: "3f7574d9-94f3-46dc-8228-9d7358019d9f", fromName: "Rhiannon Giddens", to: "57db3f59-9c58-4f68-a00e-e044666c4828", toName: "Ron Carter" },
+  { from: "3c9b356d-d1db-4f4e-a7a3-2d00c1d70255", fromName: "Kurt Cobain", to: "561d854a-6a28-4aa7-8c99-323e6ce46c2a", toName: "Miles Davis" },
 ];
 
 // A finished game, for the home card's "hear one" link.
