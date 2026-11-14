@@ -132,7 +132,7 @@ export function PlaylistView({ seeds, mix, newest, go }: {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={busy || list.performances <= list.tracks.length}>
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" aria-disabled={busy} onClick={() => { if (!busy) set({ mix: mix + 1 }); }} disabled={list.performances <= list.tracks.length}>
               <MixIcon busy={busy} /><Label>Another mix</Label>
             </Button>
             <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip} aria-label={newest ? "Newest first" : "Oldest first"}
@@ -148,10 +148,11 @@ export function PlaylistView({ seeds, mix, newest, go }: {
             <DownloadMenu disabled={!list.tracks.length} onPick={(kind) => save(list, kind)} />
           </div>
           {error && <Problem message={error} onClose={() => setError(null)} />}
+          {busy && <p className="text-sm text-foreground" role="status">Picking another mix…</p>}
 
           <div aria-busy={busy} className={"flex flex-col gap-4 transition-opacity duration-200 " + (busy ? "pointer-events-none opacity-40" : "")}>
           <p className="text-sm text-muted-foreground" title="Songs picked, out of every performance they're all credited on, and the sessions those come from">
-            {busy ? "Picking another mix…" : list.tracks.length
+            {list.tracks.length
               ? `${list.tracks.length} of ${list.performances.toLocaleString()} performances, from ${list.sessions.toLocaleString()} ${list.sessions === 1 ? "session" : "sessions"}.`
               : "Nothing with all of them on, in what's been read so far."}
           </p>
@@ -309,7 +310,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
               ))}
               <span className="px-2 text-sm text-muted-foreground">per step</span>
             </div>
-            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={busy}><MixIcon busy={busy} /><Label>Another mix</Label></Button>
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" aria-disabled={busy} onClick={() => { if (!busy) set({ mix: mix + 1 }); }}><MixIcon busy={busy} /><Label>Another mix</Label></Button>
             <Button variant="outline" size="sm" aria-label="Reverse" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
               onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), mix, connect }, { replace: true })}>
               <ArrowDownUp className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Reverse</Label>
@@ -320,7 +321,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
             <DownloadMenu disabled={!count} onPick={(kind) => savePath(list, kind)} />
           </div>
           {error && <Problem message={error} onClose={() => setError(null)} />}
-          {busy && <p className="text-sm text-muted-foreground" role="status">Picking another mix…</p>}
+          {busy && <p className="text-sm text-foreground" role="status">Picking another mix…</p>}
 
           {/* A route map: a line down the left with a stop at each player, and the songs that
               carry you from one stop to the next hanging between them. */}
