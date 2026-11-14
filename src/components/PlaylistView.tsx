@@ -10,15 +10,17 @@ import { ArrowDownUp, Check, ChevronDown, Download, Loader2, Plus, RefreshCw, Sh
 import { journeyFileName, samplerFileName } from "@/lib/filenames";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import { TuneMyMusicMark } from "@/components/TuneMyMusicMark";
-import type { PathPlaylist, Player, Playlist, PlaylistTrack } from "../../contract/index.ts";
+import type { Credit, PathPlaylist, Player, Playlist, PlaylistTrack, RecordingCredits } from "../../contract/index.ts";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/components/Link";
-import { alsoOn, appleMatches, pathPlaylist, playlist, swapTrack } from "@/lib/api";
+import { alsoOn, appleMatches, pathPlaylist, playlist, recordingCredits, swapTrack } from "@/lib/api";
 import { bandcampUrl, formatLength, listenQuery, SERVICES, textListLine } from "@/lib/listen";
 import { href, type Route } from "@/lib/route";
 import { ShareButton, shareUrl } from "@/components/Share";
 import { ConnectResult } from "@/components/Connect";
 import { journeyPer, rememberJourneyPer, rememberSamplerSize, samplerSize } from "@/lib/prefs";
+
+type Go = (r: Route, opts?: { replace?: boolean }) => void;
 
 const SIZES = [10, 20, 30];
 
@@ -160,7 +162,7 @@ export function PlaylistView({ seeds, mix, newest, go }: {
           <ol className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
             {list.tracks.map((t, i) => (
               <TrackRow key={t.recordingId} n={i + 1} track={t} why={why(list, t)} who={names} apple={apple[t.recordingId]}
-                seeds={seeds} inList={list.tracks.map((x) => x.recordingId)} onSwap={(next) => replace(i, next)} />
+                seeds={seeds} inList={list.tracks.map((x) => x.recordingId)} onSwap={(next) => replace(i, next)} go={go} />
             ))}
           </ol>
           </div>
@@ -344,7 +346,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
                     <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
                       {l.tracks.map((t, j) => (
                         <TrackRow key={t.recordingId} track={t} why={pairWhy(a, b, t)} who={[a?.name, b?.name].filter((n): n is string => !!n)}
-                          apple={apple[t.recordingId]} seeds={[l.from, l.to]} inList={all.map((x) => x.recordingId)} onSwap={(next) => replace(i, j, next)} />
+                          apple={apple[t.recordingId]} seeds={[l.from, l.to]} inList={all.map((x) => x.recordingId)} onSwap={(next) => replace(i, j, next)} go={go} />
                       ))}
                     </ul>
                   ) : (
@@ -489,11 +491,12 @@ function Notes() {
 
 type AppleMatch = { url: string | null; length?: number } | "pending" | undefined;
 
-function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap }: {
+function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap, go }: {
   n?: number; track: PlaylistTrack; why: string; who: string[]; apple: AppleMatch;
-  seeds: string[]; inList: string[]; onSwap: (t: PlaylistTrack) => void;
+  seeds: string[]; inList: string[]; onSwap: (t: PlaylistTrack) => void; go: Go;
 }) {
   const [swapping, setSwapping] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const [none, setNone] = useState(false);
   const tries = useRef(0);
   const when = t.date ?? t.year ?? "";
@@ -523,7 +526,13 @@ function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap
           </span>
           <span title="What each of them played on it">{whyText}</span>
         </span>
-        <Listen track={t} who={who} apple={apple} />
+        <Listen track={t} who={who} apple={apple}>
+          <button type="button" onClick={() => setShowCredits((v) => !v)} aria-expanded={showCredits} aria-controls={`credits-${t.recordingId}`}
+            className="inline-flex items-center gap-0.5 text-muted-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-current">
+            Credits<ChevronDown className={"h-3 w-3 transition-transform " + (showCredits ? "rotate-180" : "")} aria-hidden />
+          </button>
+        </Listen>
+        {showCredits && <Credits id={t.recordingId} seeds={seeds} go={go} />}
         {none && <span className="mt-1 block text-xs text-muted-foreground" role="status">No other songs with them, in what's been read so far.</span>}
       </span>
       <span className="flex shrink-0 flex-col items-end gap-1">
@@ -545,7 +554,7 @@ function TrackRow({ n, track: t, why: whyText, who, apple, seeds, inList, onSwap
 // Listen links. Spotify and YouTube Music: a search (the song's title, artist and album). Apple
 // Music: straight to the song when one within a few seconds of its length was found (✓), where "Add to
 // Playlist" is in the ⋯ menu; otherwise a search too. Bandcamp, last: a search for the album, to buy it.
-function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; apple: AppleMatch }) {
+function Listen({ track, who, apple, children }: { track: PlaylistTrack; who: string[]; apple: AppleMatch; children?: React.ReactNode }) {
   const q = listenQuery(track, who);
   const link = "text-muted-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-current";
   return (
@@ -569,7 +578,53 @@ function Listen({ track, who, apple }: { track: PlaylistTrack; who: string[]; ap
         title={track.album ? `Search Bandcamp for the album, ${track.album}: the place to buy it, if it's there` : "Search Bandcamp for this song"}>
         Bandcamp
       </a>
+      {children}
     </span>
+  );
+}
+
+/** A song's full credits, under its row: who played what, then who made the record. Each name
+ *  opens that person's galaxy; the playlist's own players are in bold. */
+function Credits({ id, seeds, go }: { id: string; seeds: string[]; go: Go }) {
+  const [credits, setCredits] = useState<RecordingCredits | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    recordingCredits(id).then((c) => { if (live) setCredits(c); }, () => { if (live) setFailed(true); });
+    return () => { live = false; };
+  }, [id]);
+  const person = (c: Credit) => (
+    <li key={c.id} className="flex gap-2">
+      <Link to={{ view: "player", id: c.id, trail: [] }} go={go} title={c.disambiguation ? `${c.name} (${c.disambiguation})` : `Open ${c.name}'s galaxy`}
+        className={"max-w-[60%] shrink-0 underline decoration-border underline-offset-2 hover:decoration-current " + (seeds.includes(c.id) ? "font-semibold text-foreground" : "text-foreground")}>
+        {c.name}
+      </Link>
+      <span className="text-muted-foreground">{c.roles.join(", ")}</span>
+    </li>
+  );
+  return (
+    <div id={`credits-${id}`} className="mt-2 rounded-lg border border-border bg-muted/50 p-3 text-xs" aria-live="polite">
+      {failed ? <p>Couldn’t load the credits. Close and try again.</p>
+        : !credits ? <p className="text-muted-foreground">Loading credits…</p>
+        : (
+          <div className="flex flex-col gap-3">
+            {!credits.loaded && <p className="text-muted-foreground">Still reading this recording’s credits; there may be more soon.</p>}
+            {credits.players.length > 0 && (
+              <section>
+                <h4 className="mb-1 font-medium uppercase tracking-wide text-muted-foreground">Played</h4>
+                <ul className="flex flex-col gap-0.5">{credits.players.map(person)}</ul>
+              </section>
+            )}
+            {credits.crew.length > 0 && (
+              <section>
+                <h4 className="mb-1 font-medium uppercase tracking-wide text-muted-foreground">Made by</h4>
+                <ul className="flex flex-col gap-0.5">{credits.crew.map(person)}</ul>
+              </section>
+            )}
+            <p className="text-muted-foreground">From <a className="underline" href={`https://musicbrainz.org/recording/${id}`} target="_blank" rel="noopener noreferrer">MusicBrainz</a>, where anyone can add what’s missing.</p>
+          </div>
+        )}
+    </div>
   );
 }
 

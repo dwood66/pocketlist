@@ -9,7 +9,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import type { Members, Path, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Swap } from "../contract/index.ts";
+import type { Members, Path, RecordingCredits, PathPlaylist, Player, PlayerCandidate, AlsoOn, Playlist, SharedRecording, Swap } from "../contract/index.ts";
 import { normalizeTitle } from "./aggregate.ts";
 import { jobError, refresh, watch } from "./crawler.ts";
 import { alsoOn, performanceKeys, samplePlaylist, type SampledTrack, type SeedCreditRow } from "./playlist.ts";
@@ -20,6 +20,7 @@ import { Forgetful } from "./cache.ts";
 import { track } from "./usage.ts";
 import { PERFORMER_TYPES, rememberArtist } from "./ingest.ts";
 import { BAND_TYPES, bandMembers } from "./members.ts";
+import { groupCredits, type CreditRow } from "./credits.ts";
 import { creditName, mb, NotFound, type MbArtist, type MbRecording, type MbRelease } from "./mb.ts";
 
 const app = new Hono();
@@ -176,6 +177,19 @@ app.get("/api/players/:id/members", async (c) => {
   const result: Members = a.type && BAND_TYPES.has(a.type) ? { band: true, members: bandMembers(a) } : NOT_A_BAND;
   memberLists.set(id, result);
   return c.json(result);
+});
+
+// Everyone credited on one recording: the song's "show credits" in a playlist. All from the
+// cache (the crawler stored every role when it read the recording), so no MusicBrainz request.
+app.get("/api/recordings/:id/credits", async (c) => {
+  const id = c.req.param("id");
+  if (!MBID.test(id)) return c.json({ error: "not a MusicBrainz ID" }, 400);
+  const [rec] = await rows<{ credits_loaded: boolean }>(`select credits_loaded from recordings where id = $1`, [id]);
+  if (!rec) return c.json({ error: "not found" }, 404);
+  const found = await rows<CreditRow>(
+    `select artist_id, artist_name, artist_disambiguation, rel_type, instruments from credits where recording_id = $1`, [id]);
+  const body: RecordingCredits = { recordingId: id, loaded: rec.credits_loaded, ...groupCredits(found) };
+  return c.json(body);
 });
 
 app.get("/api/players/:id/with/:other", async (c) => {

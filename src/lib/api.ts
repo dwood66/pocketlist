@@ -3,7 +3,7 @@
 
 import {
   isAlsoOn, isAppleMatches, isPath, isPathPlaylist, isPlaylist, isSwap, type AlsoOn, type AppleMatches, type Path, type PathPlaylist, type Playlist, type Swap,
-  isMembers, isPlayer, isPlayerCandidate, isSharedRecording, isSnapshot,
+  isMembers, isPlayer, isRecordingCredits, type RecordingCredits, isPlayerCandidate, isSharedRecording, isSnapshot,
   type Members, type Player, type PlayerCandidate, type SharedRecording, type Snapshot,
 } from "../../contract/index.ts";
 
@@ -187,4 +187,19 @@ export function streamPlayer(
     finished = true;
     close();
   };
+}
+
+// A song's full credits, asked for once per recording (they don't change once read).
+const creditLists = new Map<string, Promise<RecordingCredits>>();
+export function recordingCredits(id: string): Promise<RecordingCredits> {
+  let p = creditLists.get(id);
+  if (!p) {
+    p = getJson(`/api/recordings/${encodeURIComponent(id)}/credits`).then((d) => {
+      if (!isRecordingCredits(d)) throw new Error("Unexpected credits response");
+      return d;
+    });
+    p.catch(() => creditLists.delete(id)); // a failure can be tried again
+    creditLists.set(id, p);
+  }
+  return p;
 }

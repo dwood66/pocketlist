@@ -4,7 +4,7 @@ import { db, type Tx as Transaction } from "./db.ts";
 import { creditName, type MbArtist, type MbRecording, type MbRelation, type MbRelease } from "./mb.ts";
 
 /** Relationship types that mean "played or sang on this recording". */
-export const PERFORMER_TYPES = ["instrument", "vocal", "performer", "performing orchestra"];
+export { PERFORMER_TYPES } from "./roles.ts";
 
 // Attributes MusicBrainz puts alongside instruments that aren't instruments.
 const NOT_INSTRUMENTS = new Set(["additional", "guest", "solo", "minor", "task"]);

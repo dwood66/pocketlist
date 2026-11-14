@@ -66,6 +66,22 @@ export type BandMember = {
 /** `band` is false for a person (or anything that isn't a group), and then `members` is empty. */
 export type Members = { band: boolean; members: BandMember[] };
 
+/** One person on a recording, with everything they're credited with there. */
+export type Credit = {
+  id: string;
+  name: string;
+  disambiguation?: string;
+  roles: string[]; // instruments for players ("piano", "vocals"); jobs for the rest ("producer")
+};
+
+/** A recording's full credits: who played, then who made the record. */
+export type RecordingCredits = {
+  recordingId: string;
+  loaded: boolean; // false while its personnel is still being read
+  players: Credit[];
+  crew: Credit[];
+};
+
 export type SharedRecording = {
   recordingId: string;
   title: string;
@@ -113,6 +129,15 @@ export function isSnapshot(v: unknown): v is Snapshot {
 export function isMembers(v: unknown): v is Members {
   return isObj(v) && typeof v.band === "boolean" && Array.isArray(v.members) && v.members.every((m) =>
     isObj(m) && isStr(m.id) && isStr(m.name) && isStrArr(m.instruments) && optStr(m.years) && typeof m.original === "boolean");
+}
+
+function isCredit(v: unknown): v is Credit {
+  return isObj(v) && isStr(v.id) && isStr(v.name) && optStr(v.disambiguation) && isStrArr(v.roles);
+}
+
+export function isRecordingCredits(v: unknown): v is RecordingCredits {
+  return isObj(v) && isStr(v.recordingId) && typeof v.loaded === "boolean" &&
+    Array.isArray(v.players) && v.players.every(isCredit) && Array.isArray(v.crew) && v.crew.every(isCredit);
 }
 
 export function isSharedRecording(v: unknown): v is SharedRecording {
