@@ -6,7 +6,7 @@
 // TuneMyMusic or Soundiiz turn into a playlist on any service.
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownUp, Check, ChevronDown, Download, Plus, RefreshCw, Shuffle, X } from "lucide-react";
+import { ArrowDownUp, Check, ChevronDown, Download, Loader2, Plus, RefreshCw, Shuffle, X } from "lucide-react";
 import { journeyFileName, samplerFileName } from "@/lib/filenames";
 import { JourneyIcon, SamplerIcon } from "@/components/marks";
 import { TuneMyMusicMark } from "@/components/TuneMyMusicMark";
@@ -22,6 +22,25 @@ import { journeyPer, rememberJourneyPer, rememberSamplerSize, samplerSize } from
 
 const SIZES = [10, 20, 30];
 
+/** Another mix's icon: the shuffle, or a spinner while the new mix is on its way. */
+function MixIcon({ busy }: { busy: boolean }) {
+  return busy
+    ? <Loader2 className="h-4 w-4 animate-spin sm:mr-1.5" aria-hidden />
+    : <Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden />;
+}
+
+/** A failed refresh, shown where you were looking (under the buttons), over the list you still have. */
+function Problem({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <p role="alert" className="flex items-start gap-2 rounded-lg border border-border bg-muted px-3 py-2 text-sm">
+      <span className="flex-1">{message} The list below is the one you had.</span>
+      <button type="button" onClick={onClose} aria-label="Dismiss" className="-m-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <X className="h-4 w-4" aria-hidden />
+      </button>
+    </p>
+  );
+}
+
 export function PlaylistView({ seeds, mix, newest, go }: {
   seeds: string[]; mix: number; newest: boolean; go: (r: Route, opts?: { replace?: boolean }) => void;
 }) {
@@ -29,12 +48,15 @@ export function PlaylistView({ seeds, mix, newest, go }: {
   const [n, setN] = useState(samplerSize);
   const [list, setList] = useState<Playlist | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false); // fetching a new list while the old one is on screen
 
   useEffect(() => {
     const ctrl = new AbortController();
     setError(null);
+    setBusy(true);
     let timer: ReturnType<typeof setTimeout>;
     playlist(seeds, n, mix, ctrl.signal).then((l) => {
+      setBusy(false);
       // The server sends oldest first. The list is kept in the order shown, so swapping a song
       // and the downloads follow it.
       setList(newest ? { ...l, tracks: [...l.tracks].reverse() } : l);
@@ -45,7 +67,7 @@ export function PlaylistView({ seeds, mix, newest, go }: {
           .then((again) => setList((cur) => cur && { ...cur, tracks: withDetailsFrom(cur.tracks, again.tracks) })).catch(() => {}), 4000);
       }
     }).catch((e: unknown) => {
-      if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "Couldn't make the playlist");
+      if (!ctrl.signal.aborted) { setBusy(false); setError(e instanceof Error ? e.message : "Couldn't make the playlist"); }
     });
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [seeds.join(","), n, mix]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -95,7 +117,7 @@ export function PlaylistView({ seeds, mix, newest, go }: {
         <Notes />
       </header>
 
-      {error && <p role="alert" className="text-sm">{error}</p>}
+      {error && !list && <p role="alert" className="text-sm">{error}</p>}
       {!list && !error && <p className="text-sm text-muted-foreground">Picking songs…</p>}
 
       {list && (
@@ -110,8 +132,8 @@ export function PlaylistView({ seeds, mix, newest, go }: {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={list.performances <= list.tracks.length}>
-              <Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Another mix</Label>
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={busy || list.performances <= list.tracks.length}>
+              <MixIcon busy={busy} /><Label>Another mix</Label>
             </Button>
             <Button variant="outline" size="sm" disabled={list.tracks.length < 2} aria-pressed={newest} onClick={flip} aria-label={newest ? "Newest first" : "Oldest first"}
               // Tinted while newest first, so the state shows even when the button is only its icon.
@@ -125,9 +147,11 @@ export function PlaylistView({ seeds, mix, newest, go }: {
             <CopyList lines={list.tracks.map((t) => textListLine(t, names))} />
             <DownloadMenu disabled={!list.tracks.length} onPick={(kind) => save(list, kind)} />
           </div>
+          {error && <Problem message={error} onClose={() => setError(null)} />}
 
+          <div aria-busy={busy} className={"flex flex-col gap-4 transition-opacity duration-200 " + (busy ? "pointer-events-none opacity-40" : "")}>
           <p className="text-sm text-muted-foreground" title="Songs picked, out of every performance they're all credited on, and the sessions those come from">
-            {list.tracks.length
+            {busy ? "Picking another mix…" : list.tracks.length
               ? `${list.tracks.length} of ${list.performances.toLocaleString()} performances, from ${list.sessions.toLocaleString()} ${list.sessions === 1 ? "session" : "sessions"}.`
               : "Nothing with all of them on, in what's been read so far."}
           </p>
@@ -138,6 +162,7 @@ export function PlaylistView({ seeds, mix, newest, go }: {
                 seeds={seeds} inList={list.tracks.map((x) => x.recordingId)} onSwap={(next) => replace(i, next)} />
             ))}
           </ol>
+          </div>
         </>
       )}
     </div>
@@ -200,12 +225,15 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
   const [per, setPer] = useState(journeyPer);
   const [list, setList] = useState<PathPlaylist | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false); // fetching a new list while the old one is on screen
 
   useEffect(() => {
     const ctrl = new AbortController();
     setError(null);
+    setBusy(true);
     let timer: ReturnType<typeof setTimeout>;
     pathPlaylist(ids, per, mix, ctrl.signal).then((l) => {
+      setBusy(false);
       setList(l);
       if (l.links.some((x) => x.tracks.some(lacksDetails))) {
         timer = setTimeout(() => pathPlaylist(ids, per, mix, ctrl.signal).then((again) => {
@@ -214,7 +242,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
         }).catch(() => {}), 4000);
       }
     }).catch((e: unknown) => {
-      if (!ctrl.signal.aborted) setError(e instanceof Error ? e.message : "Couldn't make the playlist");
+      if (!ctrl.signal.aborted) { setBusy(false); setError(e instanceof Error ? e.message : "Couldn't make the playlist"); }
     });
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [ids.join(","), per, mix]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -265,7 +293,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
         <Notes />
       </header>
 
-      {error && <p role="alert" className="text-sm">{error}</p>}
+      {error && !list && <p role="alert" className="text-sm">{error}</p>}
       {!list && !error && <p className="text-sm text-muted-foreground">Picking songs…</p>}
 
       {list && (
@@ -281,7 +309,7 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
               ))}
               <span className="px-2 text-sm text-muted-foreground">per step</span>
             </div>
-            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })}><Shuffle className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Another mix</Label></Button>
+            <Button variant="outline" size="sm" aria-label="Another mix" title="Pick a different selection by the same rules" onClick={() => set({ mix: mix + 1 })} disabled={busy}><MixIcon busy={busy} /><Label>Another mix</Label></Button>
             <Button variant="outline" size="sm" aria-label="Reverse" title={`Go the other way: ${[...list.players].reverse().map((p) => p.name).join(" → ")}`}
               onClick={() => go({ view: "pathlist", ids: [...ids].reverse(), mix, connect }, { replace: true })}>
               <ArrowDownUp className="h-4 w-4 sm:mr-1.5" aria-hidden /><Label>Reverse</Label>
@@ -291,10 +319,12 @@ export function PathPlaylistView({ ids, mix, connect, go }: {
             <CopyList lines={list.links.flatMap((l) => l.tracks.map((t) => textListLine(t, [byId.get(l.from)?.name ?? ""])))} />
             <DownloadMenu disabled={!count} onPick={(kind) => savePath(list, kind)} />
           </div>
+          {error && <Problem message={error} onClose={() => setError(null)} />}
+          {busy && <p className="text-sm text-muted-foreground" role="status">Picking another mix…</p>}
 
           {/* A route map: a line down the left with a stop at each player, and the songs that
               carry you from one stop to the next hanging between them. */}
-          <ol className="relative pl-8" aria-label="Journey, step by step">
+          <ol aria-busy={busy} className={"relative pl-8 transition-opacity duration-200 " + (busy ? "pointer-events-none opacity-40" : "")} aria-label="Journey, step by step">
             <span aria-hidden className="absolute bottom-3 left-[9px] top-3 w-0.5 rounded-full bg-[color:var(--goal)] opacity-40" />
             {list.links.map((l, i) => {
               const a = byId.get(l.from), b = byId.get(l.to);
