@@ -31,7 +31,7 @@ add players one at a time, from who else is on the songs, and watch a band come 
 its credited artist and **length**, since in jazz the same tune is recorded again and again and
 length is the best clue to which take is which (not exact: a reissue of the same recording can
 differ by a second or so); Apple Music links marked ✓ go straight to a song within a few seconds,
-and a Bandcamp link looks for the album, to buy it. Swap any song, flip the order (newest first,
+and a Bandcamp link looks for the album, to buy it. **Credits** opens a song's full personnel under it, players and the people who made the record, each name a way into their galaxy. Swap any song, flip the order (newest first,
 or a Journey run backwards), and **Transfer to playlist** on Spotify, Apple Music and the rest through
 TuneMyMusic, or download it as text or CSV.
 
