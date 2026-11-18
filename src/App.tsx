@@ -22,9 +22,9 @@ export default function App() {
       <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-5 sm:py-8">
         <header className="flex items-center justify-between gap-4">
           <Link to={{ view: "home" }} go={go} aria-label="Pocketlist, home"
-            className="flex items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            className="group flex items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background">
             <Mark />
-            <span className="font-display text-xl font-semibold">Pocketlist</span>
+            <span className="font-display text-xl font-semibold transition-colors group-hover:text-primary group-focus-visible:text-primary">Pocketlist</span>
           </Link>
           <ThemeToggle />
         </header>

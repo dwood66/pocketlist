@@ -24,6 +24,7 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [more, setMore] = useState(false); // the "more…" details under the player's name
   const [refreshes, setRefreshes] = useState(0); // bumped by "Re-read from MusicBrainz"
   const heading = useRef<HTMLHeadingElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -95,8 +96,14 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
                 snap.player.disambiguation && [snap.player.disambiguation, "MusicBrainz's description, to tell them from others with the same name"],
                 snap.instruments.length > 0 && [snap.instruments.slice(0, 4).join(", "), "What they're credited with playing, most often first"],
               ]} />
+              {(snap.player.disambiguation || snap.instruments.length > 0) && " "}
+              <button type="button" aria-expanded={more} aria-controls="player-more" onClick={() => setMore((v) => !v)}
+                className="-my-1 rounded py-1 text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {more ? "less" : "more…"}
+              </button>
             </p>
           )}
+          {snap && more && <PlayerMore id="player-more" snap={snap} to={(c) => ({ view: "player", id: c.id, trail: childTrail, galaxy, goal })} go={go} />}
         </div>
         {snap && !goal && !isBand && (
           <div className="flex flex-wrap gap-2">
@@ -187,6 +194,72 @@ export function PlayerView({ id, trail, galaxy, goal, go }: {
         </>
       )}
     </div>
+  );
+}
+
+// The centre star's own card, opened from "more…" under the name: what the galaxy's tooltips
+// say about each partner, said about the player. All of it comes from the snapshot already on
+// screen, so it costs nothing to open and fills in as credits arrive.
+function PlayerMore({ id, snap, to, go }: {
+  id: string; snap: Snapshot; to: (c: Collaborator) => Route; go: (r: Route) => void;
+}) {
+  const { player, instruments, collaborators: people, progress } = snap;
+  // Only the start: a partner's last year can be a reissue's release year (Paul Chambers
+  // "recording" in 2016), but the earliest year is a real session.
+  const firsts = people.map((c) => c.firstYear).filter((y): y is number => !!y);
+  const first = firsts.length ? Math.min(...firsts) : undefined;
+  const closest = people.slice(0, 3); // already in order, most sessions first
+  const soFar = progress.done ? "" : " so far";
+  const row = "grid grid-cols-[7rem_1fr] gap-x-3";
+  const term = "font-medium text-foreground";
+  return (
+    <dl id={id} className="mt-2 flex max-w-prose flex-col gap-2 rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
+      {instruments.length > 0 && (
+        <div className={row}><dt className={term}>Plays</dt><dd>{instruments.join(", ")}</dd></div>
+      )}
+      {first && (
+        <div className={row}>
+          <dt className={term}>First on record</dt>
+          <dd className="tabular-nums" title="The earliest year they're credited alongside someone else">{first}{soFar && " (so far)"}</dd>
+        </div>
+      )}
+      <div className={row}>
+        <dt className={term}>On record</dt>
+        <dd className="tabular-nums">
+          <Meta parts={[
+            [`${progress.recordingsTotal.toLocaleString()} ${progress.recordingsTotal === 1 ? "recording" : "recordings"}`, "Recordings they're credited as playing on, in MusicBrainz"],
+            [`${people.length.toLocaleString()} ${people.length === 1 ? "partner" : "partners"}${soFar}`, "Everyone credited as playing on a recording with them"],
+          ]} />
+        </dd>
+      </div>
+      {closest.length > 0 && (
+        <div className={row}>
+          <dt className={term}>Played most with</dt>
+          <dd>
+            <ul className="flex flex-col">
+              {closest.map((c) => (
+                <li key={c.id}>
+                  <Link to={to(c)} go={go} className="text-foreground hover:underline focus-visible:underline focus-visible:outline-none">{c.name}</Link>
+                  {" · "}
+                  <span className="whitespace-nowrap tabular-nums" title="Recording sessions together (different dates or albums)">
+                    {`${c.sharedSessions} ${c.sharedSessions === 1 ? "session" : "sessions"}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+      )}
+      <div className={row}>
+        <dt className={term}>Elsewhere</dt>
+        <dd>
+          <a href={`https://musicbrainz.org/artist/${player.id}`} target="_blank" rel="noreferrer"
+            className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground">
+            {player.name} on MusicBrainz
+          </a>
+        </dd>
+      </div>
+    </dl>
   );
 }
 
